@@ -30,10 +30,10 @@ WSRESTFUL WSSLCOMP DESCRIPTION 'SOLICITAÇÃO DE COMPRAS AUTOMATIZADA'
     WSDATA item        AS ITEMSC
  
     //Métodos
-    WSMETHOD GET    ID     DESCRIPTION 'Retorna o registro pesquisado' WSSYNTAX '/WSSLCOMP/get_id?{numSC}'                    PATH 'get_id'        PRODUCES APPLICATION_JSON
-    WSMETHOD POST   NEW    DESCRIPTION 'Inclusão de registro'          WSSYNTAX '/WSSLCOMP/new'                               PATH 'new'           PRODUCES APPLICATION_JSON
-    WSMETHOD PUT    UPDATE DESCRIPTION 'Atualização de registro'       WSSYNTAX '/WSSLCOMP/update'                            PATH 'update'        PRODUCES APPLICATION_JSON
-    WSMETHOD PUT    ERASE  DESCRIPTION 'Blaqueio de registro'          WSSYNTAX '/WSSLCOMP/bloqu'                             PATH 'bloqu'         PRODUCES APPLICATION_JSON
+    WSMETHOD GET    ID     DESCRIPTION 'Retorna o registro pesquisado' WSSYNTAX '/WSSLCOMP/{numSC}'                  PATH '{numSC}'        PRODUCES APPLICATION_JSON
+    WSMETHOD POST   NEW    DESCRIPTION 'Inclusão de registro'          WSSYNTAX '/WSSLCOMP/new'                      PATH 'new'           PRODUCES APPLICATION_JSON
+    WSMETHOD PUT    UPDATE DESCRIPTION 'Atualização de registro'       WSSYNTAX '/WSSLCOMP/update'                   PATH 'update'        PRODUCES APPLICATION_JSON
+    WSMETHOD PUT    ERASE  DESCRIPTION 'Blaqueio de registro'          WSSYNTAX '/WSSLCOMP/bloqu'                    PATH 'bloqu'         PRODUCES APPLICATION_JSON
 END WSRESTFUL
 
 /*/{Protheus.doc} WSMETHOD GET ID
@@ -45,11 +45,12 @@ Busca registro via ID
 WSMETHOD GET ID WSRECEIVE numSC WSSERVICE WSSLCOMP
     Local lRet       := .T.
     Local jResponse  := JsonObject():New()
-    Local cAliasWS   := 'SA2'
+    Local cAliasWS   := 'SC1'
+    Local numSC			 := self:aUrlParms[1]
 	oWS    := LIBGLASS():new()
 
     //Se o id estiver vazio
-    If Empty(::cnpj)
+    If Empty(numSC)
         //SetRestFault(500, 'Falha ao consultar o registro') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
         Self:setStatus(500) 
         jResponse['errorId']  := 'ID001'
@@ -60,29 +61,18 @@ WSMETHOD GET ID WSRECEIVE numSC WSSERVICE WSSLCOMP
         (cAliasWS)->(DbSetOrder(1))
 
         //Se não encontrar o registro
-        If ! (cAliasWS)->(MsSeek(FWxFilial(cAliasWS) + ::cnpj))
+        If ! (cAliasWS)->(MsSeek(FWxFilial(cAliasWS) + numSC))
             //SetRestFault(500, 'Falha ao consultar ID') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
             Self:setStatus(500) 
             jResponse['errorId']  := 'ID002'
-            jResponse['error']    := 'ID não encontrado'
-            jResponse['solution'] := 'Código ID não encontrado na tabela ' + cAliasWS
+            jResponse['error']    := 'SC ('+numSC+') não encontrado'
+            jResponse['solution'] := 'Código SC não encontrado na tabela ' + cAliasWS
         Else
             //Define o retorno
-            jResponse['filial'] 	:= (cAliasWS)->A2_FILIAL 
-            jResponse['cod'] 		:= (cAliasWS)->A2_COD 
-            jResponse['loja'] 		:= (cAliasWS)->A2_LOJA 
-            jResponse['nome'] 		:= (cAliasWS)->A2_NOME 
-            jResponse['nreduz'] 	:= (cAliasWS)->A2_NREDUZ 
-            jResponse['end'] 		:= (cAliasWS)->A2_END 
-            jResponse['nr_end'] 	:= (cAliasWS)->A2_NR_END 
-            jResponse['bairro'] 	:= (cAliasWS)->A2_BAIRRO 
-            jResponse['estado'] 	:= (cAliasWS)->A2_ESTADO 
-            jResponse['cod_mun'] 	:= (cAliasWS)->A2_COD_MUN 
-            jResponse['contpre'] 	:= (cAliasWS)->A2_CONTPRE 
-            jResponse['pfisica'] 	:= (cAliasWS)->A2_PFISICA 
-            jResponse['cgc'] 		:= (cAliasWS)->A2_CGC 
-            jResponse['inscr'] 		:= (cAliasWS)->A2_INSCR 
-            jResponse['inscrm'] 	:= (cAliasWS)->A2_INSCRM 
+            jResponse['filial'] 	    := (cAliasWS)->C1_FILIAL 
+            jResponse['numSC'] 	    	:= (cAliasWS)->C1_NUM 
+            jResponse['solicitante'] 	:= (cAliasWS)->C1_SOLICIT 
+            jResponse['emissao'] 		:= DtoC((cAliasWS)->C1_EMISSAO)
         EndIf
     EndIf
 

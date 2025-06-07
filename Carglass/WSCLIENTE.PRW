@@ -31,7 +31,8 @@ WSMETHOD GET ID WSRECEIVE cnpj WSSERVICE wsCliente
 	Local lRet       := .T.
 	Local jResponse  := JsonObject():New()
 	Local cAliasWS   := 'SA1'
-	Local jJson		 := cnpj
+	::cnpj			 := self:aUrlParms[1]
+
 
 	oWS    := LIBGLASS():new()
 
@@ -45,22 +46,22 @@ WSMETHOD GET ID WSRECEIVE cnpj WSSERVICE wsCliente
 		oWS:GRAVALOGMURO(jResponse, jJson, "WSCLIENTE", "CONSULTA DE CLIENTE")
 	Else
 		DbSelectArea(cAliasWS)
-		(cAliasWS)->(DbSetOrder(1))
+		(cAliasWS)->(DbSetOrder(3))   //PESQUISA CGC/CPF
 
 		//Se não encontrar o registro
-		If ! (cAliasWS)->(MsSeek(FWxFilial(cAliasWS) + ::cnpj))
+		If !(cAliasWS)->(MsSeek(FWxFilial(cAliasWS) + ::cnpj))
 			//SetRestFault(500, 'Falha ao consultar ID') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
 			Self:setStatus(500)
 			jResponse['errorId']  := 'ID002'
-			jResponse['error']    := 'ID não encontrado'
-			jResponse['solution'] := 'Código ID não encontrado na tabela ' + cAliasWS
+			jResponse['error']    := 'CNPJ/CPF ('+::cnpj+') não encontrado'
+			jResponse['solution'] := 'CNPJ/CPF não encontrado na tabela ' + cAliasWS
 			oWS:GRAVALOGMURO(jResponse, jJson, "WSCLIENTE", "CONSULTA DE CLIENTE")
 		Else
 			//Define o retorno
 			jResponse['filial'] := (cAliasWS)->A1_FILIAL
-			jResponse['cod'] := (cAliasWS)->A1_COD
-			jResponse['loja'] := (cAliasWS)->A1_LOJA
-			jResponse['nome'] := (cAliasWS)->A1_NOME
+			jResponse['cod'] 	:= (cAliasWS)->A1_COD
+			jResponse['loja'] 	:= (cAliasWS)->A1_LOJA
+			jResponse['nome'] 	:= (cAliasWS)->A1_NOME
 		EndIf
 	EndIf
 
