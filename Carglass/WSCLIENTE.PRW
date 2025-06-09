@@ -58,10 +58,30 @@ WSMETHOD GET ID WSRECEIVE cnpj WSSERVICE wsCliente
 			oWS:GRAVALOGMURO(jResponse, jJson, "WSCLIENTE", "CONSULTA DE CLIENTE")
 		Else
 			//Define o retorno
-			jResponse['filial'] := (cAliasWS)->A1_FILIAL
-			jResponse['cod'] 	:= (cAliasWS)->A1_COD
-			jResponse['loja'] 	:= (cAliasWS)->A1_LOJA
-			jResponse['nome'] 	:= (cAliasWS)->A1_NOME
+			jResponse['FILIAL'] := (cAliasWS)->A1_FILIAL
+			jResponse['COD'] 	:= (cAliasWS)->A1_COD
+			jResponse['LOJA'] 	:= (cAliasWS)->A1_LOJA
+			jResponse['NOME'] 	:= (cAliasWS)->A1_NOME
+			jResponse['NREDUZ '] := (cAliasWs)->A1_NREDUZ 
+        	jResponse['BAIRRO '] := (cAliasWs)->A1_BAIRRO 
+        	jResponse['EMAIL  '] := (cAliasWs)->A1_EMAIL  
+        	jResponse['CEP    '] := (cAliasWs)->A1_CEP    
+        	jResponse['CGC    '] := (cAliasWs)->A1_CGC   
+        	jResponse['EST    '] := (cAliasWs)->A1_ESTADO 
+        	jResponse['COD_MUN'] := (cAliasWs)->A1_COD_MUN
+        	jResponse['COND   '] := (cAliasWs)->A1_COND  
+        	jResponse['DDD    '] := (cAliasWs)->A1_DDD    
+        	jResponse['DTCAD  '] := (cAliasWs)->A1_DTCAD
+        	jResponse['EMAIL  '] := (cAliasWs)->A1_EMAIL  
+        	jResponse['END    '] := (cAliasWs)->A1_END    
+        	jResponse['INSCR  '] := (cAliasWs)->A1_INSCR
+        	jResponse['MUN    '] := (cAliasWs)->A1_MUN
+        	jResponse['NATUREZ'] := (cAliasWs)->A1_NATUREZ
+        	jResponse['PESSOA '] := (cAliasWs)->A1_TPESSOA 
+        	jResponse['TIPCLI '] := (cAliasWs)->A1_TIPCLI   
+        	jResponse['TEL    '] := (cAliasWs)->A1_TEL
+        	jResponse['TRANSP '] := (cAliasWs)->A1_TRANSP
+        	jResponse['PAIS   '] := (cAliasWS)->A1_PAIS
 		EndIf
 	EndIf
 
