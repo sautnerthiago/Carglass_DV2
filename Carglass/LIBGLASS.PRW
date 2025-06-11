@@ -55,7 +55,7 @@ Method GRAVALOGMURO( cJson, cMensRet, cCodRotin, cNomRti ) class LIBGLASS
     Local lRet      := .T.
     Local cCodUsr   := RetCodUsr()
     Local cNomUsr   := UsrRetName(cCodUsr)
-    Local nTmbObs   := 250 //TamSX3("Z1_JSON")[1]
+    //Local nTmbObs   := TamSX3("Z1_JSON")[1]
 
     Begin transaction
         RecLock("SZ1",.T.)
@@ -65,12 +65,19 @@ Method GRAVALOGMURO( cJson, cMensRet, cCodRotin, cNomRti ) class LIBGLASS
         SZ1->Z1_NOMROTI     := cNomRti
         SZ1->Z1_DATAINC     := dDatabase
         SZ1->Z1_HORAINC     := Substr(time(),1,5)
-        MSMM(, nTmbObs, , cJson, 1, , , "SZ1", "Z1_JSON") //cJson
+        SZ1->Z1_JSON        := cJson
+        //MSMM(, nTmbObs, , cJson, 1, , , "SZ1", "Z1_JSON") //cJson
         SZ1->Z1_USUARIO     := cNomUsr
         SZ1->Z1_COMPUTA     := GetComputerName()
         SZ1->Z1_STATUS      := "1"
-        MSMM(, nTmbObs, , cMensRet, 1, , , "SZ1", "Z1_MESERRO") //SZ1->Z1_MESERRO     := cMensRet
+        SZ1->Z1_MESERRO     := cMensRet
+        //MSMM(, nTmbObs, , cMensRet, 1, , , "SZ1", "Z1_MESERRO") //SZ1->Z1_MESERRO     := cMensRet
+        SZ1->( DbCommit() )
         SZ1->( MsUnlock() )
+
+        //MSMM(SZ1->Z1_JSON   ,,, cJson,1,,,"SZ1","Z1_JSON")  //Grava o campo MEMO
+        //MSMM(SZ1->Z1_MESERRO,,, cMensRet,1,,,"SZ1","Z1_MESERRO")  //Grava o campo MEMO
+
     END transaction
 
 Return lRet

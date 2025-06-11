@@ -43,7 +43,9 @@ WSMETHOD GET ID WSRECEIVE cnpj WSSERVICE wsCliente
 		jResponse['errorId']  := 'ID001'
 		jResponse['error']    := 'ID vazio'
 		jResponse['solution'] := 'Informe o ID'
-		oWS:GRAVALOGMURO(jResponse, jJson, "WSCLIENTE", "CONSULTA DE CLIENTE")
+
+		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
+		oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "BLOQUEIO DE CLIENTE")
 	Else
 		DbSelectArea(cAliasWS)
 		(cAliasWS)->(DbSetOrder(3))   //PESQUISA CGC/CPF
@@ -55,7 +57,9 @@ WSMETHOD GET ID WSRECEIVE cnpj WSSERVICE wsCliente
 			jResponse['errorId']  := 'ID002'
 			jResponse['error']    := 'CNPJ/CPF ('+::cnpj+') não encontrado'
 			jResponse['solution'] := 'CNPJ/CPF não encontrado na tabela ' + cAliasWS
-			oWS:GRAVALOGMURO(jResponse, jJson, "WSCLIENTE", "CONSULTA DE CLIENTE")
+
+			cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
+			oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "BLOQUEIO DE CLIENTE")
 		Else
 			//Define o retorno
 			jResponse['FILIAL'] := (cAliasWS)->A1_FILIAL
@@ -150,7 +154,6 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE wsCliente
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
 		oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "INCLUSÃO DE CLIENTE")
-
 	Else
 		DbSelectArea(cAliasWS)
 		//Adiciona os dados do ExecAuto
@@ -218,7 +221,7 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE wsCliente
 			lRet := .F.
 
 			cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
-			oWS:GRAVALOGMURO(jResponse, cJason, "WSCLIENTE", "INCLUSÃO DE CLIENTE")
+			oWS:GRAVALOGMURO(cResponc, cErrorLog, "WSCLIENTE", "INCLUSÃO DE CLIENTE")
 			//Senão, define o retorno
 		Else
 			jResponse['note']     := 'Registro incluido com sucesso'
@@ -280,10 +283,7 @@ WSMETHOD PUT UPDATE WSRECEIVE cnpj WSSERVICE wsCliente
 		jResponse['solution'] := 'Informe o ID'
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
-		oWS:GRAVALOGMURO(jResponse, cJason, "WSCLIENTE", "ATUALIZAÇÃO DE CLIENTE")
-
-		//oWS:GRAVALOGMURO(jResponse, jJson, "WSCLIENTE", "ATUALIZAÇÃO DE CLIENTE")
-
+		oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "BLOQUEIO DE CLIENTE")
 	Else
 		//DbSelectArea(cAliasWS)
 		//SA1->(DbGoTop())
@@ -299,7 +299,7 @@ WSMETHOD PUT UPDATE WSRECEIVE cnpj WSSERVICE wsCliente
 			jResponse['solution'] := 'Código ID não encontrado na tabela ' + cAliasWS
 
 			cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
-			oWS:GRAVALOGMURO(jResponse, cJason, "WSCLIENTE", "ATUALIZAÇÃO DE CLIENTE")
+			oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "ATUALIZAÇÃO DE CLIENTE")
 		Else
 
 			//Se tiver algum erro no Parse, encerra a execução
@@ -311,7 +311,7 @@ WSMETHOD PUT UPDATE WSRECEIVE cnpj WSSERVICE wsCliente
 				jResponse['solution'] := 'Erro ao fazer o Parse do JSON'
 
 				cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
-				oWS:GRAVALOGMURO(jResponse, cJason, "WSCLIENTE", "ATUALIZAÇÃO DE CLIENTE")
+				oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "ATUALIZAÇÃO DE CLIENTE")
 			Else
 
 				//Adiciona os dados do ExecAuto
@@ -360,7 +360,7 @@ WSMETHOD PUT UPDATE WSRECEIVE cnpj WSSERVICE wsCliente
 					lRet := .F.
 
 					cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
-					oWS:GRAVALOGMURO(jResponse, cJason, "WSCLIENTE", "ATUALIZAÇÃO DE CLIENTE")
+					oWS:GRAVALOGMURO(cResponc, cErrorLog, "WSCLIENTE", "ATUALIZAÇÃO DE CLIENTE")
 					//Senão, define o retorno
 				Else
 					jResponse['note']     := 'Registro Atualizado com sucesso'
@@ -423,8 +423,6 @@ WSMETHOD PUT ERASE WSRECEIVE cnpj WSSERVICE wsCliente
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
 		oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "BLOQUEIO DE CLIENTE")
-
-		//oWS:GRAVALOGMURO(jResponse, jJson, "WSCLIENTE", "BLOQUEIO DE CLIENTE")
 	Else
 		//Se não encontrar o registro
 		If !oWS:temClient(FWxFilial(cAliasWS), ::cnpj) //(cAliasWS)->(MsSeek(FWxFilial(cAliasWS) + ::cnpj))
@@ -435,8 +433,7 @@ WSMETHOD PUT ERASE WSRECEIVE cnpj WSSERVICE wsCliente
 			jResponse['solution'] := 'Código ID não encontrado na tabela ' + cAliasWS
 
 			cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
-			oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "BLOQUEIO DE CLIENTE")
-			//oWS:GRAVALOGMURO(jResponse, jJson, "WSCLIENTE", "BLOQUEIO DE CLIENTE")
+			oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "BLOQUEIO DE CLIENTE")			
 		Else
 
 			//Se tiver algum erro no Parse, encerra a execução
@@ -449,8 +446,6 @@ WSMETHOD PUT ERASE WSRECEIVE cnpj WSSERVICE wsCliente
 
 				cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
 				oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "BLOQUEIO DE CLIENTE")
-
-				//oWS:GRAVALOGMURO(jResponse, jJson, "WSCLIENTE", "BLOQUEIO DE CLIENTE")
 			Else
 				DbSelectArea(cAliasWS)
 
@@ -495,10 +490,7 @@ WSMETHOD PUT ERASE WSRECEIVE cnpj WSSERVICE wsCliente
 					lRet := .F.
 
 					cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
-					oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "BLOQUEIO DE CLIENTE")
-
-					//oWS:GRAVALOGMURO(jResponse, jJson, "WSCLIENTE", "BLOQUEIO DE CLIENTE")
-					//Senão, define o retorno
+					oWS:GRAVALOGMURO(cResponc, cErrorLog, "WSCLIENTE", "BLOQUEIO DE CLIENTE")
 				Else
 					jResponse['note']     := 'Registro Bloqueado com sucesso'
 				EndIf

@@ -193,7 +193,7 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE WSFORNEC
 			lRet := .F.
 
 			cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
-			oWS:GRAVALOGMURO(cResponc, cJason, "WSFORNC", "INCLUSÃO DE FORNECEDOR")
+			oWS:GRAVALOGMURO(cResponc, cErrorLog, "WSFORNC", "INCLUSÃO DE FORNECEDOR")
 
 		//Senão, define o retorno
 		Else
@@ -324,7 +324,7 @@ WSMETHOD PUT UPDATE WSRECEIVE cnpj WSSERVICE WSFORNEC
 		            lRet := .F.
 
 					cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
-					oWS:GRAVALOGMURO(cResponc, cJason, "WSFORNC", "ATUALIZAÇÃO DE FORNECEDOR")
+					oWS:GRAVALOGMURO(cResponc, cErrorLog, "WSFORNC", "ATUALIZAÇÃO DE FORNECEDOR")
 
 		         Else
 		         	jResponse['note']     := 'Registro Atualizado com sucesso'
@@ -443,7 +443,7 @@ WSMETHOD PUT ERASE WSRECEIVE id WSSERVICE WSFORNEC
 		            jResponse['solution'] := 'Nao foi possivel incluir o registro, foi gerado um arquivo de log em ' + cDirLog + cArqLog + ' '
 		            lRet := .F.
 					cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
-					oWS:GRAVALOGMURO(cResponc, cJason, "WSFORNC", "BLOQUEIO DE FORNECEDOR")
+					oWS:GRAVALOGMURO(cResponc, cErrorLog, "WSFORNC", "BLOQUEIO DE FORNECEDOR")
 		         Else
 		         	jResponse['note']     := 'Registro Bloqueado com sucesso'
 		         EndIf
