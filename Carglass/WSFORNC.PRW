@@ -14,15 +14,23 @@ CADASTRO DE FORNECEDOR
 WSRESTFUL WSFORNEC DESCRIPTION 'CADASTRO DE FORNECEDOR'
     //Atributos
     WSDATA cnpj       AS STRING
+	WSDATA estado     AS STRING
+	WSDATA dataDe     AS STRING
+	WSDATA dataAte    AS STRING
+	WSDATA tipo       AS STRING
+
     WSDATA updated_at AS STRING
     WSDATA limit      AS INTEGER
     WSDATA page       AS INTEGER
- 
-    //Métodos
-    WSMETHOD GET    CNPJ   DESCRIPTION 'Retorna o registro pesquisado' WSSYNTAX '/WSFORNEC/{cnpj}'                     PATH '{cnpj}'        PRODUCES APPLICATION_JSON
-    WSMETHOD POST   NEW    DESCRIPTION 'Inclusão de registro'          WSSYNTAX '/WSFORNEC/new'                        PATH 'new'           PRODUCES APPLICATION_JSON
-    WSMETHOD PUT    UPDATE DESCRIPTION 'Atualização de registro'       WSSYNTAX '/WSFORNEC/update'                     PATH 'update'        PRODUCES APPLICATION_JSON
-    WSMETHOD PUT    ERASE  DESCRIPTION 'Blaqueio de registro'          WSSYNTAX '/WSFORNEC/bloqu'                      PATH 'bloqu'         PRODUCES APPLICATION_JSON
+
+	//Métodos 
+    WSMETHOD GET  CNPJ   DESCRIPTION 'Retorna o registro pesquisado - CNPJ'   WSSYNTAX '/WSFORNEC/cnpj?{cnpj}'      PATH '{cnpj}'   PRODUCES APPLICATION_JSON
+	//WSMETHOD GET  estado DESCRIPTION 'Retorna o registro pesquisado - ESTADO' WSSYNTAX '/WSFORNEC/estado?{estado}'  PATH '{estado}' PRODUCES APPLICATION_JSON
+	//WSMETHOD GET  dat    DESCRIPTION 'Retorna o registro pesquisado - DATA'   WSSYNTAX '/WSFORNEC/datas?dataini{dataDe}&datafin={dataAte}'       PATH 'datas?dataini{dataDe}&datafin={dataAte}'   PRODUCES APPLICATION_JSON
+	//WSMETHOD GET  tipo   DESCRIPTION 'Retorna o registro pesquisado - TIPO'   WSSYNTAX '/WSFORNEC/tipo?{tipo}'      PATH '{tipo}'   PRODUCES APPLICATION_JSON
+    WSMETHOD POST NEW    DESCRIPTION 'Inclusão de registro'                   WSSYNTAX '/WSFORNEC/new'              PATH 'new'      PRODUCES APPLICATION_JSON
+    WSMETHOD PUT  UPDATE DESCRIPTION 'Atualização de registro'                WSSYNTAX '/WSFORNEC/update'           PATH 'update'   PRODUCES APPLICATION_JSON
+    WSMETHOD PUT  ERASE  DESCRIPTION 'Blaqueio de registro'                   WSSYNTAX '/WSFORNEC/bloqu'            PATH 'bloqu'    PRODUCES APPLICATION_JSON
 END WSRESTFUL
 
 /*/{Protheus.doc} WSMETHOD GET ID
@@ -35,7 +43,9 @@ WSMETHOD GET CNPJ WSRECEIVE cnpj WSSERVICE WSFORNEC
     Local lRet       := .T.
     Local jResponse  := JsonObject():New()
     Local cAliasWS   := 'SA2'
-    ::cnpj			 := self:aUrlParms[1]
+    Local cJason	 := ""
+    //::cnpj			 := self:aUrlParms[1]
+    ::cnpj			 := SELF:AQUERYSTRING[1][1]  //self:querystring[1,1]
 
 	oWS    := LIBGLASS():new()
 
@@ -46,6 +56,10 @@ WSMETHOD GET CNPJ WSRECEIVE cnpj WSSERVICE WSFORNEC
         jResponse['errorId']  := 'ID001'
         jResponse['error']    := 'ID vazio'
         jResponse['solution'] := 'Informe o ID'
+
+		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
+		oWS:GRAVALOGMURO(cResponc, cJason, "WSFORNC", "NAO DIGITADO O FORNECEDOR")
+
     Else
         DbSelectArea(cAliasWS)
         (cAliasWS)->(DbSetOrder(3))
@@ -59,10 +73,30 @@ WSMETHOD GET CNPJ WSRECEIVE cnpj WSSERVICE WSFORNEC
 			jResponse['solution'] := 'CNPJ/CPF não encontrado na tabela ' + cAliasWS
         Else
             //Define o retorno
-            jResponse['filial'] 	:= (cAliasWS)->A2_FILIAL 
-            jResponse['cod'] 		:= (cAliasWS)->A2_COD 
-            jResponse['loja'] 		:= (cAliasWS)->A2_LOJA 
-            jResponse['nome'] 		:= (cAliasWS)->A2_NOME 
+            jResponse['FILIAL'] 	:= (cAliasWS)->A2_FILIAL 
+            jResponse['CODIGO']		:= (cAliasWS)->A2_COD 
+            jResponse['LOJA'] 		:= (cAliasWS)->A2_LOJA 
+			jResponse['NAME'] 		:= Rtrim( (cAliasWS)->A2_NOME)
+			jResponse['NREDUZ'] 	:= Rtrim( (cAliasWs)->A2_NREDUZ )
+        	jResponse['DISTRICT'] 	:= Rtrim( (cAliasWs)->A2_BAIRRO )
+        	jResponse['EMAIL'] 		:= Rtrim( (cAliasWs)->A2_EMAIL  )
+        	jResponse['ZIPCODE'] 	:= Rtrim( (cAliasWs)->A2_CEP    )
+        	jResponse['CNPJ'] 		:= Rtrim( (cAliasWs)->A2_CGC    )
+        	jResponse['STATE'] 		:= Rtrim( (cAliasWs)->A2_ESTADO )
+        	jResponse['COD_MUN']	:= Rtrim( (cAliasWs)->A2_COD_MUN)
+        	jResponse['COND'] 		:= Rtrim( (cAliasWs)->A2_COND   )
+        	jResponse['DDD'] 		:= Rtrim( (cAliasWs)->A2_DDD    )
+        	jResponse['DTCAD'] 		:= (cAliasWs)->A2_DTNASC
+        	jResponse['ADDRESS']	:= Rtrim( (cAliasWs)->A2_END    )
+        	jResponse['INSCR'] 		:= Rtrim( (cAliasWs)->A2_INSCR  )
+        	jResponse['CITY'] 		:= Rtrim( (cAliasWs)->A2_MUN    )
+        	jResponse['NATUREZ']	:= Rtrim( (cAliasWs)->A2_NATUREZ)
+        	jResponse['PESSOA'] 	:= Rtrim( (cAliasWs)->A2_TPESSOA)
+        	jResponse['TIPCLI'] 	:= Rtrim( (cAliasWs)->A2_TIPO )
+        	jResponse['TEL'] 		:= Rtrim( (cAliasWs)->A2_TEL    )
+        	jResponse['TRANSP'] 	:= Rtrim( (cAliasWs)->A2_TRANSP )
+        	jResponse['COUNTRY']	:= Rtrim( (cAliasWS)->A2_PAIS   )
+        	jResponse['BLOQUEADO'] 	:= IF ((cAliasWS)->A2_MSBLQL == "2", "NAO", "SIM")
         EndIf
     EndIf
 

@@ -15,15 +15,22 @@ Cadastro de Cliente
 WSRESTFUL wsCliente DESCRIPTION 'Cadastro de Cliente'
 	//Atributos
 	WSDATA cnpj       AS STRING
+	WSDATA estado     AS STRING
+	WSDATA dataDe     AS STRING
+	WSDATA dataAte    AS STRING
+	WSDATA tipo       AS STRING
 	WSDATA updated_at AS STRING
 	WSDATA limit      AS INTEGER
 	WSDATA page       AS INTEGER
 
-	//Métodos
-	WSMETHOD GET  ID     DESCRIPTION 'Retorna o registro pesquisado' WSSYNTAX '/wsCliente/{cnpj}'           PATH '{cnpj}'  PRODUCES APPLICATION_JSON
-	WSMETHOD POST NEW    DESCRIPTION 'Inclusão de registro'          WSSYNTAX '/wsCliente/new'              PATH 'new'     PRODUCES APPLICATION_JSON
-	WSMETHOD PUT  UPDATE DESCRIPTION 'Atualização de registro'       WSSYNTAX '/wsCliente/update'           PATH 'update'  PRODUCES APPLICATION_JSON
-	WSMETHOD PUT  ERASE  DESCRIPTION 'Bloquear Registro'             WSSYNTAX '/wsCliente/bloqu'            PATH 'bloqu'   PRODUCES APPLICATION_JSON
+	//Métodos 
+	WSMETHOD GET  ID     DESCRIPTION 'Retorna o Registro pesquisado - CNPJ'   WSSYNTAX '/wsCliente/cnpj?{cnpj}'   	PATH '{cnpj}'   PRODUCES APPLICATION_JSON
+	//WSMETHOD GET  estado DESCRIPTION 'Retorna o registro pesquisado - ESTADO' WSSYNTAX '/wsCliente/estado?{estado}' PATH '{estado}' PRODUCES APPLICATION_JSON
+	//WSMETHOD GET  dat    DESCRIPTION 'Retorna o registro pesquisado - DATA'   WSSYNTAX '/wsCliente/datas?dataini{dataDe}&datafin={dataAte}'       PATH 'datas?dataini{dataDe}&datafin={dataAte}'   PRODUCES APPLICATION_JSON
+	//WSMETHOD GET  tipo   DESCRIPTION 'Retorna o registro pesquisado - TIPO'   WSSYNTAX '/wsCliente/tipo?{tipo}'   	PATH '{tipo}'   PRODUCES APPLICATION_JSON
+	WSMETHOD POST NEW    DESCRIPTION 'Inclusão de registro'          		  WSSYNTAX '/wsCliente/new'      		PATH 'new'      PRODUCES APPLICATION_JSON
+	WSMETHOD PUT  UPDATE DESCRIPTION 'Atualização de registro'       		  WSSYNTAX '/wsCliente/update'   		PATH 'update'   PRODUCES APPLICATION_JSON
+	WSMETHOD PUT  ERASE  DESCRIPTION 'Bloquear Registro'             		  WSSYNTAX '/wsCliente/bloqu'    		PATH 'bloqu'    PRODUCES APPLICATION_JSON
 END WSRESTFUL
 
 
@@ -31,9 +38,8 @@ WSMETHOD GET ID WSRECEIVE cnpj WSSERVICE wsCliente
 	Local lRet       := .T.
 	Local jResponse  := JsonObject():New()
 	Local cAliasWS   := 'SA1'
-	::cnpj			 := self:aUrlParms[1]
-
-
+	::cnpj			 := SELF:AQUERYSTRING[1][1]  //self:querystring[1,1]
+	Local cJason	 := ""
 	oWS    := LIBGLASS():new()
 
 	//Se o id estiver vazio
@@ -45,7 +51,7 @@ WSMETHOD GET ID WSRECEIVE cnpj WSSERVICE wsCliente
 		jResponse['solution'] := 'Informe o ID'
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
-		oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "BLOQUEIO DE CLIENTE")
+		oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "NAO DIGITADO O CLIENTE")
 	Else
 		DbSelectArea(cAliasWS)
 		(cAliasWS)->(DbSetOrder(3))   //PESQUISA CGC/CPF
@@ -62,30 +68,31 @@ WSMETHOD GET ID WSRECEIVE cnpj WSSERVICE wsCliente
 			oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "BLOQUEIO DE CLIENTE")
 		Else
 			//Define o retorno
-			jResponse['FILIAL'] := (cAliasWS)->A1_FILIAL
-			jResponse['COD'] 	:= (cAliasWS)->A1_COD
-			jResponse['LOJA'] 	:= (cAliasWS)->A1_LOJA
-			jResponse['NOME'] 	:= (cAliasWS)->A1_NOME
-			jResponse['NREDUZ '] := (cAliasWs)->A1_NREDUZ 
-        	jResponse['BAIRRO '] := (cAliasWs)->A1_BAIRRO 
-        	jResponse['EMAIL  '] := (cAliasWs)->A1_EMAIL  
-        	jResponse['CEP    '] := (cAliasWs)->A1_CEP    
-        	jResponse['CGC    '] := (cAliasWs)->A1_CGC   
-        	jResponse['EST    '] := (cAliasWs)->A1_ESTADO 
-        	jResponse['COD_MUN'] := (cAliasWs)->A1_COD_MUN
-        	jResponse['COND   '] := (cAliasWs)->A1_COND  
-        	jResponse['DDD    '] := (cAliasWs)->A1_DDD    
-        	jResponse['DTCAD  '] := (cAliasWs)->A1_DTCAD
-        	jResponse['EMAIL  '] := (cAliasWs)->A1_EMAIL  
-        	jResponse['END    '] := (cAliasWs)->A1_END    
-        	jResponse['INSCR  '] := (cAliasWs)->A1_INSCR
-        	jResponse['MUN    '] := (cAliasWs)->A1_MUN
-        	jResponse['NATUREZ'] := (cAliasWs)->A1_NATUREZ
-        	jResponse['PESSOA '] := (cAliasWs)->A1_TPESSOA 
-        	jResponse['TIPCLI '] := (cAliasWs)->A1_TIPCLI   
-        	jResponse['TEL    '] := (cAliasWs)->A1_TEL
-        	jResponse['TRANSP '] := (cAliasWs)->A1_TRANSP
-        	jResponse['PAIS   '] := (cAliasWS)->A1_PAIS
+			jResponse['FILIAL'] 	:= (cAliasWS)->A1_FILIAL
+			jResponse['COD'] 		:= (cAliasWS)->A1_COD
+			jResponse['LOJA'] 		:= (cAliasWS)->A1_LOJA
+			jResponse['NAME'] 		:= Rtrim( (cAliasWS)->A1_NOME)
+			jResponse['NREDUZ'] 	:= Rtrim( (cAliasWs)->A1_NREDUZ )
+        	jResponse['DISTRICT'] 	:= Rtrim( (cAliasWs)->A1_BAIRRO )
+        	jResponse['EMAIL'] 		:= Rtrim( (cAliasWs)->A1_EMAIL  )
+        	jResponse['ZIPCODE']	:= Rtrim( (cAliasWs)->A1_CEP    )
+        	jResponse['CNPJ'] 		:= Rtrim( (cAliasWs)->A1_CGC    )
+        	jResponse['STATE']		:= Rtrim( (cAliasWs)->A1_ESTADO )
+        	jResponse['COD_MUN']	:= Rtrim( (cAliasWs)->A1_COD_MUN)
+        	jResponse['COND'] 		:= Rtrim( (cAliasWs)->A1_COND   )
+        	jResponse['DDD'] 		:= Rtrim( (cAliasWs)->A1_DDD    )
+        	jResponse['DTCAD'] 		:= (cAliasWs)->A1_DTCAD
+        	jResponse['EMAIL'] 		:= Rtrim( (cAliasWs)->A1_EMAIL  )
+        	jResponse['ADDRESS']	:= Rtrim( (cAliasWs)->A1_END    )
+        	jResponse['INSCR'] 		:= Rtrim( (cAliasWs)->A1_INSCR  )
+        	jResponse['CITY'] 		:= Rtrim( (cAliasWs)->A1_MUN    )
+        	jResponse['NATUREZ']	:= Rtrim( (cAliasWs)->A1_NATUREZ)
+        	jResponse['PESSOA'] 	:= Rtrim( (cAliasWs)->A1_TPESSOA)
+        	jResponse['TIPCLI'] 	:= Rtrim( (cAliasWs)->A1_TIPCLI )
+        	jResponse['TEL'] 		:= Rtrim( (cAliasWs)->A1_TEL    )
+        	jResponse['TRANSP'] 	:= Rtrim( (cAliasWs)->A1_TRANSP )
+        	jResponse['COUNTRY'] 	:= Rtrim( (cAliasWS)->A1_PAIS   )
+        	jResponse['BLOQUEADO'] 	:= IF ((cAliasWS)->A1_MSBLQL == "2", "NAO", "SIM")
 		EndIf
 	EndIf
 

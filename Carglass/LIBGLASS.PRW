@@ -26,7 +26,7 @@ class LIBGLASS
     method temCndpg(_fili, _cod)
     
     method pedVendas(_fili, aCab, aItens, nOpc, cDoc)
-    method pedCompra(_fili, aCab, aItens, nOpc, cDoc)
+    method pedCompra(aDados, nOpc)
     method SCCompras(_fili, aCab, aItens, nOpc, cDoc)
 
 endclass
@@ -200,7 +200,6 @@ method temTES(_fili, _cod) class LIBGLASS
 
 Return lRet
 
-
 method temCndpg(_fili, _cod) class LIBGLASS
     Local lRet := .T.
 
@@ -217,7 +216,6 @@ method temCndpg(_fili, _cod) class LIBGLASS
     (cAlSE4)->(dbclosearea())
 
 Return lRet
-
 
 method pedVendas(_fili, aCab, aItens, nOpc, cDoc) class LIBGLASS
     Local nCount
@@ -241,16 +239,16 @@ method pedVendas(_fili, aCab, aItens, nOpc, cDoc) class LIBGLASS
 
 Return aRet
 
-method pedCompra(_fili, aCab, aItens, nOpc, cDoc) class LIBGLASS
+method pedCompra(aCab, aItem, nOpc) class LIBGLASS
     Local nCount
-    Local aRet := {}
-    Local cLogErro := ""
+    Local cLogErro  := ""
+    Local aRet      := {}
 
-    MsExecAuto({|x, y, z, d| MATA120(x, y, z, d)}, aCabPC, aItensPC, nOpcX, 1  )
+    MSExecAuto({|v,x,y,z| MATA120(v,x,y,z)},1, aCab, aItem, nOpc)
     
     If !lMsErroAuto
-        ConOut("Incluido com sucesso! " + cDoc)
-        aAdd(aRet, {"Incluido com sucesso! " + cDoc, .T.})
+        ConOut("Incluido com sucesso! " )
+        aAdd(aRet, {"Incluido com sucesso! " , .T.})
     Else
         ConOut("Erro na inclusao!")
         aErroAuto := GetAutoGRLog()
