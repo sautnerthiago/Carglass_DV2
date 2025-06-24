@@ -362,7 +362,7 @@ WSMETHOD PUT UPDATE WSRECEIVE NUMPC WSSERVICE WSPEDCOM
 			cErrorLog   := ''
 			aLogAuto    := aRetGrv // GetAutoGrLog()
 			For nLinha := 1 To Len(aLogAuto)
-				cErrorLog += aLogAuto[nLinha] + CRLF
+				cErrorLog += aLogAuto[nLinha,1] + CRLF
 			Next nLinha
 
 			//Grava o arquivo de log

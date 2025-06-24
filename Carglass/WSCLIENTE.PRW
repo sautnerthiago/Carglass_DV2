@@ -90,7 +90,7 @@ WSMETHOD GET CLICNPJ WSRECEIVE cnpj WSSERVICE wsCliente
         	jResponse['MUNCIPIO'] 		:= Rtrim( (cAliasWs)->A1_MUN    )
         	jResponse['NATUREZ']		:= Rtrim( (cAliasWs)->A1_NATUREZ)
         	jResponse['PESSOA'] 		:= Rtrim( (cAliasWs)->A1_TPESSOA)
-        	jResponse['TIPCLI'] 		:= Rtrim( (cAliasWs)->A1_TIPCLI )
+        	jResponse['TIPO'] 			:= Rtrim( (cAliasWs)->A1_TIPCLI )
         	jResponse['FONE'] 			:= Rtrim( (cAliasWs)->A1_TEL    )
         	jResponse['TRANSP'] 		:= Rtrim( (cAliasWs)->A1_TRANSP )
         	jResponse['PAIS'] 			:= Rtrim( (cAliasWS)->A1_PAIS   )
@@ -142,8 +142,8 @@ WSMETHOD GET TIPO WSRECEIVE tipo WSSERVICE wsCliente
 			oWS:GRAVALOGMURO(cResponc, cJason, "wsClieTipo", "BLOQUEIO DE CLIENTE")
 		Else
 			// Converte para JSON
-   			jResponse['CLIENTES'] := oWS:CLieTipo(::tipo)
-		    cJsonNfs:= FwJsonSerialize( jResponse )			
+   			//jResponse['CLIENTES'] := oWS:CLieTipo(::tipo)
+		    cJsonNfs:= FwJsonSerialize( oWS:CLieTipo(::tipo) )			
 
 			Self:SetContentType('application/json')
 			Self:SetResponse(cJsonNfs)
@@ -187,8 +187,8 @@ WSMETHOD GET ESTADO WSRECEIVE estado WSSERVICE wsCliente
 			cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
 			oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "BLOQUEIO DE CLIENTE")
 		Else
-   			jResponse['CLIENTES'] := oWS:CLieEst(::estado)
-		    cJsonNfs:= FwJsonSerialize( jResponse )			
+   			//jResponse['CLIENTES'] := oWS:CLieEst(::estado)
+		    cJsonNfs:= FwJsonSerialize( oWS:CLieEst(::estado) )			
 
 			Self:SetContentType('application/json')
 			Self:SetResponse(cJsonNfs)
@@ -223,8 +223,8 @@ WSMETHOD GET CLIDATA WSRECEIVE dataDe, dataAte WSSERVICE wsCliente
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
 		oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "NAO DIGITADAS AS DATAS")
 	Else
-		jResponse['CLIENTES'] := oWS:CLieDatas( dDataDe, dDataAt) 
-		cJsonNfs:= FwJsonSerialize( jResponse )			
+		//jResponse['CLIENTES'] := oWS:CLieDatas( dDataDe, dDataAt) 
+		cJsonNfs:= FwJsonSerialize( oWS:CLieDatas( dDataDe, dDataAt)  )			
 
 		Self:SetContentType('application/json')
 		Self:SetResponse(cJsonNfs)
@@ -320,8 +320,8 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE wsCliente
         aAdd(aDados, {'A1_NATUREZ', jJson:GetJsonObject('NATUREZ')  , Nil} )
         aAdd(aDados, {'A1_OBS    ', 'WMSCLINTE'                     , Nil} )
         aAdd(aDados, {'A1_PESSOA ', jJson:GetJsonObject('PESSOA')   , Nil} )
-        aAdd(aDados, {'A1_TIPCLI ', jJson:GetJsonObject('TIPCLI')   , Nil} )
-        aAdd(aDados, {'A1_TIPO   ', jJson:GetJsonObject('TIPCLI')   , Nil} )
+        aAdd(aDados, {'A1_TIPCLI ', jJson:GetJsonObject('TIPO')   	, Nil} )
+        aAdd(aDados, {'A1_TIPO   ', jJson:GetJsonObject('TIPO') 	, Nil} )
         aAdd(aDados, {'A1_TEL    ', jJson:GetJsonObject('FONE')     , Nil} )
         aAdd(aDados, {'A1_TRANSP ', jJson:GetJsonObject('TRANSP')   , Nil} )
         aAdd(aDados, {'A1_PAIS   ', '105'  							, Nil} )

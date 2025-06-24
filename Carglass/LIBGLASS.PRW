@@ -19,13 +19,14 @@ class LIBGLASS
     method ATUSA1(aDads, _fili, _cnpj)
     method ATUSA2(aDads, _fili, _cnpj)
     method temClient(_fili, _cnpj)
+    method temCliCod(_fili, cod, loja)    
     method temFornec(_fili, _cnpj)
 
     method temProd(_fili, _cod)
     method temTES(_fili, _cod)
     method temCndpg(_fili, _cod)
     
-    method pedVendas(_fili, aCab, aItens, nOpc, cDoc)
+    method pedVendas(aCab, aItens, nOpc, cDoc)
     method pedCompra(aDados, nOpc)
     method SCCompras(_fili, aCab, aItens, nOpc, cDoc)
 
@@ -38,6 +39,8 @@ class LIBGLASS
     METHOD FornDatas( dtIni, DtFin) //criar
     
     method TemEstado(_estad)
+
+    method ITENSPV()
 
 endclass
 
@@ -97,7 +100,26 @@ method temClient(_fili, _cnpj) class LIBGLASS
 
     cQuery := " SELECT A1_FILIAL, A1_COD, A1_LOJA, A1_NOME, A1_NREDUZ, A1_CGC, A1_END "
 	cQuery += " FROM "+RetSQLName("SA1") + " AS SA1 WITH (NOLOCK) "
-	cQuery += " WHERE A1_FILIAL = '" + _fili + "' AND SA1.A1_CGC = '"+_cnpj+"' "
+	cQuery += " WHERE A1_FILIAL = '" + _fili + "' "
+    cQuery += " AND SA1.A1_CGC = '"+_cnpj+"' "
+	cQuery += " AND SA1.D_E_L_E_T_ = '' "
+	cAlSA1:= CriaTrab(Nil,.F.)
+	DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSA1, .F., .T.)    
+
+	If (cAlSA1)->(Eof())
+        lRet := .F. 
+	Endif
+    (cAlSA1)->(dbclosearea())
+
+Return lRet
+
+method temCliCod(_fili, cod, loja) class LIBGLASS
+    Local lRet := .T.
+
+    cQuery := " SELECT A1_FILIAL, A1_COD, A1_LOJA, A1_NOME, A1_NREDUZ, A1_CGC, A1_END "
+	cQuery += " FROM "+RetSQLName("SA1") + " AS SA1 WITH (NOLOCK) "
+	cQuery += " WHERE A1_FILIAL = '" + _fili + "' "
+    cQuery += " AND SA1.A1_COD = '"+cod+"' AND A1_LOJA = '"+loja+"' "
 	cQuery += " AND SA1.D_E_L_E_T_ = '' "
 	cAlSA1:= CriaTrab(Nil,.F.)
 	DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSA1, .F., .T.)    
@@ -225,12 +247,12 @@ method temCndpg(_fili, _cod) class LIBGLASS
 
 Return lRet
 
-method pedVendas(_fili, aCab, aItens, nOpc, cDoc) class LIBGLASS
+method pedVendas(aCab, aItens, nOpc, cDoc) class LIBGLASS
     Local nCount
     Local aRet := {}
     Local cLogErro := ""
 
-    MSExecAuto({|a, b, c, d| MATA410(a, b, c, d)}, aCabec, aItens, nOpcX, .F.)
+    MSExecAuto({|a, b, c, d| MATA410(a, b, c, d)}, aCab, aItens, nOpc, .F.)
     
     If !lMsErroAuto
         ConOut("Incluido com sucesso! " + cDoc)
@@ -333,7 +355,7 @@ method CLieEst(_estad) class LIBGLASS
         aCliTmp[nItem]['MUNCIPIO'] 		:= Rtrim( (cAlSA1)->A1_MUN    )
         aCliTmp[nItem]['NATUREZ']		:= Rtrim( (cAlSA1)->A1_NATUREZ)
         aCliTmp[nItem]['PESSOA'] 		:= Rtrim( (cAlSA1)->A1_TPESSOA)
-        aCliTmp[nItem]['TIPCLIFOR'] 	:= Rtrim( (cAlSA1)->A1_TIPCLI )
+        aCliTmp[nItem]['TIPO'] 	        := Rtrim( (cAlSA1)->A1_TIPCLI )
         aCliTmp[nItem]['FONE'] 			:= Rtrim( (cAlSA1)->A1_TEL    )
         aCliTmp[nItem]['TRANSP'] 		:= Rtrim( (cAlSA1)->A1_TRANSP )
         aCliTmp[nItem]['PAIS'] 			:= Rtrim( (cAlSA1)->A1_PAIS   )
@@ -386,7 +408,7 @@ method CLieTipo(_Tipo) class LIBGLASS
         aCliTmp[nItem]['MUNCIPIO'] 		:= Rtrim( (cAlSA1)->A1_MUN    )
         aCliTmp[nItem]['NATUREZ']		:= Rtrim( (cAlSA1)->A1_NATUREZ)
         aCliTmp[nItem]['PESSOA'] 		:= Rtrim( (cAlSA1)->A1_TPESSOA)
-        aCliTmp[nItem]['TIPCLIFOR'] 	:= Rtrim( (cAlSA1)->A1_TIPCLI )
+        aCliTmp[nItem]['TIPO'] 	        := Rtrim( (cAlSA1)->A1_TIPCLI )
         aCliTmp[nItem]['FONE'] 			:= Rtrim( (cAlSA1)->A1_TEL    )
         aCliTmp[nItem]['TRANSP'] 		:= Rtrim( (cAlSA1)->A1_TRANSP )
         aCliTmp[nItem]['PAIS'] 			:= Rtrim( (cAlSA1)->A1_PAIS   )
@@ -439,7 +461,7 @@ method CLieDatas( dtIni, DtFin) class LIBGLASS
         aCliTmp[nItem]['MUNCIPIO'] 		:= Rtrim( (cAlSA1)->A1_MUN    )
         aCliTmp[nItem]['NATUREZ']		:= Rtrim( (cAlSA1)->A1_NATUREZ)
         aCliTmp[nItem]['PESSOA'] 		:= Rtrim( (cAlSA1)->A1_TPESSOA)
-        aCliTmp[nItem]['TIPCLIFOR'] 	:= Rtrim( (cAlSA1)->A1_TIPCLI )
+        aCliTmp[nItem]['TIPO'] 	        := Rtrim( (cAlSA1)->A1_TIPCLI )
         aCliTmp[nItem]['FONE'] 			:= Rtrim( (cAlSA1)->A1_TEL    )
         aCliTmp[nItem]['TRANSP'] 		:= Rtrim( (cAlSA1)->A1_TRANSP )
         aCliTmp[nItem]['PAIS'] 			:= Rtrim( (cAlSA1)->A1_PAIS   )
@@ -490,7 +512,7 @@ method FornEst(_estad) class LIBGLASS
         aFornTmp[nItem]['INSCR'] 		:= Rtrim( (cAlSA2)->A2_INSCR  )
         aFornTmp[nItem]['MUNCIPIO'] 	:= Rtrim( (cAlSA2)->A2_MUN    )
         aFornTmp[nItem]['NATUREZ']		:= Rtrim( (cAlSA2)->A2_NATUREZ)
-        aFornTmp[nItem]['TIPCLIFOR'] 	:= Rtrim( (cAlSA2)->A2_TIPO )
+        aFornTmp[nItem]['TIPO'] 	    := Rtrim( (cAlSA2)->A2_TIPO )
         aFornTmp[nItem]['FONE'] 		:= Rtrim( (cAlSA2)->A2_TEL    )
         aFornTmp[nItem]['TRANSP'] 		:= Rtrim( (cAlSA2)->A2_TRANSP )
         aFornTmp[nItem]['PAIS'] 		:= Rtrim( (cAlSA2)->A2_PAIS   )
@@ -541,7 +563,7 @@ method FornTipo(_Tipo) class LIBGLASS
         aFornTmp[nItem]['INSCR'] 		:= Rtrim( (cAlSA2)->A2_INSCR  )
         aFornTmp[nItem]['MUNCIPIO'] 	:= Rtrim( (cAlSA2)->A2_MUN    )
         aFornTmp[nItem]['NATUREZ']		:= Rtrim( (cAlSA2)->A2_NATUREZ)
-        aFornTmp[nItem]['TIPCLIFOR'] 	:= Rtrim( (cAlSA2)->A2_TIPO )
+        aFornTmp[nItem]['TIPO'] 	    := Rtrim( (cAlSA2)->A2_TIPO )
         aFornTmp[nItem]['FONE'] 		:= Rtrim( (cAlSA2)->A2_TEL    )
         aFornTmp[nItem]['TRANSP'] 		:= Rtrim( (cAlSA2)->A2_TRANSP )
         aFornTmp[nItem]['PAIS'] 		:= Rtrim( (cAlSA2)->A2_PAIS   )
@@ -592,7 +614,7 @@ method FornDatas( dtIni, DtFin) class LIBGLASS
         aFornTmp[nItem]['INSCR'] 		:= Rtrim( (cAlSA2)->A2_INSCR  )
         aFornTmp[nItem]['MUNCIPIO'] 	:= Rtrim( (cAlSA2)->A2_MUN    )
         aFornTmp[nItem]['NATUREZ']		:= Rtrim( (cAlSA2)->A2_NATUREZ)
-        aFornTmp[nItem]['TIPCLIFOR'] 	:= Rtrim( (cAlSA2)->A2_TIPO )
+        aFornTmp[nItem]['TIPO'] 	    := Rtrim( (cAlSA2)->A2_TIPO )
         aFornTmp[nItem]['FONE'] 		:= Rtrim( (cAlSA2)->A2_TEL    )
         aFornTmp[nItem]['TRANSP'] 		:= Rtrim( (cAlSA2)->A2_TRANSP )
         aFornTmp[nItem]['PAIS'] 		:= Rtrim( (cAlSA2)->A2_PAIS   )
@@ -611,3 +633,31 @@ method FornDatas( dtIni, DtFin) class LIBGLASS
     (cAlSA2)->(dbclosearea())
 
 Return aFornTmp
+
+
+method ITENSPV(_FILIAL, _NUM, _CLIENTE, _LOJACLI) class LIBGLASS
+    aRet := {}
+
+    cQuery := " SELECT * "
+    cQuery += " FROM "+RetSQLName("SC6") + " AS SC5 WITH (NOLOCK) "
+    cQuery += " WHERE C6_FILIAL = '" + _FILIAL + "' AND SC6.C6_NUM = '"+_NUM+"' "
+    cQuery += " AND C6_CLI = '" + _CLIENTE + "' AND SC6.C6_LOJA = '"+_LOJA+"' "
+    cQuery += " AND SC6.D_E_L_E_T_ = '' "
+    cAlSC6:= CriaTrab(Nil,.F.)
+    DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSC6, .F., .T.)                
+            
+    DO WHILE !((cAlSC6)->(EOF())) .AND. (cAlSC6)->C6_NUM == NUMPV
+        aAdd( aRet , JsonObject():New() )
+        nItem++
+        jResponse[nItem]['PRODUTO']     := Rtrim( (cAlSC6)->C6_PRODUTO )
+        jResponse[nItem]['DESCRICAO']   := POSICIONE("SB1",1,(cAlSC6)->C6_FILIAL+(cAlSC6)->C6_PRODUTO,"B1_DESC")
+        jResponse[nItem]['UM']          := (cAlSC6)->C6_UM
+        jResponse[nItem]['QUANT']       := TRANSFORM( (cAlSC6)->C6_QTDVEN, "@e 999,999,999.99")
+        jResponse[nItem]['PRECO']       := TRANSFORM( (cAlSC6)->C6_PRCVEN, "@e 999,999,999.99")
+        jResponse[nItem]['TOTAL']       := TRANSFORM( (cAlSC6)->C6_VALOR, "@e 999,999,999.99")
+        (cAlSC6)->(DBSKIP())
+        LOOP
+    ENDDO
+    (cAlSC6)->(DBCLOSEAREA())
+
+Return aRet

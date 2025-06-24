@@ -69,29 +69,29 @@ WSMETHOD GET CNPJ WSRECEIVE cnpj WSSERVICE WSFORNEC
 			jResponse['solution'] := 'CNPJ/CPF não encontrado na tabela ' + cAliasWS
         Else
             //Define o retorno
-            jResponse['FILIAL'] 		:= (cAliasWS)->A2_FILIAL 
-            jResponse['CODIGO']			:= (cAliasWS)->A2_COD 
-            jResponse['LOJA'] 			:= (cAliasWS)->A2_LOJA 
-			jResponse['NAME'] 			:= Rtrim( (cAliasWS)->A2_NOME)
+            jResponse['FILIAL'] 		:= Rtrim( (cAliasWS)->A2_FILIAL)
+            jResponse['CODIGO']			:= Rtrim( (cAliasWS)->A2_COD)
+            jResponse['LOJA'] 			:= Rtrim( (cAliasWS)->A2_LOJA )
+			jResponse['NOME'] 			:= Rtrim( (cAliasWS)->A2_NOME)
 			jResponse['NREDUZ'] 		:= Rtrim( (cAliasWs)->A2_NREDUZ )
-        	jResponse['DISTRICT'] 		:= Rtrim( (cAliasWs)->A2_BAIRRO )
+        	jResponse['BAIRRO'] 		:= Rtrim( (cAliasWs)->A2_BAIRRO )
         	jResponse['EMAIL'] 			:= Rtrim( (cAliasWs)->A2_EMAIL  )
-        	jResponse['ZIPCODE'] 		:= Rtrim( (cAliasWs)->A2_CEP    )
+        	jResponse['CEP'] 			:= Rtrim( (cAliasWs)->A2_CEP    )
         	jResponse['CNPJ'] 			:= Rtrim( (cAliasWs)->A2_CGC    )
-        	jResponse['STATE'] 			:= Rtrim( (cAliasWs)->A2_ESTADO )
+        	jResponse['ESTADO']			:= Rtrim( (cAliasWs)->A2_ESTADO )
         	jResponse['COD_MUN']		:= Rtrim( (cAliasWs)->A2_COD_MUN)
         	jResponse['COND'] 			:= Rtrim( (cAliasWs)->A2_COND   )
         	jResponse['DDD'] 			:= Rtrim( (cAliasWs)->A2_DDD    )
         	jResponse['DTCAD'] 			:= (cAliasWs)->A2_DTNASC
-        	jResponse['ADDRESS']		:= Rtrim( (cAliasWs)->A2_END    )
+        	jResponse['END']			:= Rtrim( (cAliasWs)->A2_END    )
         	jResponse['INSCR'] 			:= Rtrim( (cAliasWs)->A2_INSCR  )
-        	jResponse['CITY'] 			:= Rtrim( (cAliasWs)->A2_MUN    )
+        	jResponse['MUNICIPIO']		:= Rtrim( (cAliasWs)->A2_MUN    )
         	jResponse['NATUREZ']		:= Rtrim( (cAliasWs)->A2_NATUREZ)
         	jResponse['PESSOA'] 		:= Rtrim( (cAliasWs)->A2_TPESSOA)
-        	jResponse['TIPCLI'] 		:= Rtrim( (cAliasWs)->A2_TIPO )
-        	jResponse['TEL'] 			:= Rtrim( (cAliasWs)->A2_TEL    )
+        	jResponse['TIPO']	 		:= Rtrim( (cAliasWs)->A2_TIPO )
+        	jResponse['FONE'] 			:= Rtrim( (cAliasWs)->A2_TEL    )
         	jResponse['TRANSP'] 		:= Rtrim( (cAliasWs)->A2_TRANSP )
-        	jResponse['COUNTRY']		:= Rtrim( (cAliasWS)->A2_PAIS   )
+        	jResponse['PAIS']			:= Rtrim( (cAliasWS)->A2_PAIS   )
         	jResponse['BLOQUEADO'] 		:= IF ((cAliasWS)->A2_MSBLQL == "2", "NAO", "SIM")
 			jResponse['MOVEL']			:= (cAliasWS)->A2_ZMOBILE
 			jResponse['TIPOVEICULO']	:= (cAliasWS)->A2_ZTPVEIC
@@ -139,8 +139,8 @@ WSMETHOD GET TIPO WSRECEIVE tipo WSSERVICE WSFORNEC
 			cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
 			oWS:GRAVALOGMURO(cResponc, cJason, "wsFornTipo", "BLOQUEIO DE FORNECEDOR")
 		Else
-   			jResponse['FORNECEDORES'] := oWS:FornTipo(::tipo)
-		    cJson:= FwJsonSerialize( jResponse )			
+   			//jResponse['FORNECEDORES'] := oWS:FornTipo(::tipo)
+		    cJson:= FwJsonSerialize( oWS:FornTipo(::tipo) )			
 
 			Self:SetContentType('application/json')
 			Self:SetResponse(cJson)
@@ -183,8 +183,8 @@ WSMETHOD GET ESTADO WSRECEIVE estado WSSERVICE WSFORNEC
 			cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
 			oWS:GRAVALOGMURO(cResponc, cJason, "WSFORNECE", "BLOQUEIO DE FORNECEDOR")
 		Else
-			jResponse['FORNECEDORES'] := oWS:FornEst(::estado)
-		    cJson:= FwJsonSerialize( jResponse )			
+			//jResponse['FORNECEDORES'] := oWS:FornEst(::estado)
+		    cJson:= FwJsonSerialize( oWS:FornEst(::estado) )			
 
 			Self:SetContentType('application/json')
 			Self:SetResponse(cJson)
@@ -219,8 +219,8 @@ WSMETHOD GET FORDATA WSRECEIVE dataDe, dataAte WSSERVICE WSFORNEC
 		oWS:GRAVALOGMURO(cResponc, cJason, "WSFORNC", "NAO DIGITADAS AS DATAS")
 	Else
 		// Converte para JSON
-		jResponse['FORNECEDORES'] := oWS:FornDatas( dDataDe, dDataAt) 
-		cJson:= FwJsonSerialize( jResponse )			
+		//jResponse['FORNECEDORES'] := oWS:FornDatas( dDataDe, dDataAt) 
+		cJson:= FwJsonSerialize( oWS:FornDatas( dDataDe, dDataAt) )			
 
 		Self:SetContentType('application/json')
 		Self:SetResponse(cJson)
