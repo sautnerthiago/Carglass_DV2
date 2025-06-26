@@ -636,25 +636,26 @@ Return aFornTmp
 
 
 method ITENSPV(_FILIAL, _NUM, _CLIENTE, _LOJACLI) class LIBGLASS
-    aRet := {}
+    Local aRet := {}
 
     cQuery := " SELECT * "
-    cQuery += " FROM "+RetSQLName("SC6") + " AS SC5 WITH (NOLOCK) "
+    cQuery += " FROM "+RetSQLName("SC6") + " AS SC6 WITH (NOLOCK) "
     cQuery += " WHERE C6_FILIAL = '" + _FILIAL + "' AND SC6.C6_NUM = '"+_NUM+"' "
-    cQuery += " AND C6_CLI = '" + _CLIENTE + "' AND SC6.C6_LOJA = '"+_LOJA+"' "
+    cQuery += " AND C6_CLI = '" + _CLIENTE + "' AND SC6.C6_LOJA = '"+_LOJACLI+"' "
     cQuery += " AND SC6.D_E_L_E_T_ = '' "
     cAlSC6:= CriaTrab(Nil,.F.)
-    DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSC6, .F., .T.)                
-            
-    DO WHILE !((cAlSC6)->(EOF())) .AND. (cAlSC6)->C6_NUM == NUMPV
+    DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSC6, .F., .T.)    
+               
+    nItem := 0        
+    DO WHILE !((cAlSC6)->(EOF())) .AND. (cAlSC6)->C6_NUM == _NUM
         aAdd( aRet , JsonObject():New() )
         nItem++
-        jResponse[nItem]['PRODUTO']     := Rtrim( (cAlSC6)->C6_PRODUTO )
-        jResponse[nItem]['DESCRICAO']   := POSICIONE("SB1",1,(cAlSC6)->C6_FILIAL+(cAlSC6)->C6_PRODUTO,"B1_DESC")
-        jResponse[nItem]['UM']          := (cAlSC6)->C6_UM
-        jResponse[nItem]['QUANT']       := TRANSFORM( (cAlSC6)->C6_QTDVEN, "@e 999,999,999.99")
-        jResponse[nItem]['PRECO']       := TRANSFORM( (cAlSC6)->C6_PRCVEN, "@e 999,999,999.99")
-        jResponse[nItem]['TOTAL']       := TRANSFORM( (cAlSC6)->C6_VALOR, "@e 999,999,999.99")
+        aRet[nItem]['PRODUTO']     := Rtrim( (cAlSC6)->C6_PRODUTO )
+        aRet[nItem]['DESCRICAO']   := Rtrim(POSICIONE("SB1",1,FWxFilial("SB1")+(cAlSC6)->C6_PRODUTO,"B1_DESC"))
+        aRet[nItem]['UM']          := (cAlSC6)->C6_UM
+        aRet[nItem]['QUANT']       := TRANSFORM( (cAlSC6)->C6_QTDVEN, "@e 999,999,999.99")
+        aRet[nItem]['PRECO']       := TRANSFORM( (cAlSC6)->C6_PRCVEN, "@e 999,999,999.99")
+        aRet[nItem]['TOTAL']       := TRANSFORM( (cAlSC6)->C6_VALOR, "@e 999,999,999.99")
         (cAlSC6)->(DBSKIP())
         LOOP
     ENDDO

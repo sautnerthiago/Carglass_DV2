@@ -323,7 +323,7 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE WSFORNEC
 		For nCampo := 1 To Len(aDados)
 			//Se o campo for data, retira os hifens e faz a conversão
 			If GetSX3Cache(aDados[nCampo][1], 'X3_TIPO') == 'D'
-				aDados[nCampo][2] := StrTran(aDados[nCampo][2], '-', '')
+				//aDados[nCampo][2] := StrTran(aDados[nCampo][2], '-', '')
 				aDados[nCampo][2] := sToD(aDados[nCampo][2])
 			EndIf
 		Next

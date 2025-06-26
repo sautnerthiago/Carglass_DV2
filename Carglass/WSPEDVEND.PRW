@@ -71,7 +71,7 @@ WSMETHOD GET ID WSRECEIVE NUMPV WSSERVICE WSPEDVEND
 
             cQuery := " SELECT * "
             cQuery += " FROM "+RetSQLName("SC5") + " AS SC5 WITH (NOLOCK) "
-            cQuery += " WHERE C5_FILENT = '" + FWxFilial(cAliasWS) + "' AND SC5.C5_NUM = '"+NUMPV+"' "
+            cQuery += " WHERE C5_FILIAL = '" + FWxFilial(cAliasWS) + "' AND SC5.C5_NUM = '"+NUMPV+"' "
             cQuery += " AND SC5.D_E_L_E_T_ = '' "
             cAlSC5:= CriaTrab(Nil,.F.)
             DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSC5, .F., .T.)                
@@ -301,70 +301,50 @@ WSMETHOD PUT UPDATE WSRECEIVE NUMPV WSSERVICE WSPEDVEND
     Else
 
 		//Adiciona os dados do ExecAuto
-        _cNumPed := jJson:GetJsonObject("PEDIDO"):GetJsonObject("NUMPV") //GetSx8Num("SC7","C7_NUM")
+        _cNumPed := jJson:GetJsonObject("PEDIDO"):GetJsonObject("NUMPV") 
 
-        aadd(aCab, {"C7_NUM"       , _cNumPed   ,Nil})
-        aadd(aCab, {"C7_EMISSAO"   , ddatabase  ,Nil})
-        aadd(aCab, {"C7_MOEDA"     , 1			,Nil})
-        aadd(aCab, {"C7_TXMOEDA"   , 1			,Nil})
-        aadd(aCab, {"C7_FORNECE"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("FORNECE"), Nil})
-        aadd(aCab, {"C7_LOJA"      , jJson:GetJsonObject("PEDIDO"):GetJsonObject("LOJA"), Nil})
-        aadd(aCab, {"C7_COND"      , jJson:GetJsonObject("PEDIDO"):GetJsonObject("COND"), Nil})
-        aadd(aCab, {"C7_CONTATO"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("CONTATO"), Nil})
-        aadd(aCab, {"C7_FILENT"    , jJson:GetJsonObject("PEDIDO"):GetJsonObject("FILENT"), Nil})
+        aadd(aCab, {"C5_NUM"       , _cNumPed   ,Nil})
+        aadd(aCab, {"C5_EMISSAO"   , ddatabase  ,Nil})
+        aadd(aCab, {"C5_CLIENTE"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("CLIENTE"), Nil})
+        aadd(aCab, {"C5_LOJACLI"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("LOJA"), Nil})
+        aadd(aCab, {"C5_LOJAENT"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("LOJAENTREGA"), Nil})
+        aadd(aCab, {"C5_CONDPAG"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("COND"), Nil})
+        aadd(aCab, {"C5_NATUREZ"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("NATUREZA"), Nil})
 
         FOR Nx := 1 to len(jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS"))
             aLinhaC1 := {}
-            aadd(aLinhaC1, {"C7_PRODUTO" , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"), NIL})
-            aadd(aLinhaC1, {"C7_QUANT"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT"), NIL})
-            aadd(aLinhaC1, {"C7_PRECO"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO"), NIL})
-            aadd(aLinhaC1, {"C7_TOTAL"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("TOTAL"), NIL})
-
-            cUM    := POSICIONE("SB1",1,xFilial("SB1")+jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"),"B1_UM")
-            cDesc  := POSICIONE("SB1",1,xFilial("SB1")+jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"),"B1_DESC")
-
-            aadd(aLinhaC1,{"C7_ITEM"    ,Strzero(Nx,4)               ,nil})
-            aadd(aLinhaC1,{"C7_UM"      ,cUM                         ,nil})
-            aadd(aLinhaC1,{"C7_DESCRI"  ,cDesc                       ,nil})
-            aadd(aLinhaC1,{"C7_LOCAL"   ,"01"                        ,Nil})   
-            aadd(aLinhaC1,{"C7_IPI"     ,0.00                        ,Nil})  
-            aadd(aLinhaC1,{"C7_CC"      ,""                          ,Nil})                 
-            aadd(aLinhaC1,{"C7_OBS"     ,""                          ,Nil})
-            aadd(aLinhaC1,{"C7_CONTATO" ,""                          ,Nil})
-            aadd(aLinhaC1,{"C7_DATPRF"  ,dDataBase                   ,NIL})
-            aadd(aLinhaC1,{"C7_EMISSAO" ,dDataBase                   ,NIL})
-            aadd(aLinhaC1,{"C7_PICM"    ,0.00                        ,NIL})              
-            aadd(aLinhaC1,{"C7_SEGURO"  ,0.00                        ,NIL})
-            aadd(aLinhaC1,{"C7_DESPESA" ,0.00                        ,NIL})  
-            aadd(aLinhaC1,{"C7_TXMOEDA" ,0.00                        ,NIL})              
-            aadd(aLinhaC1,{"C7_VALFRE"  ,0.00                        ,NIL})         
-            aadd(aLinhaC1,{"C7_BASESOL" ,0.00                        ,NIL})
+            aadd(aLinhaC1, {"C6_ITEM"     ,Strzero(Nx,4)               ,nil})
+            aadd(aLinhaC1, {"C6_PRODUTO"  , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"), NIL})
+            aadd(aLinhaC1, {"C6_QTDVEN"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT"), NIL})
+            aadd(aLinhaC1, {"C6_PRCVEN"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO"), NIL})
+            aadd(aLinhaC1, {"C6_VALOR"    , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("TOTAL"), NIL})
+            aadd(aLinhaC1, {"C6_TES"      , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("TES"), NIL})
             aadd(aItens,aLinhaC1)
         Next
-        aRetGrv := oWS:pedCompra(aCab, aItens, 4) 
+        aRetGrv := oWS:pedVendas(aCab, aItens, 4, _cNumPed) //pedCompra(aCab, aItens, 3) 
 
 		If !aRetGrv[1,2] //lMsErroAuto
 			//Monta o texto do Error Log que será salvo
 			cErrorLog   := ''
 			aLogAuto    := aRetGrv // GetAutoGrLog()
 			For nLinha := 1 To Len(aLogAuto)
-				cErrorLog += aLogAuto[nLinha] + CRLF
+				cErrorLog += aLogAuto[nLinha,1] + CRLF
 			Next nLinha
 
 			//Grava o arquivo de log
-			cArqLog := 'WSPEDVEND_upd_' + dToS(Date()) + '_' + StrTran(Time(), ':', '-') + '.log'
+			cArqLog := 'WSPEDVEND_New_' + dToS(Date()) + '_' + StrTran(Time(), ':', '-') + '.log'
 			MemoWrite(cDirLog + cArqLog, cErrorLog)
 
 			//Define o retorno para o WebService
 			//SetRestFault(500, cErrorLog) //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
            Self:setStatus(500) 
 			jResponse['errorId']  := 'NEW005'
-			jResponse['error']    := 'Erro na inclusão do registro'
-			jResponse['solution'] := 'Nao foi possivel alterar o registro, foi gerado um arquivo de log em ' + cDirLog + cArqLog + ' '
+			jResponse['error']    := 'Erro na alteração do registro'
+			jResponse['solution'] := 'Nao foi possivel incluir o registro, foi gerado um arquivo de log em ' + cDirLog + cArqLog + ' '
 			lRet := .F.
 
 			cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
-			oWS:GRAVALOGMURO(cResponc, cJason, "WSPEDVEND", "ALTERAÇÃO DE PEDIDO DE VENDAS")
+			oWS:GRAVALOGMURO(cResponc, cJason, "WSPEDVEND", "ALTERACAO DE PEDIDO DE VENDAS")
 
 		//Senão, define o retorno
 		Else
@@ -443,56 +423,36 @@ WSMETHOD PUT ERASE WSRECEIVE NUMPV WSSERVICE WSPEDVEND
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
 		oWS:GRAVALOGMURO(cResponc, cJason, "WSPEDVEND", "EXCLUSÃO DE PEDIDO DE VENDAS")
     Else
-		
-		//Adiciona os dados do ExecAuto
-        _cNumPed := jJson:GetJsonObject("PEDIDO"):GetJsonObject("NUMPV") //GetSx8Num("SC7","C7_NUM")
 
-        aadd(aCab, {"C7_NUM"       , _cNumPed   ,Nil})
-        aadd(aCab, {"C7_EMISSAO"   , ddatabase  ,Nil})
-        aadd(aCab, {"C7_MOEDA"     , 1			,Nil})
-        aadd(aCab, {"C7_TXMOEDA"   , 1			,Nil})
-        aadd(aCab, {"C7_FORNECE"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("FORNECE"), Nil})
-        aadd(aCab, {"C7_LOJA"      , jJson:GetJsonObject("PEDIDO"):GetJsonObject("LOJA"), Nil})
-        aadd(aCab, {"C7_COND"      , jJson:GetJsonObject("PEDIDO"):GetJsonObject("COND"), Nil})
-        aadd(aCab, {"C7_CONTATO"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("CONTATO"), Nil})
-        aadd(aCab, {"C7_FILENT"    , jJson:GetJsonObject("PEDIDO"):GetJsonObject("FILENT"), Nil})
+		//Adiciona os dados do ExecAuto
+        _cNumPed := jJson:GetJsonObject("PEDIDO"):GetJsonObject("NUMPV") 
+		
+        aadd(aCab, {"C5_NUM"       , _cNumPed   ,Nil})
+        aadd(aCab, {"C5_EMISSAO"   , ddatabase  ,Nil})
+        aadd(aCab, {"C5_CLIENTE"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("CLIENTE"), Nil})
+        aadd(aCab, {"C5_LOJACLI"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("LOJA"), Nil})
+        aadd(aCab, {"C5_LOJAENT"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("LOJAENTREGA"), Nil})
+        aadd(aCab, {"C5_CONDPAG"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("COND"), Nil})
+        aadd(aCab, {"C5_NATUREZ"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("NATUREZA"), Nil})
 
         FOR Nx := 1 to len(jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS"))
             aLinhaC1 := {}
-            aadd(aLinhaC1, {"C7_PRODUTO" , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"), NIL})
-            aadd(aLinhaC1, {"C7_QUANT"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT"), NIL})
-            aadd(aLinhaC1, {"C7_PRECO"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO"), NIL})
-            aadd(aLinhaC1, {"C7_TOTAL"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("TOTAL"), NIL})
-
-            cUM    := POSICIONE("SB1",1,xFilial("SB1")+jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"),"B1_UM")
-            cDesc  := POSICIONE("SB1",1,xFilial("SB1")+jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"),"B1_DESC")
-
-            aadd(aLinhaC1,{"C7_ITEM"    ,Strzero(Nx,4)               ,nil})
-            aadd(aLinhaC1,{"C7_UM"      ,cUM                         ,nil})
-            aadd(aLinhaC1,{"C7_DESCRI"  ,cDesc                       ,nil})
-            aadd(aLinhaC1,{"C7_LOCAL"   ,"01"                        ,Nil})   
-            aadd(aLinhaC1,{"C7_IPI"     ,0.00                        ,Nil})  
-            aadd(aLinhaC1,{"C7_CC"      ,""                          ,Nil})                 
-            aadd(aLinhaC1,{"C7_OBS"     ,""                          ,Nil})
-            aadd(aLinhaC1,{"C7_CONTATO" ,""                          ,Nil})
-            aadd(aLinhaC1,{"C7_DATPRF"  ,dDataBase                   ,NIL})
-            aadd(aLinhaC1,{"C7_EMISSAO" ,dDataBase                   ,NIL})
-            aadd(aLinhaC1,{"C7_PICM"    ,0.00                        ,NIL})              
-            aadd(aLinhaC1,{"C7_SEGURO"  ,0.00                        ,NIL})
-            aadd(aLinhaC1,{"C7_DESPESA" ,0.00                        ,NIL})  
-            aadd(aLinhaC1,{"C7_TXMOEDA" ,0.00                        ,NIL})              
-            aadd(aLinhaC1,{"C7_VALFRE"  ,0.00                        ,NIL})         
-            aadd(aLinhaC1,{"C7_BASESOL" ,0.00                        ,NIL})
+            aadd(aLinhaC1, {"C6_ITEM"     ,Strzero(Nx,4)               ,nil})
+            aadd(aLinhaC1, {"C6_PRODUTO"  , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"), NIL})
+            aadd(aLinhaC1, {"C6_QTDVEN"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT"), NIL})
+            aadd(aLinhaC1, {"C6_PRCVEN"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO"), NIL})
+            aadd(aLinhaC1, {"C6_VALOR"    , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("TOTAL"), NIL})
+            aadd(aLinhaC1, {"C6_TES"      , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("TES"), NIL})
             aadd(aItens,aLinhaC1)
         Next
-        aRetGrv := oWS:pedCompra(aCab, aItens, 5) 
+        aRetGrv := oWS:pedVendas(aCab, aItens, 5, _cNumPed) //pedCompra(aCab, aItens, 3) 
 
 		If !aRetGrv[1,2] //lMsErroAuto
 			//Monta o texto do Error Log que será salvo
 			cErrorLog   := ''
 			aLogAuto    := aRetGrv // GetAutoGrLog()
 			For nLinha := 1 To Len(aLogAuto)
-				cErrorLog += aLogAuto[nLinha] + CRLF
+				cErrorLog += aLogAuto[nLinha,1] + CRLF
 			Next nLinha
 
 			//Grava o arquivo de log
@@ -503,12 +463,12 @@ WSMETHOD PUT ERASE WSRECEIVE NUMPV WSSERVICE WSPEDVEND
 			//SetRestFault(500, cErrorLog) //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
            Self:setStatus(500) 
 			jResponse['errorId']  := 'NEW005'
-			jResponse['error']    := 'Erro na inclusão do registro'
+			jResponse['error']    := 'Erro na exclusao do registro'
 			jResponse['solution'] := 'Nao foi possivel excluir o registro, foi gerado um arquivo de log em ' + cDirLog + cArqLog + ' '
 			lRet := .F.
 
 			cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
-			oWS:GRAVALOGMURO(cResponc, cJason, "WSPEDVEND", "EXCLUSÃO DE PEDIDO DE VENDAS")
+			oWS:GRAVALOGMURO(cResponc, cJason, "WSPEDVEND", "EXCLUSAO DE PEDIDO DE VENDAS")
 
 		//Senão, define o retorno
 		Else
