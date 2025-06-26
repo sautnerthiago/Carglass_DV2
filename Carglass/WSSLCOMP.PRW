@@ -73,6 +73,7 @@ WSMETHOD GET ID WSRECEIVE numSC WSSERVICE WSSLCOMP
             jResponse['numSC'] 	    	:= (cAliasWS)->C1_NUM 
             jResponse['solicitante'] 	:= (cAliasWS)->C1_SOLICIT 
             jResponse['emissao'] 		:= DtoC((cAliasWS)->C1_EMISSAO)
+            jResponse['integrado']  	:= (cAliasWS)->C1_ZINTEGR
         EndIf
     EndIf
 
@@ -153,6 +154,7 @@ WSMETHOD POST NEW WSRECEIVE numSC WSSERVICE WSSLCOMP
         aadd(aCab,{"C1_NUM"       , jJson:GetJsonObject("solicitacao"):GetJsonObject("numSC")})
         aadd(aCab,{"C1_SOLICIT"   , jJson:GetJsonObject("solicitacao"):GetJsonObject("solicitante")})
         aadd(aCab,{"C1_EMISSAO"   , Stod(jJson:GetJsonObject("solicitacao"):GetJsonObject("emissao"))})
+        aadd(aCab,{"C1_ZINTEGR"   , jJson:GetJsonObject("solicitacao"):GetJsonObject("integrado")})
 
         FOR Nx := 1 to len(jJson:GetJsonObject("solicitacao"):GetJsonObject("itens"))
             aLinhaC1 := {}
@@ -269,6 +271,7 @@ WSMETHOD PUT UPDATE WSRECEIVE numSC WSSERVICE WSSLCOMP
         aadd(aCab,{"C1_NUM"       , jJson:GetJsonObject("solicitacao"):GetJsonObject("numSC")})
         aadd(aCab,{"C1_SOLICIT"   , jJson:GetJsonObject("solicitacao"):GetJsonObject("solicitante")})
         aadd(aCab,{"C1_EMISSAO"   , Stod(jJson:GetJsonObject("solicitacao"):GetJsonObject("emissao"))})
+        aadd(aCab,{"C1_ZINTEGR"   , jJson:GetJsonObject("solicitacao"):GetJsonObject("integrado")})
 
         FOR Nx := 1 to len(jJson:GetJsonObject("solicitacao"):GetJsonObject("itens"))
             aLinhaC1 := {}
@@ -385,6 +388,7 @@ WSMETHOD PUT ERASE WSRECEIVE numSC WSSERVICE WSSLCOMP
         aadd(aCab,{"C1_NUM"       , jJson:GetJsonObject("solicitacao"):GetJsonObject("numSC")})
         aadd(aCab,{"C1_SOLICIT"   , jJson:GetJsonObject("solicitacao"):GetJsonObject("solicitante")})
         aadd(aCab,{"C1_EMISSAO"   , Stod(jJson:GetJsonObject("solicitacao"):GetJsonObject("emissao"))})
+        aadd(aCab,{"C1_ZINTEGR"   , jJson:GetJsonObject("solicitacao"):GetJsonObject("integrado")})
 
         FOR Nx := 1 to len(jJson:GetJsonObject("solicitacao"):GetJsonObject("itens"))
             aLinhaC1 := {}

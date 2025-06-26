@@ -27,7 +27,7 @@ WSRESTFUL WSFORNEC DESCRIPTION 'CADASTRO DE FORNECEDOR'
 
     WSMETHOD POST NEW    DESCRIPTION 'Inclusão de registro'                   WSSYNTAX '/WSFORNEC/new'              PATH 'new'      PRODUCES APPLICATION_JSON
     WSMETHOD PUT  UPDATE DESCRIPTION 'Atualização de registro'                WSSYNTAX '/WSFORNEC/update'           PATH 'update'   PRODUCES APPLICATION_JSON
-    WSMETHOD PUT  ERASE  DESCRIPTION 'Blaqueio de registro'                   WSSYNTAX '/WSFORNEC/bloqu'            PATH 'bloqu'    PRODUCES APPLICATION_JSON
+    WSMETHOD PUT  ERASE  DESCRIPTION 'Blaqueio de registro'                   WSSYNTAX '/WSFORNEC/delete'           PATH 'delete'    PRODUCES APPLICATION_JSON
 END WSRESTFUL
 
 /*/{Protheus.doc} WSMETHOD GET ID
@@ -101,6 +101,7 @@ WSMETHOD GET CNPJ WSRECEIVE cnpj WSSERVICE WSFORNEC
 			jResponse['REVENDEAFIAL']	:= (cAliasWS)->A2_ZREVAFI
 			jResponse['AFILIADOCONV']	:= (cAliasWS)->A2_ZAFICON
 			jResponse['TIPOAFILIADO']	:= (cAliasWS)->A2_ZTPAFIL
+			jResponse['INTEGRADO']	    := (cAliasWS)->A2_ZINTEGR
         EndIf
     EndIf
 
@@ -270,7 +271,10 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE WSFORNEC
 	cJason := cJson
 	::cnpj := jJson:GetJsonObject('CNPJ')
 
-	IF oWS:temFornec(FWxFilial(cAliasWS), ::cnpj)
+	cCodi  := jJson:GetJsonObject('CODIGO')
+	cLoja  := jJson:GetJsonObject('LOJA')
+
+	IF oWS:temFornec(FWxFilial(cAliasWS), ::cnpj) .OR. oWS:temForCod(FWxFilial(cAliasWS), cCodi, cLoja)    
 		//SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
 		Self:setStatus(500)
 		jResponse['errorId']  := 'NEW0041'
@@ -407,7 +411,7 @@ WSMETHOD PUT UPDATE WSRECEIVE cnpj WSSERVICE WSFORNEC
 	::cnpj := jJson:GetJsonObject('CNPJ')
 
     //Se o id estiver vazio
-    If Empty(::cnpj)
+    If Empty(::cnpj) .OR. oWS:temForCod(FWxFilial(cAliasWS), cCodi, cLoja)    
         //SetRestFault(500, 'Falha ao consultar o registro') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
         Self:setStatus(500) 
         jResponse['errorId']  := 'UPD006'
@@ -540,7 +544,7 @@ WSMETHOD PUT ERASE WSRECEIVE id WSSERVICE WSFORNEC
 	::cnpj := jJson:GetJsonObject('CNPJ')
 
     //Se o id estiver vazio
-    If Empty(::cnpj)
+    If Empty(::cnpj) .OR. oWS:temForCod(FWxFilial(cAliasWS), cCodi, cLoja)    
         //SetRestFault(500, 'Falha ao consultar o registro') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
         Self:setStatus(500) 
         jResponse['errorId']  := 'DEL010'

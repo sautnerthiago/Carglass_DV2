@@ -29,9 +29,9 @@ WSRESTFUL wsCliente DESCRIPTION 'Cadastro de Cliente' FORMAT APPLICATION_JSON
 	WSMETHOD GET TIPO    DESCRIPTION 'Retorna o registro pesquisado - TIPO'   WSSYNTAX '/wsCliente/tipolist/{tipo}'   	 			  PATH '/wsCliente/tipolist/{tipo}' 				PRODUCES APPLICATION_JSON
 	WSMETHOD GET ESTADO  DESCRIPTION 'Retorna o registro pesquisado - ESTADO' WSSYNTAX '/wsCliente/estadolist/{estado}'   			  PATH '/wsCliente/estadolist/{estado}'        		PRODUCES APPLICATION_JSON
 	WSMETHOD GET CLIDATA DESCRIPTION 'Retorna o registro pesquisado - DATA'   WSSYNTAX '/wsCliente/dataslist/data?{dataDe}&{dataAte}' PATH '/wsCliente/dataslist/{dataDe}/{dataAte}'  	PRODUCES APPLICATION_JSON
-	WSMETHOD POST NEW    DESCRIPTION 'Inclusão de registro'          		  WSSYNTAX '/wsCliente/new'      		PATH 'new'      PRODUCES APPLICATION_JSON
-	WSMETHOD PUT  UPDATE DESCRIPTION 'Atualização de registro'       		  WSSYNTAX '/wsCliente/update'   		PATH 'update'   PRODUCES APPLICATION_JSON
-	WSMETHOD PUT  ERASE  DESCRIPTION 'Bloquear Registro'             		  WSSYNTAX '/wsCliente/bloqu'    		PATH 'bloqu'    PRODUCES APPLICATION_JSON
+	WSMETHOD POST NEW    DESCRIPTION 'Inclusão de registro'          		  WSSYNTAX '/wsCliente/new'      		PATH 'new'        PRODUCES APPLICATION_JSON
+	WSMETHOD PUT  UPDATE DESCRIPTION 'Atualização de registro'       		  WSSYNTAX '/wsCliente/update'   		PATH 'update'     PRODUCES APPLICATION_JSON
+	WSMETHOD PUT  ERASE  DESCRIPTION 'Bloquear Registro'             		  WSSYNTAX '/wsCliente/delete'    		PATH 'delete'     PRODUCES APPLICATION_JSON
 
 END WSRESTFUL
 
@@ -103,6 +103,7 @@ WSMETHOD GET CLICNPJ WSRECEIVE cnpj WSSERVICE wsCliente
 			jResponse['REVENDEAFIAL']	:= (cAliasWS)->A1_ZREVAFI
 			jResponse['AFILIADOCONV']	:= (cAliasWS)->A1_ZAFICON
 			jResponse['TIPOAFILIADO']	:= (cAliasWS)->A1_ZTPAFIL
+			jResponse['INTEGRADO']		:= (cAliasWS)->A1_ZINTEGR
 		EndIf
 	EndIf
 
@@ -274,8 +275,11 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE wsCliente
 	cError := jJson:FromJson(cJson)
 	cJason := cJson
 	::cnpj := jJson:GetJsonObject('CNPJ')
+	_COD   := jJson:GetJsonObject('CODIGO')
+	_LOJA  := jJson:GetJsonObject('LOJA')
 
-	IF oWS:temClient(FWxFilial(cAliasWS), ::cnpj)
+
+	IF oWS:temClient(FWxFilial(cAliasWS), ::cnpj) .OR. oWS:temCliCod(FWxFilial(cAliasWS), _cod, _loja)    
 		//SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
 		Self:setStatus(500)
 		jResponse['errorId']  := 'NEW0041'
@@ -325,7 +329,7 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE wsCliente
         aAdd(aDados, {'A1_TEL    ', jJson:GetJsonObject('FONE')     , Nil} )
         aAdd(aDados, {'A1_TRANSP ', jJson:GetJsonObject('TRANSP')   , Nil} )
         aAdd(aDados, {'A1_PAIS   ', '105'  							, Nil} )
-
+        aAdd(aDados, {'A1_ZINTEGR', jJson:GetJsonObject('INTEGRADO'), Nil} )
 		//Percorre os dados do execauto
 		For nCampo := 1 To Len(aDados)
 			//Se o campo for data, retira os hifens e faz a conversão
@@ -417,7 +421,7 @@ WSMETHOD PUT UPDATE WSRECEIVE cnpj WSSERVICE wsCliente
 	cLoja  := jJson:GetJsonObject('LOJA')
 
 	//Se o id estiver vazio
-	If Empty(::cnpj)
+	If Empty(::cnpj) .OR. oWS:temCliCod(FWxFilial(cAliasWS), cCodi, cLoja)    
 		//SetRestFault(500, 'Falha ao consultar o registro') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
 		Self:setStatus(500)
 		jResponse['errorId']  := 'UPD006'
@@ -472,7 +476,7 @@ WSMETHOD PUT UPDATE WSRECEIVE cnpj WSSERVICE wsCliente
 				aAdd(aDadUpd, {'A1_NATUREZ'	, jJson:GetJsonObject('NATUREZ')  , Nil} )
 				aAdd(aDadUpd, {'A1_PESSOA'	, jJson:GetJsonObject('PESSOA')   , Nil} )
 				aAdd(aDadUpd, {'A1_TRANSP'	, jJson:GetJsonObject('TRANSP')   , Nil} )
-
+		        aAdd(aDadUpd, {'A1_ZINTEGR' , jJson:GetJsonObject('INTEGRADO'), Nil} )
 				SA1->(DbGoTop())
 				SA1->(DbSetOrder(3)) 
 				if (SA1->( DbSeek( xFilial("SA1") + cCnpj ) ) )
@@ -556,7 +560,7 @@ WSMETHOD PUT ERASE WSRECEIVE cnpj WSSERVICE wsCliente
 	cLoja  := jJson:GetJsonObject('LOJA')
 
 	//Se o id estiver vazio
-	If Empty(::cnpj)
+	If Empty(::cnpj) .OR. oWS:temCliCod(FWxFilial(cAliasWS), cCodi, cLoja)    
 		//SetRestFault(500, 'Falha ao consultar o registro') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
 		Self:setStatus(500)
 		jResponse['errorId']  := 'DEL010'

@@ -21,6 +21,7 @@ class LIBGLASS
     method temClient(_fili, _cnpj)
     method temCliCod(_fili, cod, loja)    
     method temFornec(_fili, _cnpj)
+    method temForCod(_fili, cod, loja)    
 
     method temProd(_fili, _cod)
     method temTES(_fili, _cod)
@@ -137,6 +138,25 @@ method temFornec(_fili, _cnpj) class LIBGLASS
     cQuery := " SELECT A2_FILIAL, A2_COD, A2_LOJA, A2_NOME, A2_NREDUZ, A2_CGC, A2_END "
 	cQuery += " FROM "+RetSQLName("SA2") + " AS SA2 WITH (NOLOCK) "
 	cQuery += " WHERE A2_FILIAL = '" + _fili + "' AND SA2.A2_CGC = '"+_cnpj+"' "
+	cQuery += " AND SA2.D_E_L_E_T_ = '' AND SA2.A2_MSBLQL <> '1' "
+	cAlSA2:= CriaTrab(Nil,.F.)
+	DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSA2, .F., .T.)    
+
+    (cAlSA2)->(DbGoTop())
+	If (cAlSA2)->(Eof())
+        lRet := .F. 
+	Endif
+    (cAlSA2)->(dbclosearea())
+
+Return lRet
+
+method temForCod(_fili, cod, loja) class LIBGLASS
+    Local lRet := .T.
+
+    cQuery := " SELECT A2_FILIAL, A2_COD, A2_LOJA, A2_NOME, A2_NREDUZ, A2_CGC, A2_END "
+	cQuery += " FROM "+RetSQLName("SA2") + " AS SA2 WITH (NOLOCK) "
+	cQuery += " WHERE A2_FILIAL = '" + _fili + "' "
+    cQuery += " AND SA2.A2_COD = '"+cod+"' AND A2_LOJA = '"+loja+"' "
 	cQuery += " AND SA2.D_E_L_E_T_ = '' AND SA2.A2_MSBLQL <> '1' "
 	cAlSA2:= CriaTrab(Nil,.F.)
 	DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSA2, .F., .T.)    
@@ -368,6 +388,7 @@ method CLieEst(_estad) class LIBGLASS
         aCliTmp[nItem]['REVENDEAFIAL']	:= (cAlSA1)->A1_ZREVAFI
         aCliTmp[nItem]['AFILIADOCONV']	:= (cAlSA1)->A1_ZAFICON
         aCliTmp[nItem]['TIPOAFILIADO']	:= (cAlSA1)->A1_ZTPAFIL
+        aCliTmp[nItem]['INTEGRADO']		:= (cAlSA1)->A1_ZINTEGR
         (cAlSA1)->(DBSKIP())
         LOOP
 	ENDDO
@@ -421,6 +442,7 @@ method CLieTipo(_Tipo) class LIBGLASS
         aCliTmp[nItem]['REVENDEAFIAL']	:= (cAlSA1)->A1_ZREVAFI
         aCliTmp[nItem]['AFILIADOCONV']	:= (cAlSA1)->A1_ZAFICON
         aCliTmp[nItem]['TIPOAFILIADO']	:= (cAlSA1)->A1_ZTPAFIL
+        aCliTmp[nItem]['INTEGRADO']		:= (cAlSA1)->A1_ZINTEGR
         (cAlSA1)->(DBSKIP())
         LOOP
 	EndDo
@@ -474,6 +496,7 @@ method CLieDatas( dtIni, DtFin) class LIBGLASS
         aCliTmp[nItem]['REVENDEAFIAL']	:= (cAlSA1)->A1_ZREVAFI
         aCliTmp[nItem]['AFILIADOCONV']	:= (cAlSA1)->A1_ZAFICON
         aCliTmp[nItem]['TIPOAFILIADO']	:= (cAlSA1)->A1_ZTPAFIL
+        aCliTmp[nItem]['INTEGRADO']		:= (cAlSA1)->A1_ZINTEGR
         (cAlSA1)->(DBSKIP())
         LOOP
 	ENDDO
@@ -525,6 +548,7 @@ method FornEst(_estad) class LIBGLASS
         aFornTmp[nItem]['REVENDEAFIAL']	:= (cAlSA2)->A2_ZREVAFI
         aFornTmp[nItem]['AFILIADOCONV']	:= (cAlSA2)->A2_ZAFICON
         aFornTmp[nItem]['TIPOAFILIADO']	:= (cAlSA2)->A2_ZTPAFIL
+        aFornTmp[nItem]['INTEGRADO']	:= (cAlSA2)->A2_ZINTEGR
         (cAlSA2)->(DBSKIP())
         LOOP
 	ENDDO
@@ -576,6 +600,7 @@ method FornTipo(_Tipo) class LIBGLASS
         aFornTmp[nItem]['REVENDEAFIAL']	:= (cAlSA2)->A2_ZREVAFI
         aFornTmp[nItem]['AFILIADOCONV']	:= (cAlSA2)->A2_ZAFICON
         aFornTmp[nItem]['TIPOAFILIADO']	:= (cAlSA2)->A2_ZTPAFIL
+        aFornTmp[nItem]['INTEGRADO']	:= (cAlSA2)->A2_ZINTEGR
         (cAlSA2)->(DBSKIP())
         LOOP
 	EndDo
@@ -627,6 +652,7 @@ method FornDatas( dtIni, DtFin) class LIBGLASS
         aFornTmp[nItem]['REVENDEAFIAL']	:= (cAlSA2)->A2_ZREVAFI
         aFornTmp[nItem]['AFILIADOCONV']	:= (cAlSA2)->A2_ZAFICON
         aFornTmp[nItem]['TIPOAFILIADO']	:= (cAlSA2)->A2_ZTPAFIL
+        aFornTmp[nItem]['INTEGRADO']	:= (cAlSA2)->A2_ZINTEGR
         (cAlSA2)->(DBSKIP())
         LOOP
 	ENDDO

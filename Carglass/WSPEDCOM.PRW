@@ -33,7 +33,7 @@ WSRESTFUL WSPEDCOM DESCRIPTION 'PEDIDO DE COMPRAS'
     WSMETHOD GET    ID     DESCRIPTION 'Retorna o registro pesquisado' WSSYNTAX '/WSPEDCOM/{NUMPC}'                  PATH '{NUMPC}'       PRODUCES APPLICATION_JSON
     WSMETHOD POST   NEW    DESCRIPTION 'Inclusão de registro'          WSSYNTAX '/WSPEDCOM/new'                      PATH 'new'           PRODUCES APPLICATION_JSON
     WSMETHOD PUT    UPDATE DESCRIPTION 'Atualização de registro'       WSSYNTAX '/WSPEDCOM/update'                   PATH 'update'        PRODUCES APPLICATION_JSON
-    WSMETHOD PUT    ERASE  DESCRIPTION 'Blaqueio de registro'          WSSYNTAX '/WSPEDCOM/bloqu'                    PATH 'bloqu'         PRODUCES APPLICATION_JSON
+    WSMETHOD PUT    ERASE  DESCRIPTION 'Blaqueio de registro'          WSSYNTAX '/WSPEDCOM/delete'                   PATH 'delete'        PRODUCES APPLICATION_JSON
 END WSRESTFUL
 
 /*/{Protheus.doc} WSMETHOD GET ID
@@ -90,6 +90,7 @@ WSMETHOD GET ID WSRECEIVE NUMPC WSSERVICE WSPEDCOM
                     jResponse['QUANT']     := TRANSFORM( (cAlSC7)->C7_QUANT, "@e 999,999,999.99")
                     jResponse['PRECO']     := TRANSFORM( (cAlSC7)->C7_PRECO, "@e 999,999,999.99")
                     jResponse['TOTAL']     := TRANSFORM( (cAlSC7)->C7_TOTAL, "@e 999,999,999.99")
+                    jResponse['INTEGRADO'] := (cAlSC7)->C7_ZINTEGR
                     (cAlSC7)->(DBSKIP())
                     LOOP
             ENDDO
@@ -182,7 +183,8 @@ WSMETHOD POST NEW WSRECEIVE NUMPC WSSERVICE WSPEDCOM
         aadd(aCab, {"C7_COND"      , jJson:GetJsonObject("PEDIDO"):GetJsonObject("COND"), Nil})
         aadd(aCab, {"C7_CONTATO"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("CONTATO"), Nil})
         aadd(aCab, {"C7_FILENT"    , jJson:GetJsonObject("PEDIDO"):GetJsonObject("FILENT"), Nil})
-
+        aadd(aCab, {"C7_ZINTEGR"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("INTEGRADO"), Nil})
+                            
         FOR Nx := 1 to len(jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS"))
             aLinhaC1 := {}
             aadd(aLinhaC1, {"C7_PRODUTO" , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"), NIL})
@@ -326,6 +328,7 @@ WSMETHOD PUT UPDATE WSRECEIVE NUMPC WSSERVICE WSPEDCOM
         aadd(aCab, {"C7_COND"      , jJson:GetJsonObject("PEDIDO"):GetJsonObject("COND"), Nil})
         aadd(aCab, {"C7_CONTATO"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("CONTATO"), Nil})
         aadd(aCab, {"C7_FILENT"    , jJson:GetJsonObject("PEDIDO"):GetJsonObject("FILENT"), Nil})
+        aadd(aCab, {"C7_ZINTEGR"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("INTEGRADO"), Nil})
 
         FOR Nx := 1 to len(jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS"))
             aLinhaC1 := {}
@@ -470,6 +473,7 @@ WSMETHOD PUT ERASE WSRECEIVE NUMPC WSSERVICE WSPEDCOM
         aadd(aCab, {"C7_COND"      , jJson:GetJsonObject("PEDIDO"):GetJsonObject("COND"), Nil})
         aadd(aCab, {"C7_CONTATO"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("CONTATO"), Nil})
         aadd(aCab, {"C7_FILENT"    , jJson:GetJsonObject("PEDIDO"):GetJsonObject("FILENT"), Nil})
+        aadd(aCab, {"C7_ZINTEGR"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("INTEGRADO"), Nil})
 
         FOR Nx := 1 to len(jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS"))
             aLinhaC1 := {}

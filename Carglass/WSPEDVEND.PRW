@@ -33,7 +33,7 @@ WSRESTFUL WSPEDVEND DESCRIPTION 'PEDIDO DE VENDAS'
     WSMETHOD GET    ID     DESCRIPTION 'Retorna o registro pesquisado' WSSYNTAX '/WSPEDVEND/{NUMPV}'                  PATH '{NUMPV}'       PRODUCES APPLICATION_JSON
     WSMETHOD POST   NEW    DESCRIPTION 'Inclusão de registro'          WSSYNTAX '/WSPEDVEND/new'                      PATH 'new'           PRODUCES APPLICATION_JSON
     WSMETHOD PUT    UPDATE DESCRIPTION 'Atualização de registro'       WSSYNTAX '/WSPEDVEND/update'                   PATH 'update'        PRODUCES APPLICATION_JSON
-    WSMETHOD PUT    ERASE  DESCRIPTION 'Blaqueio de registro'          WSSYNTAX '/WSPEDVEND/bloqu'                    PATH 'bloqu'         PRODUCES APPLICATION_JSON
+    WSMETHOD PUT    ERASE  DESCRIPTION 'Blaqueio de registro'          WSSYNTAX '/WSPEDVEND/delete'                   PATH 'delete'        PRODUCES APPLICATION_JSON
 END WSRESTFUL
 
 /*/{Protheus.doc} WSMETHOD GET ID
