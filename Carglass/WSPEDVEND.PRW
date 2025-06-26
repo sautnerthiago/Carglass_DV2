@@ -83,6 +83,7 @@ WSMETHOD GET ID WSRECEIVE NUMPV WSSERVICE WSPEDVEND
                     jResponse['LOJA']           := (cAlSC5)->C5_LOJACLI
                     jResponse['LOJAENTREGA']    := (cAlSC5)->C5_LOJAENT
                     jResponse['COND']           := (cAlSC5)->C5_CONDPAG
+                    jResponse['INTEGRADO']	    := (cAlSC5)->C5_ZINTEGR
                     jResponse['ITENS']          := oWS:ITENSPV((cAlSC5)->C5_FILIAL, (cAlSC5)->C5_NUM, (cAlSC5)->C5_CLIENTE, (cAlSC5)->C5_LOJACLI )
                     (cAlSC5)->(DBSKIP())
                     LOOP
@@ -186,6 +187,7 @@ WSMETHOD POST NEW WSRECEIVE NUMPV WSSERVICE WSPEDVEND
         aadd(aCab, {"C5_LOJAENT"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("LOJAENTREGA"), Nil})
         aadd(aCab, {"C5_CONDPAG"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("COND"), Nil})
         aadd(aCab, {"C5_NATUREZ"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("NATUREZA"), Nil})
+        aadd(aCab, {"C5_ZINTEGR"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("INTEGRADO"), Nil})
 
         FOR Nx := 1 to len(jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS"))
             aLinhaC1 := {}
@@ -310,6 +312,7 @@ WSMETHOD PUT UPDATE WSRECEIVE NUMPV WSSERVICE WSPEDVEND
         aadd(aCab, {"C5_LOJAENT"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("LOJAENTREGA"), Nil})
         aadd(aCab, {"C5_CONDPAG"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("COND"), Nil})
         aadd(aCab, {"C5_NATUREZ"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("NATUREZA"), Nil})
+        aadd(aCab, {"C5_ZINTEGR"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("INTEGRADO"), Nil})
 
         FOR Nx := 1 to len(jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS"))
             aLinhaC1 := {}
@@ -434,6 +437,7 @@ WSMETHOD PUT ERASE WSRECEIVE NUMPV WSSERVICE WSPEDVEND
         aadd(aCab, {"C5_LOJAENT"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("LOJAENTREGA"), Nil})
         aadd(aCab, {"C5_CONDPAG"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("COND"), Nil})
         aadd(aCab, {"C5_NATUREZ"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("NATUREZA"), Nil})
+        aadd(aCab, {"C5_ZINTEGR"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("INTEGRADO"), Nil})
 
         FOR Nx := 1 to len(jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS"))
             aLinhaC1 := {}
