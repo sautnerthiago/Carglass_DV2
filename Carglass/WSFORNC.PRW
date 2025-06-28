@@ -20,10 +20,11 @@ WSRESTFUL WSFORNEC DESCRIPTION 'CADASTRO DE FORNECEDOR'
 	WSDATA tipo       AS STRING OPTIONAL
 
 	//Métodos 
-	WSMETHOD GET CNPJ    DESCRIPTION 'Retorna o Registro pesquisado - CNPJ'   WSSYNTAX '/WSFORNEC/listcnpj/cnpj?{cnpj}' 			  PATH '/WSFORNEC/cnpj/{cnpj}'  					PRODUCES APPLICATION_JSON
-	WSMETHOD GET TIPO    DESCRIPTION 'Retorna o registro pesquisado - TIPO'   WSSYNTAX '/WSFORNEC/tipolist/{tipo}'   	 			  PATH '/WSFORNEC/tipolist/{tipo}' 					PRODUCES APPLICATION_JSON
-	WSMETHOD GET ESTADO  DESCRIPTION 'Retorna o registro pesquisado - ESTADO' WSSYNTAX '/WSFORNEC/estadolist/{estado}'   			  PATH '/WSFORNEC/estadolist/{estado}'        		PRODUCES APPLICATION_JSON
-	WSMETHOD GET FORDATA DESCRIPTION 'Retorna o registro pesquisado - DATA'   WSSYNTAX '/WSFORNEC/dataslist/data?{dataDe}&{dataAte}'  PATH '/WSFORNEC/dataslist/{dataDe}/{dataAte}'  	PRODUCES APPLICATION_JSON
+	WSMETHOD GET CNPJ    DESCRIPTION 'Retorna o Registro pesquisado - CNPJ'   		WSSYNTAX '/WSFORNEC/listcnpj/cnpj?{cnpj}' 			  	PATH '/WSFORNEC/cnpj/{cnpj}'  					PRODUCES APPLICATION_JSON
+	WSMETHOD GET TIPO    DESCRIPTION 'Retorna o registro pesquisado - TIPO'   		WSSYNTAX '/WSFORNEC/tipolist/{tipo}'   	 			  	PATH '/WSFORNEC/tipolist/{tipo}' 					PRODUCES APPLICATION_JSON
+	WSMETHOD GET ESTADO  DESCRIPTION 'Retorna o registro pesquisado - ESTADO' 		WSSYNTAX '/WSFORNEC/estadolist/{estado}'   			  	PATH '/WSFORNEC/estadolist/{estado}'        		PRODUCES APPLICATION_JSON
+	WSMETHOD GET FORDATA DESCRIPTION 'Retorna o registro pesquisado - DATA'   		WSSYNTAX '/WSFORNEC/dataslist/data?{dataDe}&{dataAte}'  PATH '/WSFORNEC/dataslist/{dataDe}/{dataAte}'  	PRODUCES APPLICATION_JSON
+	WSMETHOD GET INTEGRA DESCRIPTION 'Retorna o registro pesquisado - INTEGRADO'   	WSSYNTAX '/WSFORNEC/integrado' 							PATH '/wsCliente/integrado'  					PRODUCES APPLICATION_JSON
 
     WSMETHOD POST NEW    DESCRIPTION 'Inclusão de registro'                   WSSYNTAX '/WSFORNEC/new'              PATH 'new'      PRODUCES APPLICATION_JSON
     WSMETHOD PUT  UPDATE DESCRIPTION 'Atualização de registro'                WSSYNTAX '/WSFORNEC/update'           PATH 'update'   PRODUCES APPLICATION_JSON
@@ -234,6 +235,19 @@ WSMETHOD GET FORDATA WSRECEIVE dataDe, dataAte WSSERVICE WSFORNEC
 	Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
 Return lRet
 
+WSMETHOD GET INTEGRA WSRECEIVE WSSERVICE WSFORNEC
+	Local lRet       := .T.
+	Local jResponse  := JsonObject():New()
+
+	oWS    := LIBGLASS():new()
+	cJsonNfs:= FwJsonSerialize( oWS:Integrado( "SA2" )  )			
+
+	//Define o retorno
+	Self:SetContentType('application/json')
+	Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
+
+Return lRet
+
 WSMETHOD POST NEW WSRECEIVE WSSERVICE WSFORNEC
     Local lRet              := .T.
     Local aDados            := {}
@@ -273,6 +287,17 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE WSFORNEC
 
 	cCodi  := jJson:GetJsonObject('CODIGO')
 	cLoja  := jJson:GetJsonObject('LOJA')
+
+	lBloq  := iif(jJson:GetJsonObject('BLOQUEADO')=="NAO" .or. Empty(jJson:GetJsonObject('BLOQUEADO')), "2", "1")
+	lAtivo := iif( jJson:GetJsonObject('ATIVO')=="NAO" .or. Empty(jJson:GetJsonObject('ATIVO')), "N", "S")
+
+    cMOVEL := iif( jJson:GetJsonObject('MOVEL') == "" , "N", "S")
+    cTIPOV := iif( jJson:GetJsonObject('TIPOVEICULO')  == "" , "N", "S")
+    cPAGAM := iif( jJson:GetJsonObject('PAGAMENTOADT') == "" , "N", "S")
+    cREVEN := iif( jJson:GetJsonObject('REVENDEAFIAL') == "" , "N", "S")
+    cAFILI := iif( jJson:GetJsonObject('AFILIADOCONV') == "" , "N", "S")
+    cTIPOA := iif( jJson:GetJsonObject('TIPOAFILIADO') == "" , "N", "S")
+
 
 	IF oWS:temFornec(FWxFilial(cAliasWS), ::cnpj) .OR. oWS:temForCod(FWxFilial(cAliasWS), cCodi, cLoja)    
 		//SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
@@ -322,6 +347,15 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE WSFORNEC
         aAdd(aDados, {'A2_TEL    ', jJson:GetJsonObject('FONE')     , Nil} )
         aAdd(aDados, {'A2_TRANSP ', jJson:GetJsonObject('TRANSP')   , Nil} )
         aAdd(aDados, {'A2_PAIS   ', '105'  							, Nil} )
+		aAdd(aDados, {'A2_ZINTEGR', jJson:GetJsonObject('INTEGRADO'), Nil} )
+		aAdd(aDados, {'A2_ZMOBILE', cMOVEL							, Nil} )
+		aAdd(aDados, {'A2_ZTPVEIC', cTIPOV							, Nil} )
+		aAdd(aDados, {'A2_ZPGTADT', cPAGAM							, Nil} )
+		aAdd(aDados, {'A2_ZREVAFI', cREVEN							, Nil} )
+		aAdd(aDados, {'A2_ZAFICON', cAFILI							, Nil} )
+		aAdd(aDados, {'A2_ZTPAFIL', cTIPOA							, Nil} )
+		aAdd(aDados, {'A2_MSBLQL' , lBloq 							, Nil} )
+		aAdd(aDados, {'A2_ZATIVO' , lAtivo	    					, Nil} )
 
 		//Percorre os dados do execauto
 		For nCampo := 1 To Len(aDados)
@@ -410,13 +444,23 @@ WSMETHOD PUT UPDATE WSRECEIVE cnpj WSSERVICE WSFORNEC
 	cLoja  := jJson:GetJsonObject('LOJA')
 	::cnpj := jJson:GetJsonObject('CNPJ')
 
+	lBloq  := iif(jJson:GetJsonObject('BLOQUEADO')=="NAO" .or. Empty(jJson:GetJsonObject('BLOQUEADO')), "2", "1")
+	lAtivo := iif( jJson:GetJsonObject('ATIVO')=="NAO" .or. Empty(jJson:GetJsonObject('ATIVO')), "N", "S")
+
+    cMOVEL := iif( jJson:GetJsonObject('MOVEL') == "" , "N", "S")
+    cTIPOV := iif( jJson:GetJsonObject('TIPOVEICULO')  == "" , "N", "S")
+    cPAGAM := iif( jJson:GetJsonObject('PAGAMENTOADT') == "" , "N", "S")
+    cREVEN := iif( jJson:GetJsonObject('REVENDEAFIAL') == "" , "N", "S")
+    cAFILI := iif( jJson:GetJsonObject('AFILIADOCONV') == "" , "N", "S")
+    cTIPOA := iif( jJson:GetJsonObject('TIPOAFILIADO') == "" , "N", "S")
+
     //Se o id estiver vazio
-    If Empty(::cnpj) .OR. oWS:temForCod(FWxFilial(cAliasWS), cCodi, cLoja)    
+    If Empty(::cnpj) .OR. !oWS:temForCod(FWxFilial(cAliasWS), cCodi, cLoja)    
         //SetRestFault(500, 'Falha ao consultar o registro') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
         Self:setStatus(500) 
         jResponse['errorId']  := 'UPD006'
-        jResponse['error']    := 'ID vazio'
-        jResponse['solution'] := 'Informe o ID'
+        jResponse['error']    := 'CNPJ VAZIO E/OU CODIGO E LOJA VAZIOS'
+        jResponse['solution'] := 'Informe o CNPJ, CODIGO E LOJA'
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
 		oWS:GRAVALOGMURO(cResponc, cJason, "WSFORNC", "ATUALIZAÇÃO DE FORNECEDOR")
@@ -461,6 +505,15 @@ WSMETHOD PUT UPDATE WSRECEIVE cnpj WSSERVICE WSFORNEC
 				aAdd(aDados, {'A2_INSCR  ', jJson:GetJsonObject('INSCR')    , Nil} )
 				aAdd(aDados, {'A2_MUN    ', jJson:GetJsonObject('MUNICIPIO'), Nil} )
 				aAdd(aDados, {'A2_NATUREZ', jJson:GetJsonObject('NATUREZ')  , Nil} )
+				aAdd(aDados, {'A2_ZINTEGR', jJson:GetJsonObject('INTEGRADO'), Nil} )
+				aAdd(aDados, {'A2_ZMOBILE', cMOVEL							, Nil} )
+				aAdd(aDados, {'A2_ZTPVEIC', cTIPOV							, Nil} )
+				aAdd(aDados, {'A2_ZPGTADT', cPAGAM							, Nil} )
+				aAdd(aDados, {'A2_ZREVAFI', cREVEN							, Nil} )
+				aAdd(aDados, {'A2_ZAFICON', cAFILI							, Nil} )
+				aAdd(aDados, {'A2_ZTPAFIL', cTIPOA							, Nil} )
+				aAdd(aDados, {'A2_MSBLQL' , lBloq    						, Nil} )
+				aAdd(aDados, {'A2_ZATIVO' , lAtivo	    					, Nil} )
 		         
 				 SA2->(DbGoTop())
 				 SA2->(DbSetOrder(3)) 
@@ -544,12 +597,12 @@ WSMETHOD PUT ERASE WSRECEIVE id WSSERVICE WSFORNEC
 	::cnpj := jJson:GetJsonObject('CNPJ')
 
     //Se o id estiver vazio
-    If Empty(::cnpj) .OR. oWS:temForCod(FWxFilial(cAliasWS), cCodi, cLoja)    
+    If Empty(::cnpj) .OR. !oWS:temForCod(FWxFilial(cAliasWS), cCodi, cLoja)    
         //SetRestFault(500, 'Falha ao consultar o registro') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
         Self:setStatus(500) 
         jResponse['errorId']  := 'DEL010'
-        jResponse['error']    := 'ID vazio'
-        jResponse['solution'] := 'Informe o ID'
+        jResponse['error']    := 'CNPJ VAZIO E/OU CODIGO E LOJA VAZIOS'
+        jResponse['solution'] := 'Informe o CNPJ, CODIGO E LOJA'
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
 		oWS:GRAVALOGMURO(cResponc, cJason, "WSFORNC", "BLOQUEIO DE FORNECEDOR")

@@ -30,7 +30,9 @@ WSRESTFUL WSPEDCOM DESCRIPTION 'PEDIDO DE COMPRAS'
     WSDATA item        AS ITEMPD
  
     //Métodos
-    WSMETHOD GET    ID     DESCRIPTION 'Retorna o registro pesquisado' WSSYNTAX '/WSPEDCOM/{NUMPC}'                  PATH '{NUMPC}'       PRODUCES APPLICATION_JSON
+    WSMETHOD GET ID      DESCRIPTION 'Retorna o registro pesquisado'                WSSYNTAX '/WSPEDCOM/{NUMPC}'        PATH '{NUMPC}'      PRODUCES APPLICATION_JSON
+	WSMETHOD GET INTEGRA DESCRIPTION 'Retorna o registro pesquisado - INTEGRADO'   	WSSYNTAX '/WSPEDCOM/integrado' 		PATH '/integrado'  	PRODUCES APPLICATION_JSON
+
     WSMETHOD POST   NEW    DESCRIPTION 'Inclusão de registro'          WSSYNTAX '/WSPEDCOM/new'                      PATH 'new'           PRODUCES APPLICATION_JSON
     WSMETHOD PUT    UPDATE DESCRIPTION 'Atualização de registro'       WSSYNTAX '/WSPEDCOM/update'                   PATH 'update'        PRODUCES APPLICATION_JSON
     WSMETHOD PUT    ERASE  DESCRIPTION 'Blaqueio de registro'          WSSYNTAX '/WSPEDCOM/delete'                   PATH 'delete'        PRODUCES APPLICATION_JSON
@@ -102,6 +104,19 @@ WSMETHOD GET ID WSRECEIVE NUMPC WSSERVICE WSPEDCOM
     //Define o retorno
     Self:SetContentType('application/json')
     Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
+Return lRet
+
+WSMETHOD GET INTEGRA WSRECEIVE WSSERVICE WSPEDCOM
+	Local lRet       := .T.
+	Local jResponse  := JsonObject():New()
+
+	oWS    := LIBGLASS():new()
+	cJsonNfs:= FwJsonSerialize( oWS:Integrado( "SC7" )  )			
+
+	//Define o retorno
+	Self:SetContentType('application/json')
+	Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
+
 Return lRet
 
 WSMETHOD POST NEW WSRECEIVE NUMPC WSSERVICE WSPEDCOM

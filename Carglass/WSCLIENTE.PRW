@@ -25,13 +25,14 @@ WSRESTFUL wsCliente DESCRIPTION 'Cadastro de Cliente' FORMAT APPLICATION_JSON
 	WSDATA tipo       AS STRING OPTIONAL 
 
 	//Métodos 
-	WSMETHOD GET CLICNPJ DESCRIPTION 'Retorna o Registro pesquisado - CNPJ'   WSSYNTAX '/wsCliente/listcnpj/cnpj?{cnpj}' 			  PATH '/wsCliente/cnpj/{cnpj}'  						PRODUCES APPLICATION_JSON
-	WSMETHOD GET TIPO    DESCRIPTION 'Retorna o registro pesquisado - TIPO'   WSSYNTAX '/wsCliente/tipolist/{tipo}'   	 			  PATH '/wsCliente/tipolist/{tipo}' 				PRODUCES APPLICATION_JSON
-	WSMETHOD GET ESTADO  DESCRIPTION 'Retorna o registro pesquisado - ESTADO' WSSYNTAX '/wsCliente/estadolist/{estado}'   			  PATH '/wsCliente/estadolist/{estado}'        		PRODUCES APPLICATION_JSON
-	WSMETHOD GET CLIDATA DESCRIPTION 'Retorna o registro pesquisado - DATA'   WSSYNTAX '/wsCliente/dataslist/data?{dataDe}&{dataAte}' PATH '/wsCliente/dataslist/{dataDe}/{dataAte}'  	PRODUCES APPLICATION_JSON
-	WSMETHOD POST NEW    DESCRIPTION 'Inclusão de registro'          		  WSSYNTAX '/wsCliente/new'      		PATH 'new'        PRODUCES APPLICATION_JSON
-	WSMETHOD PUT  UPDATE DESCRIPTION 'Atualização de registro'       		  WSSYNTAX '/wsCliente/update'   		PATH 'update'     PRODUCES APPLICATION_JSON
-	WSMETHOD PUT  ERASE  DESCRIPTION 'Bloquear Registro'             		  WSSYNTAX '/wsCliente/delete'    		PATH 'delete'     PRODUCES APPLICATION_JSON
+	WSMETHOD GET CLICNPJ DESCRIPTION 'Retorna o Registro pesquisado - CNPJ'   		WSSYNTAX '/wsCliente/listcnpj/cnpj?{cnpj}' 			  	PATH '/wsCliente/cnpj/{cnpj}'  					PRODUCES APPLICATION_JSON
+	WSMETHOD GET TIPO    DESCRIPTION 'Retorna o registro pesquisado - TIPO'   		WSSYNTAX '/wsCliente/tipolist/{tipo}'   	 			PATH '/wsCliente/tipolist/{tipo}' 				PRODUCES APPLICATION_JSON
+	WSMETHOD GET ESTADO  DESCRIPTION 'Retorna o registro pesquisado - ESTADO' 		WSSYNTAX '/wsCliente/estadolist/{estado}'   			PATH '/wsCliente/estadolist/{estado}'        	PRODUCES APPLICATION_JSON
+	WSMETHOD GET CLIDATA DESCRIPTION 'Retorna o registro pesquisado - DATA'   		WSSYNTAX '/wsCliente/dataslist/data?{dataDe}&{dataAte}' PATH '/wsCliente/dataslist/{dataDe}/{dataAte}'  PRODUCES APPLICATION_JSON
+	WSMETHOD GET INTEGRA DESCRIPTION 'Retorna o registro pesquisado - INTEGRADO'   	WSSYNTAX '/wsCliente/integrado' 						PATH '/wsCliente/integrado'  					PRODUCES APPLICATION_JSON
+	WSMETHOD POST NEW    DESCRIPTION 'Inclusão de registro'          		  		WSSYNTAX '/wsCliente/new'      							PATH 'new'        								PRODUCES APPLICATION_JSON
+	WSMETHOD PUT  UPDATE DESCRIPTION 'Atualização de registro'       		  		WSSYNTAX '/wsCliente/update'   							PATH 'update'     								PRODUCES APPLICATION_JSON
+	WSMETHOD PUT  ERASE  DESCRIPTION 'Bloquear Registro'             		  		WSSYNTAX '/wsCliente/delete'    						PATH 'delete'     								PRODUCES APPLICATION_JSON
 
 END WSRESTFUL
 
@@ -238,6 +239,20 @@ WSMETHOD GET CLIDATA WSRECEIVE dataDe, dataAte WSSERVICE wsCliente
 	Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
 Return lRet
 
+WSMETHOD GET INTEGRA WSRECEIVE WSSERVICE wsCliente
+	Local lRet       := .T.
+	Local jResponse  := JsonObject():New()
+
+	oWS    := LIBGLASS():new()
+	cJsonNfs:= FwJsonSerialize( oWS:Integrado( "SA1" )  )			
+
+	//Define o retorno
+	Self:SetContentType('application/json')
+	Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
+
+Return lRet
+
+
 WSMETHOD POST NEW WSRECEIVE WSSERVICE wsCliente
 	Local lRet              := .T.
 	Local aDados            := {}
@@ -278,6 +293,14 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE wsCliente
 	_COD   := jJson:GetJsonObject('CODIGO')
 	_LOJA  := jJson:GetJsonObject('LOJA')
 
+	lBloq  := iif(jJson:GetJsonObject('BLOQUEADO')=="NAO" .or. Empty(jJson:GetJsonObject('BLOQUEADO')), "2", "1")
+	lAtivo := iif( jJson:GetJsonObject('ATIVO')=="NAO" .or. Empty(jJson:GetJsonObject('ATIVO')), "N", "S")
+    cMOVEL := iif( jJson:GetJsonObject('MOVEL') == "" , "N", "S")
+    cTIPOV := iif( jJson:GetJsonObject('TIPOVEICULO')  == "" , "N", "S")
+    cPAGAM := iif( jJson:GetJsonObject('PAGAMENTOADT') == "" , "N", "S")
+    cREVEN := iif( jJson:GetJsonObject('REVENDEAFIAL') == "" , "N", "S")
+    cAFILI := iif( jJson:GetJsonObject('AFILIADOCONV') == "" , "N", "S")
+    cTIPOA := iif( jJson:GetJsonObject('TIPOAFILIADO') == "" , "N", "S")
 
 	IF oWS:temClient(FWxFilial(cAliasWS), ::cnpj) .OR. oWS:temCliCod(FWxFilial(cAliasWS), _cod, _loja)    
 		//SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
@@ -330,6 +353,15 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE wsCliente
         aAdd(aDados, {'A1_TRANSP ', jJson:GetJsonObject('TRANSP')   , Nil} )
         aAdd(aDados, {'A1_PAIS   ', '105'  							, Nil} )
         aAdd(aDados, {'A1_ZINTEGR', jJson:GetJsonObject('INTEGRADO'), Nil} )
+		aAdd(aDados, {'A1_ZMOBILE', cMOVEL							, Nil} )
+		aAdd(aDados, {'A1_ZTPVEIC', cTIPOV							, Nil} )
+		aAdd(aDados, {'A1_ZPGTADT', cPAGAM							, Nil} )
+		aAdd(aDados, {'A1_ZREVAFI', cREVEN							, Nil} )
+		aAdd(aDados, {'A1_ZAFICON', cAFILI							, Nil} )
+		aAdd(aDados, {'A1_ZTPAFIL', cTIPOA							, Nil} )
+		aAdd(aDados, {'A1_MSBLQL' , lBloq 							, Nil} )
+		aAdd(aDados, {'A1_ZATIVO' , lAtivo	    					, Nil} )
+
 		//Percorre os dados do execauto
 		For nCampo := 1 To Len(aDados)
 			//Se o campo for data, retira os hifens e faz a conversão
@@ -419,14 +451,24 @@ WSMETHOD PUT UPDATE WSRECEIVE cnpj WSSERVICE wsCliente
 	cCnpj  := jJson:GetJsonObject('CNPJ')
 	cCodi  := jJson:GetJsonObject('CODIGO')
 	cLoja  := jJson:GetJsonObject('LOJA')
+	lBloq  := iif(jJson:GetJsonObject('BLOQUEADO')=="NAO" .or. Empty(jJson:GetJsonObject('BLOQUEADO')), "2", "1")
+	lAtivo := iif( jJson:GetJsonObject('ATIVO')=="NAO" .or. Empty(jJson:GetJsonObject('ATIVO')), "N", "S")
+
+    cMOVEL := iif( jJson:GetJsonObject('MOVEL') == "" , "N", "S")
+    cTIPOV := iif( jJson:GetJsonObject('TIPOVEICULO')  == "" , "N", "S")
+    cPAGAM := iif( jJson:GetJsonObject('PAGAMENTOADT') == "" , "N", "S")
+    cREVEN := iif( jJson:GetJsonObject('REVENDEAFIAL') == "" , "N", "S")
+    cAFILI := iif( jJson:GetJsonObject('AFILIADOCONV') == "" , "N", "S")
+    cTIPOA := iif( jJson:GetJsonObject('TIPOAFILIADO') == "" , "N", "S")
+
 
 	//Se o id estiver vazio
-	If Empty(::cnpj) .OR. oWS:temCliCod(FWxFilial(cAliasWS), cCodi, cLoja)    
+	If Empty(::cnpj) .OR. !oWS:temCliCod(FWxFilial(cAliasWS), cCodi, cLoja)    
 		//SetRestFault(500, 'Falha ao consultar o registro') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
 		Self:setStatus(500)
-		jResponse['errorId']  := 'UPD006'
-		jResponse['error']    := 'ID vazio'
-		jResponse['solution'] := 'Informe o ID'
+        jResponse['errorId']  := 'UPD006'
+        jResponse['error']    := 'CNPJ VAZIO E/OU CODIGO E LOJA VAZIOS'
+        jResponse['solution'] := 'Informe o CNPJ, CODIGO E LOJA'
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
 		oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "BLOQUEIO DE CLIENTE")
@@ -477,6 +519,15 @@ WSMETHOD PUT UPDATE WSRECEIVE cnpj WSSERVICE wsCliente
 				aAdd(aDadUpd, {'A1_PESSOA'	, jJson:GetJsonObject('PESSOA')   , Nil} )
 				aAdd(aDadUpd, {'A1_TRANSP'	, jJson:GetJsonObject('TRANSP')   , Nil} )
 		        aAdd(aDadUpd, {'A1_ZINTEGR' , jJson:GetJsonObject('INTEGRADO'), Nil} )
+				aAdd(aDadUpd, {'A1_ZMOBILE' , cMOVEL						  , Nil} )
+				aAdd(aDadUpd, {'A1_ZTPVEIC' , cTIPOV					  	  , Nil} )
+				aAdd(aDadUpd, {'A1_ZPGTADT' , cPAGAM						  , Nil} )
+				aAdd(aDadUpd, {'A1_ZREVAFI' , cREVEN						  , Nil} )
+				aAdd(aDadUpd, {'A1_ZAFICON' , cAFILI						  , Nil} )
+				aAdd(aDadUpd, {'A1_ZTPAFIL' , cTIPOA						  , Nil} )
+				aAdd(aDadUpd, {'A1_MSBLQL'  , lBloq 						  , Nil} )
+				aAdd(aDadUpd, {'A1_ZATIVO'  , lAtivo	    				  , Nil} )
+
 				SA1->(DbGoTop())
 				SA1->(DbSetOrder(3)) 
 				if (SA1->( DbSeek( xFilial("SA1") + cCnpj ) ) )
@@ -560,12 +611,12 @@ WSMETHOD PUT ERASE WSRECEIVE cnpj WSSERVICE wsCliente
 	cLoja  := jJson:GetJsonObject('LOJA')
 
 	//Se o id estiver vazio
-	If Empty(::cnpj) .OR. oWS:temCliCod(FWxFilial(cAliasWS), cCodi, cLoja)    
+	If Empty(::cnpj) .OR. !oWS:temCliCod(FWxFilial(cAliasWS), cCodi, cLoja)    
 		//SetRestFault(500, 'Falha ao consultar o registro') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
 		Self:setStatus(500)
 		jResponse['errorId']  := 'DEL010'
-		jResponse['error']    := 'ID vazio'
-		jResponse['solution'] := 'Informe o ID'
+        jResponse['error']    := 'CNPJ VAZIO E/OU CODIGO E LOJA VAZIOS'
+        jResponse['solution'] := 'Informe o CNPJ, CODIGO E LOJA'
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
 		oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "BLOQUEIO DE CLIENTE")

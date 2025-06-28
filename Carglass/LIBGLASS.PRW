@@ -43,6 +43,8 @@ class LIBGLASS
 
     method ITENSPV()
 
+    method Integrado(_Tabela)    //verifica se na tabela selecionada ha registros não integrados
+
 endclass
 
 method new() class LIBGLASS
@@ -688,3 +690,186 @@ method ITENSPV(_FILIAL, _NUM, _CLIENTE, _LOJACLI) class LIBGLASS
     (cAlSC6)->(DBCLOSEAREA())
 
 Return aRet
+
+method Integrado( tabela ) class LIBGLASS
+    Local aTmp := {}
+
+    if tabela == "SA2"
+        cQuery := " SELECT * "
+        cQuery += " FROM "+RetSQLName("SA2") + " AS SA2 "
+        cQuery += " WHERE SA2.A2_ZINTEGR <> 'S' "
+        cQuery += " AND SA2.D_E_L_E_T_ = '' "
+        cAlS:= CriaTrab(Nil,.F.)
+        DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlS, .F., .T.)    
+
+        nItem := 0
+        DO WHILE !(cAlS)->(Eof())
+            aAdd( aTmp , JsonObject():New() )
+            nItem++
+            aTmp[nItem]['FILIAL'] 		:= (cAlS)->A2_FILIAL
+            aTmp[nItem]['CODIGO']		:= (cAlS)->A2_COD
+            aTmp[nItem]['LOJA'] 		:= (cAlS)->A2_LOJA
+            aTmp[nItem]['NOME'] 		:= Rtrim( (cAlS)->A2_NOME)
+            aTmp[nItem]['NREDUZ'] 		:= Rtrim( (cAlS)->A2_NREDUZ )
+            aTmp[nItem]['BAIRRO'] 		:= Rtrim( (cAlS)->A2_BAIRRO )
+            aTmp[nItem]['EMAIL'] 		:= Rtrim( (cAlS)->A2_EMAIL  )
+            aTmp[nItem]['CEP']			:= Rtrim( (cAlS)->A2_CEP    )
+            aTmp[nItem]['CNPJ'] 		:= Rtrim( (cAlS)->A2_CGC    )
+            aTmp[nItem]['ESTADO']		:= Rtrim( (cAlS)->A2_ESTADO )
+            aTmp[nItem]['COD_MUN']		:= Rtrim( (cAlS)->A2_COD_MUN)
+            aTmp[nItem]['COND'] 		:= Rtrim( (cAlS)->A2_COND   )
+            aTmp[nItem]['DDD'] 			:= Rtrim( (cAlS)->A2_DDD    )
+            aTmp[nItem]['END']			:= Rtrim( (cAlS)->A2_END    )
+            aTmp[nItem]['INSCR'] 		:= Rtrim( (cAlS)->A2_INSCR  )
+            aTmp[nItem]['MUNCIPIO'] 	:= Rtrim( (cAlS)->A2_MUN    )
+            aTmp[nItem]['NATUREZ']		:= Rtrim( (cAlS)->A2_NATUREZ)
+            aTmp[nItem]['TIPO'] 	    := Rtrim( (cAlS)->A2_TIPO )
+            aTmp[nItem]['FONE'] 		:= Rtrim( (cAlS)->A2_TEL    )
+            aTmp[nItem]['TRANSP'] 		:= Rtrim( (cAlS)->A2_TRANSP )
+            aTmp[nItem]['PAIS'] 		:= Rtrim( (cAlS)->A2_PAIS   )
+            aTmp[nItem]['BLOQUEADO']	:= IF((cAlS)->A2_MSBLQL == "2", "NAO", "SIM")
+            aTmp[nItem]['MOVEL']		:= (cAlS)->A2_ZMOBILE
+            aTmp[nItem]['TIPOVEICULO']	:= (cAlS)->A2_ZTPVEIC
+            aTmp[nItem]['DTCRIACAO']	:= (cAlS)->A2_ZDTCRIA
+            aTmp[nItem]['ATIVO']		:= (cAlS)->A2_ZATIVO
+            aTmp[nItem]['PAGAMENTOADT']	:= (cAlS)->A2_ZPGTADT
+            aTmp[nItem]['REVENDEAFIAL']	:= (cAlS)->A2_ZREVAFI
+            aTmp[nItem]['AFILIADOCONV']	:= (cAlS)->A2_ZAFICON
+            aTmp[nItem]['TIPOAFILIADO']	:= (cAlS)->A2_ZTPAFIL
+            aTmp[nItem]['INTEGRADO']	:= (cAlS)->A2_ZINTEGR
+            (cAlS)->(DBSKIP())
+            LOOP
+        ENDDO
+        (cAlS)->(dbclosearea())
+
+    elseif tabela == "SA1"
+        cQuery := " SELECT * "
+        cQuery += " FROM "+RetSQLName("SA1") + " AS SA1 WITH (NOLOCK) "
+        cQuery += " WHERE SA1.A1_ZINTEGR <> 'S' "
+        cQuery += " AND SA1.D_E_L_E_T_ = '' "
+        cAlSA1 := CriaTrab(Nil,.F.)
+        DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSA1, .F., .T.)    
+
+        nItem := 0
+        DO WHILE !(cAlSA1)->(Eof())
+            aAdd( aTmp , JsonObject():New() )
+            nItem++
+            aTmp[nItem]['FILIAL'] 		:= (cAlSA1)->A1_FILIAL
+            aTmp[nItem]['CODIGO']		:= (cAlSA1)->A1_COD
+            aTmp[nItem]['LOJA'] 		:= (cAlSA1)->A1_LOJA
+            aTmp[nItem]['NOME'] 		:= Rtrim( (cAlSA1)->A1_NOME)
+            aTmp[nItem]['NREDUZ'] 		:= Rtrim( (cAlSA1)->A1_NREDUZ )
+            aTmp[nItem]['BAIRRO'] 		:= Rtrim( (cAlSA1)->A1_BAIRRO )
+            aTmp[nItem]['EMAIL'] 		:= Rtrim( (cAlSA1)->A1_EMAIL  )
+            aTmp[nItem]['CEP']			:= Rtrim( (cAlSA1)->A1_CEP    )
+            aTmp[nItem]['CNPJ'] 		:= Rtrim( (cAlSA1)->A1_CGC    )
+            aTmp[nItem]['ESTADO']		:= Rtrim( (cAlSA1)->A1_ESTADO )
+            aTmp[nItem]['COD_MUN']		:= Rtrim( (cAlSA1)->A1_COD_MUN)
+            aTmp[nItem]['COND'] 		:= Rtrim( (cAlSA1)->A1_COND   )
+            aTmp[nItem]['DDD'] 			:= Rtrim( (cAlSA1)->A1_DDD    )
+            aTmp[nItem]['DTCAD'] 		:= (cAlSA1)->A1_DTCAD
+            aTmp[nItem]['END']			:= Rtrim( (cAlSA1)->A1_END    )
+            aTmp[nItem]['INSCR'] 		:= Rtrim( (cAlSA1)->A1_INSCR  )
+            aTmp[nItem]['MUNCIPIO'] 	:= Rtrim( (cAlSA1)->A1_MUN    )
+            aTmp[nItem]['NATUREZ']		:= Rtrim( (cAlSA1)->A1_NATUREZ)
+            aTmp[nItem]['PESSOA'] 		:= Rtrim( (cAlSA1)->A1_TPESSOA)
+            aTmp[nItem]['TIPO'] 	    := Rtrim( (cAlSA1)->A1_TIPCLI )
+            aTmp[nItem]['FONE'] 		:= Rtrim( (cAlSA1)->A1_TEL    )
+            aTmp[nItem]['TRANSP'] 		:= Rtrim( (cAlSA1)->A1_TRANSP )
+            aTmp[nItem]['PAIS'] 		:= Rtrim( (cAlSA1)->A1_PAIS   )
+            aTmp[nItem]['BLOQUEADO']	:= IF((cAlSA1)->A1_MSBLQL == "2", "NAO", "SIM")
+            aTmp[nItem]['MOVEL']		:= (cAlSA1)->A1_ZMOBILE
+            aTmp[nItem]['TIPOVEICULO']	:= (cAlSA1)->A1_ZTPVEIC
+            aTmp[nItem]['DTCRIACAO']	:= (cAlSA1)->A1_ZDTCRIA
+            aTmp[nItem]['ATIVO']		:= (cAlSA1)->A1_ZATIVO
+            aTmp[nItem]['PAGAMENTOADT']	:= (cAlSA1)->A1_ZPGTADT
+            aTmp[nItem]['REVENDEAFIAL']	:= (cAlSA1)->A1_ZREVAFI
+            aTmp[nItem]['AFILIADOCONV']	:= (cAlSA1)->A1_ZAFICON
+            aTmp[nItem]['TIPOAFILIADO']	:= (cAlSA1)->A1_ZTPAFIL
+            aTmp[nItem]['INTEGRADO']	:= (cAlSA1)->A1_ZINTEGR
+            (cAlSA1)->(DBSKIP())
+            LOOP
+        ENDDO
+        (cAlSA1)->(dbclosearea())
+
+    elseif tabela == "SC5"
+        cQuery := " SELECT * "
+        cQuery += " FROM "+RetSQLName("SC5") + " AS SC5 "
+        cQuery += " WHERE C5_ZINTEGR <> 'S' "
+        cQuery += " AND SC5.D_E_L_E_T_ = '' "
+        cAlSC5:= CriaTrab(Nil,.F.)
+        DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSC5, .F., .T.)                
+
+        nItem := 0                
+        DO WHILE !((cAlSC5)->(EOF()))
+            aAdd( aTmp , JsonObject():New() )
+            nItem++
+            aTmp[nItem]['NUMPV']          := (cAlSC5)->C5_NUM
+            aTmp[nItem]['EMISSAO']        := StoD((cAlSC5)->C5_EMISSAO)
+            aTmp[nItem]['FORNECE']        := (cAlSC5)->C5_CLIENTE
+            aTmp[nItem]['LOJA']           := (cAlSC5)->C5_LOJACLI
+            aTmp[nItem]['LOJAENTREGA']    := (cAlSC5)->C5_LOJAENT
+            aTmp[nItem]['COND']           := (cAlSC5)->C5_CONDPAG
+            aTmp[nItem]['INTEGRADO']	  := (cAlSC5)->C5_ZINTEGR
+            (cAlSC5)->(DBSKIP())
+            LOOP
+        ENDDO
+        (cAlSC5)->(DBCLOSEAREA())     
+
+    elseif tabela == "SC7"
+        cQuery := " SELECT * "
+        cQuery += " FROM "+RetSQLName("SC7") + " AS SC7 "
+        cQuery += " WHERE C7_ZINTEGR <> 'S' "
+        cQuery += " AND SC7.D_E_L_E_T_ = '' "
+        cAlSC7:= CriaTrab(Nil,.F.)
+        DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSC7, .F., .T.)                
+
+        nItem := 0                
+        DO WHILE !((cAlSC7)->(EOF()))
+            aAdd( aTmp , JsonObject():New() )
+            nItem++
+            aTmp[nItem]['NUMPC']     := (cAlSC7)->C7_NUM
+            aTmp[nItem]['EMISSAO']   := StoD((cAlSC7)->C7_EMISSAO)
+            aTmp[nItem]['FORNECE']   := (cAlSC7)->C7_FORNECE
+            aTmp[nItem]['LOJA']      := (cAlSC7)->C7_LOJA
+            aTmp[nItem]['COND']      := (cAlSC7)->C7_COND
+            aTmp[nItem]['CONTATO']   := (cAlSC7)->C7_CONTATO
+            aTmp[nItem]['FILENT']    := (cAlSC7)->C7_FILENT
+            aTmp[nItem]['TPFRETE']   := (cAlSC7)->C7_TPFRETE
+            aTmp[nItem]['FRETE']     := (cAlSC7)->C7_FRETE
+            aTmp[nItem]['PRODUTO']   := (cAlSC7)->C7_PRODUTO
+            aTmp[nItem]['QUANT']     := TRANSFORM( (cAlSC7)->C7_QUANT, "@e 999,999,999.99")
+            aTmp[nItem]['PRECO']     := TRANSFORM( (cAlSC7)->C7_PRECO, "@e 999,999,999.99")
+            aTmp[nItem]['TOTAL']     := TRANSFORM( (cAlSC7)->C7_TOTAL, "@e 999,999,999.99")
+            aTmp[nItem]['INTEGRADO'] := (cAlSC7)->C7_ZINTEGR
+            (cAlSC7)->(DBSKIP())
+            LOOP
+        ENDDO
+        (cAlSC7)->(DBCLOSEAREA())
+    elseif tabela == 'SC1'
+        cQuery := " SELECT * "
+        cQuery += " FROM "+RetSQLName("SC1") + " AS SC1 "
+        cQuery += " WHERE C1_ZINTEGR <> 'S' "
+        cQuery += " AND SC1.D_E_L_E_T_ = '' "
+        cAlSC1:= CriaTrab(Nil,.F.)
+        DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSC1, .F., .T.)                
+
+        nItem := 0                
+        DO WHILE !((cAlSC1)->(EOF()))
+            aAdd( aTmp , JsonObject():New() )
+            nItem++
+            aTmp[nItem]['filial'] 	    := (cAlSC1)->C1_FILIAL 
+            aTmp[nItem]['numSC']    	:= (cAlSC1)->C1_NUM 
+            aTmp[nItem]['solicitante'] 	:= (cAlSC1)->C1_SOLICIT 
+            aTmp[nItem]['emissao'] 		:= DtoC((cAlSC1)->C1_EMISSAO)
+            aTmp[nItem]['integrado']  	:= (cAlSC1)->C1_ZINTEGR
+            (cAlSC1)->(DBSKIP())
+            LOOP
+        ENDDO
+        (cAlSC1)->(DBCLOSEAREA())
+    EndIF
+Return aTmp
+
+
+
+
