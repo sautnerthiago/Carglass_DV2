@@ -86,13 +86,8 @@ WSMETHOD GET ID WSRECEIVE NUMPC WSSERVICE WSPEDCOM
                     jResponse['COND']      := (cAlSC7)->C7_COND
                     jResponse['CONTATO']   := (cAlSC7)->C7_CONTATO
                     jResponse['FILENT']    := (cAlSC7)->C7_FILENT
-                    jResponse['TPFRETE']   := (cAlSC7)->C7_TPFRETE
-                    jResponse['FRETE']     := (cAlSC7)->C7_FRETE
-                    jResponse['PRODUTO']   := (cAlSC7)->C7_PRODUTO
-                    jResponse['QUANT']     := TRANSFORM( (cAlSC7)->C7_QUANT, "@e 999,999,999.99")
-                    jResponse['PRECO']     := TRANSFORM( (cAlSC7)->C7_PRECO, "@e 999,999,999.99")
-                    jResponse['TOTAL']     := TRANSFORM( (cAlSC7)->C7_TOTAL, "@e 999,999,999.99")
                     jResponse['INTEGRADO'] := (cAlSC7)->C7_ZINTEGR
+                    jResponse['ITENS']     := oWS:ITENSPC((cAlSC7)->C7_FILIAL, (cAlSC7)->C7_NUM, (cAlSC7)->C7_FORNECE, (cAlSC7)->C7_LOJA )
                     (cAlSC7)->(DBSKIP())
                     LOOP
             ENDDO
@@ -155,8 +150,8 @@ WSMETHOD POST NEW WSRECEIVE NUMPC WSSERVICE WSPEDCOM
     cError := jJson:FromJson(cJson)
 	cJason := cJson
     lTemPr := .T.
-    FOR NX := 1 TO LEN(jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS"))
-	    _cod   := jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO")
+    FOR NX := 1 TO LEN(jJson:GetJsonObject("ITENS"))
+	    _cod   := jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO")
         lTemPr := oWS:temProd(FWxFilial("SB1"), _cod)//temFornec(, ::cnpj)
     Next
 
@@ -187,28 +182,32 @@ WSMETHOD POST NEW WSRECEIVE NUMPC WSSERVICE WSPEDCOM
     Else		
       
 		//Adiciona os dados do ExecAuto
-        _cNumPed := jJson:GetJsonObject("PEDIDO"):GetJsonObject("NUMPC") //GetSx8Num("SC7","C7_NUM")
+        _cNumPed := jJson:GetJsonObject("NUMPC") //GetSx8Num("SC7","C7_NUM")
+        cTes     := jJson:GetJsonObject("TES")
 
         aadd(aCab, {"C7_NUM"       , _cNumPed   ,Nil})
         aadd(aCab, {"C7_EMISSAO"   , ddatabase  ,Nil})
         aadd(aCab, {"C7_MOEDA"     , 1			,Nil})
         aadd(aCab, {"C7_TXMOEDA"   , 1			,Nil})
-        aadd(aCab, {"C7_FORNECE"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("FORNECE"), Nil})
-        aadd(aCab, {"C7_LOJA"      , jJson:GetJsonObject("PEDIDO"):GetJsonObject("LOJA"), Nil})
-        aadd(aCab, {"C7_COND"      , jJson:GetJsonObject("PEDIDO"):GetJsonObject("COND"), Nil})
-        aadd(aCab, {"C7_CONTATO"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("CONTATO"), Nil})
-        aadd(aCab, {"C7_FILENT"    , jJson:GetJsonObject("PEDIDO"):GetJsonObject("FILENT"), Nil})
-        aadd(aCab, {"C7_ZINTEGR"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("INTEGRADO"), Nil})
+        aadd(aCab, {"C7_FORNECE"   , jJson:GetJsonObject("FORNECE"), Nil})
+        aadd(aCab, {"C7_LOJA"      , jJson:GetJsonObject("LOJA"), Nil})
+        aadd(aCab, {"C7_COND"      , jJson:GetJsonObject("COND"), Nil})
+        aadd(aCab, {"C7_CONTATO"   , jJson:GetJsonObject("CONTATO"), Nil})
+        aadd(aCab, {"C7_FILENT"    , jJson:GetJsonObject("FILENT"), Nil})
+        aadd(aCab, {"C7_ZINTEGR"   , jJson:GetJsonObject("INTEGRADO"), Nil})
+        IF !Empty(cTes)
+            aadd(aCab, {"C7_TES"       , jJson:GetJsonObject("TES"), Nil})
+        EndIF
                             
-        FOR Nx := 1 to len(jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS"))
+        FOR Nx := 1 to len(jJson:GetJsonObject("ITENS"))
             aLinhaC1 := {}
-            aadd(aLinhaC1, {"C7_PRODUTO" , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"), NIL})
-            aadd(aLinhaC1, {"C7_QUANT"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT"), NIL})
-            aadd(aLinhaC1, {"C7_PRECO"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO"), NIL})
-            aadd(aLinhaC1, {"C7_TOTAL"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("TOTAL"), NIL})
+            aadd(aLinhaC1, {"C7_PRODUTO" , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"), NIL})
+            aadd(aLinhaC1, {"C7_QUANT"   , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT"), NIL})
+            aadd(aLinhaC1, {"C7_PRECO"   , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO"), NIL})
+            aadd(aLinhaC1, {"C7_TOTAL"   , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("TOTAL"), NIL})
 
-            cUM    := POSICIONE("SB1",1,xFilial("SB1")+jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"),"B1_UM")
-            cDesc  := POSICIONE("SB1",1,xFilial("SB1")+jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"),"B1_DESC")
+            cUM    := POSICIONE("SB1",1,xFilial("SB1")+jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"),"B1_UM")
+            cDesc  := POSICIONE("SB1",1,xFilial("SB1")+jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"),"B1_DESC")
 
             aadd(aLinhaC1,{"C7_ITEM"    ,Strzero(Nx,4)               ,nil})
             aadd(aLinhaC1,{"C7_UM"      ,cUM                         ,nil})
@@ -300,8 +299,8 @@ WSMETHOD PUT UPDATE WSRECEIVE NUMPC WSSERVICE WSPEDCOM
     cError := jJson:FromJson(cJson)
 	cJason := cJson
     lTemPr := .T.
-    FOR NX := 1 TO LEN(jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS"))
-	    _cod   := jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO")
+    FOR NX := 1 TO LEN(jJson:GetJsonObject("ITENS"))
+	    _cod   := jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO")
         lTemPr := oWS:temProd(FWxFilial("SB1"), _cod)//temFornec(, ::cnpj)
     Next
 
@@ -332,28 +331,28 @@ WSMETHOD PUT UPDATE WSRECEIVE NUMPC WSSERVICE WSPEDCOM
     Else
 
 		//Adiciona os dados do ExecAuto
-        _cNumPed := jJson:GetJsonObject("PEDIDO"):GetJsonObject("NUMPC") //GetSx8Num("SC7","C7_NUM")
+        _cNumPed := jJson:GetJsonObject("NUMPC") //GetSx8Num("SC7","C7_NUM")
 
         aadd(aCab, {"C7_NUM"       , _cNumPed   ,Nil})
         aadd(aCab, {"C7_EMISSAO"   , ddatabase  ,Nil})
         aadd(aCab, {"C7_MOEDA"     , 1			,Nil})
         aadd(aCab, {"C7_TXMOEDA"   , 1			,Nil})
-        aadd(aCab, {"C7_FORNECE"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("FORNECE"), Nil})
-        aadd(aCab, {"C7_LOJA"      , jJson:GetJsonObject("PEDIDO"):GetJsonObject("LOJA"), Nil})
-        aadd(aCab, {"C7_COND"      , jJson:GetJsonObject("PEDIDO"):GetJsonObject("COND"), Nil})
-        aadd(aCab, {"C7_CONTATO"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("CONTATO"), Nil})
-        aadd(aCab, {"C7_FILENT"    , jJson:GetJsonObject("PEDIDO"):GetJsonObject("FILENT"), Nil})
-        aadd(aCab, {"C7_ZINTEGR"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("INTEGRADO"), Nil})
+        aadd(aCab, {"C7_FORNECE"   , jJson:GetJsonObject("FORNECE"), Nil})
+        aadd(aCab, {"C7_LOJA"      , jJson:GetJsonObject("LOJA"), Nil})
+        aadd(aCab, {"C7_COND"      , jJson:GetJsonObject("COND"), Nil})
+        aadd(aCab, {"C7_CONTATO"   , jJson:GetJsonObject("CONTATO"), Nil})
+        aadd(aCab, {"C7_FILENT"    , jJson:GetJsonObject("FILENT"), Nil})
+        aadd(aCab, {"C7_ZINTEGR"   , jJson:GetJsonObject("INTEGRADO"), Nil})
 
-        FOR Nx := 1 to len(jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS"))
+        FOR Nx := 1 to len(jJson:GetJsonObject("ITENS"))
             aLinhaC1 := {}
-            aadd(aLinhaC1, {"C7_PRODUTO" , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"), NIL})
-            aadd(aLinhaC1, {"C7_QUANT"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT"), NIL})
-            aadd(aLinhaC1, {"C7_PRECO"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO"), NIL})
-            aadd(aLinhaC1, {"C7_TOTAL"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("TOTAL"), NIL})
+            aadd(aLinhaC1, {"C7_PRODUTO" , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"), NIL})
+            aadd(aLinhaC1, {"C7_QUANT"   , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT"), NIL})
+            aadd(aLinhaC1, {"C7_PRECO"   , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO"), NIL})
+            aadd(aLinhaC1, {"C7_TOTAL"   , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("TOTAL"), NIL})
 
-            cUM    := POSICIONE("SB1",1,xFilial("SB1")+jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"),"B1_UM")
-            cDesc  := POSICIONE("SB1",1,xFilial("SB1")+jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"),"B1_DESC")
+            cUM    := POSICIONE("SB1",1,xFilial("SB1")+jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"),"B1_UM")
+            cDesc  := POSICIONE("SB1",1,xFilial("SB1")+jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"),"B1_DESC")
 
             aadd(aLinhaC1,{"C7_ITEM"    ,Strzero(Nx,4)               ,nil})
             aadd(aLinhaC1,{"C7_UM"      ,cUM                         ,nil})
@@ -445,8 +444,8 @@ WSMETHOD PUT ERASE WSRECEIVE NUMPC WSSERVICE WSPEDCOM
     cError := jJson:FromJson(cJson)
 	cJason := cJson
     lTemPr := .T.
-    FOR NX := 1 TO LEN(jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS"))
-	    _cod   := jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO")
+    FOR NX := 1 TO LEN(jJson:GetJsonObject("ITENS"))
+	    _cod   := jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO")
         lTemPr := oWS:temProd(FWxFilial("SB1"), _cod)//temFornec(, ::cnpj)
     Next
 
@@ -477,28 +476,28 @@ WSMETHOD PUT ERASE WSRECEIVE NUMPC WSSERVICE WSPEDCOM
     Else
 		
 		//Adiciona os dados do ExecAuto
-        _cNumPed := jJson:GetJsonObject("PEDIDO"):GetJsonObject("NUMPC") //GetSx8Num("SC7","C7_NUM")
+        _cNumPed := jJson:GetJsonObject("NUMPC") //GetSx8Num("SC7","C7_NUM")
 
         aadd(aCab, {"C7_NUM"       , _cNumPed   ,Nil})
         aadd(aCab, {"C7_EMISSAO"   , ddatabase  ,Nil})
         aadd(aCab, {"C7_MOEDA"     , 1			,Nil})
         aadd(aCab, {"C7_TXMOEDA"   , 1			,Nil})
-        aadd(aCab, {"C7_FORNECE"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("FORNECE"), Nil})
-        aadd(aCab, {"C7_LOJA"      , jJson:GetJsonObject("PEDIDO"):GetJsonObject("LOJA"), Nil})
-        aadd(aCab, {"C7_COND"      , jJson:GetJsonObject("PEDIDO"):GetJsonObject("COND"), Nil})
-        aadd(aCab, {"C7_CONTATO"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("CONTATO"), Nil})
-        aadd(aCab, {"C7_FILENT"    , jJson:GetJsonObject("PEDIDO"):GetJsonObject("FILENT"), Nil})
-        aadd(aCab, {"C7_ZINTEGR"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("INTEGRADO"), Nil})
+        aadd(aCab, {"C7_FORNECE"   , jJson:GetJsonObject("FORNECE"), Nil})
+        aadd(aCab, {"C7_LOJA"      , jJson:GetJsonObject("LOJA"), Nil})
+        aadd(aCab, {"C7_COND"      , jJson:GetJsonObject("COND"), Nil})
+        aadd(aCab, {"C7_CONTATO"   , jJson:GetJsonObject("CONTATO"), Nil})
+        aadd(aCab, {"C7_FILENT"    , jJson:GetJsonObject("FILENT"), Nil})
+        aadd(aCab, {"C7_ZINTEGR"   , jJson:GetJsonObject("INTEGRADO"), Nil})
 
-        FOR Nx := 1 to len(jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS"))
+        FOR Nx := 1 to len(jJson:GetJsonObject("ITENS"))
             aLinhaC1 := {}
-            aadd(aLinhaC1, {"C7_PRODUTO" , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"), NIL})
-            aadd(aLinhaC1, {"C7_QUANT"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT"), NIL})
-            aadd(aLinhaC1, {"C7_PRECO"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO"), NIL})
-            aadd(aLinhaC1, {"C7_TOTAL"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("TOTAL"), NIL})
+            aadd(aLinhaC1, {"C7_PRODUTO" , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"), NIL})
+            aadd(aLinhaC1, {"C7_QUANT"   , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT"), NIL})
+            aadd(aLinhaC1, {"C7_PRECO"   , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO"), NIL})
+            aadd(aLinhaC1, {"C7_TOTAL"   , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("TOTAL"), NIL})
 
-            cUM    := POSICIONE("SB1",1,xFilial("SB1")+jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"),"B1_UM")
-            cDesc  := POSICIONE("SB1",1,xFilial("SB1")+jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"),"B1_DESC")
+            cUM    := POSICIONE("SB1",1,xFilial("SB1")+jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"),"B1_UM")
+            cDesc  := POSICIONE("SB1",1,xFilial("SB1")+jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"),"B1_DESC")
 
             aadd(aLinhaC1,{"C7_ITEM"    ,Strzero(Nx,4)               ,nil})
             aadd(aLinhaC1,{"C7_UM"      ,cUM                         ,nil})
