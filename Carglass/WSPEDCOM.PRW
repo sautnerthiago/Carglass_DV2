@@ -28,7 +28,14 @@ WSRESTFUL WSPEDCOM DESCRIPTION 'PEDIDO DE COMPRAS'
     WSDATA solicitante AS STRING
     WSDATA emissao     AS STRING
     WSDATA item        AS ITEMPD
- 
+    
+    WSDATA page AS INTEGER OPTIONAL
+	WSDATA pageSize AS INTEGER OPTIONAL
+	WSDATA searchKey AS STRING OPTIONAL
+
+	//Métodos
+	WSMETHOD GET PDC DESCRIPTION "Retorna lista de Pedidos de Compras" WSSYNTAX "/WSPEDCOM/pdcs " PATH '/WSPEDCOM/pdcs' PRODUCES APPLICATION_JSON
+  
     //Métodos
     WSMETHOD GET ID      DESCRIPTION 'Retorna o registro pesquisado'                WSSYNTAX '/WSPEDCOM/{NUMPC}'        PATH '{NUMPC}'      PRODUCES APPLICATION_JSON
 	WSMETHOD GET INTEGRA DESCRIPTION 'Retorna o registro pesquisado - INTEGRADO'   	WSSYNTAX '/WSPEDCOM/integrado' 		PATH '/integrado'  	PRODUCES APPLICATION_JSON
@@ -552,3 +559,125 @@ WSMETHOD PUT ERASE WSRECEIVE NUMPC WSSERVICE WSPEDCOM
     //Define o retorno
     Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
 Return lRet
+
+
+
+WSMETHOD GET PDC WSRECEIVE searchKey, page, pageSize WSREST WSPEDCOM
+
+	Local aList := {}
+
+	Local cAlias := GetNextAlias()
+	Local cJsonPdC := ''
+	Local cWhere := "AND SC7.C7_FILIAL = '"+xFilial('SC7')+"'"
+
+	Local lRet := .T.
+
+	Local nCount := 0
+	Local nStart := 1
+	Local nReg := 0
+	Local nAux := 0
+
+	Local oJsonPdC := JsonObject():New()
+
+	Default self:searchKey := ''
+	Default self:page := 1
+	Default self:pageSize := 10
+    
+    cWhere += " AND SC7.C7_ZINTEGR <> 'S' "
+
+	cWhere := '%'+cWhere+'%'
+
+	//-------------------------------------------------------------------
+	// Query para selecionar clientes
+	//-------------------------------------------------------------------
+	BEGINSQL Alias cAlias
+ 
+	SELECT SC7.C7_NUM,SC7.C7_EMISSAO,SC7.C7_FORNECE,SC7.C7_LOJA,SC7.C7_COND,SC7.C7_CONTATO,SC7.C7_FILENT,SC7.C7_ZINTEGR FROM %table:SC7% SC7
+	WHERE SC7.%NotDel%
+	%exp:cWhere%
+	
+	ENDSQL
+
+	If ( cAlias )->( ! Eof() )
+
+		//-------------------------------------------------------------------
+		// Identifica a quantidade de registro no alias temporário
+		//-------------------------------------------------------------------
+		COUNT TO nRecord
+
+		//-------------------------------------------------------------------
+		// nStart -> primeiro registro da pagina
+		// nReg -> numero de registros do inicio da pagina ao fim do arquivo
+		//-------------------------------------------------------------------
+		If self:page > 1
+			nStart := ( ( self:page - 1 ) * self:pageSize ) + 1
+			nReg := nRecord - nStart + 1
+		Else
+			nReg := nRecord
+		EndIf
+
+		//-------------------------------------------------------------------
+		// Posiciona no primeiro registro.
+		//-------------------------------------------------------------------
+		( cAlias )->( DBGoTop() )
+
+		//-------------------------------------------------------------------
+		// Valida a exitencia de mais paginas
+		//-------------------------------------------------------------------
+		If nReg > self:pageSize
+			oJsonPdC['hasNext'] := .T.
+		Else
+			oJsonPdC['hasNext'] := .F.
+		EndIf
+	Else
+		//-------------------------------------------------------------------
+		// Nao encontrou registros
+		//-------------------------------------------------------------------
+		oJsonPdC['hasNext'] := .F.
+	EndIf
+
+	//-------------------------------------------------------------------
+	// Alimenta array de clientes
+	//-------------------------------------------------------------------
+	While ( cAlias )->( ! Eof() )
+
+		nCount++
+
+		If nCount >= nStart
+			nAux++
+			aAdd( aList , JsonObject():New() )
+            aList[nAux]['NUMPC']     := (cAlias)->C7_NUM
+            aList[nAux]['EMISSAO']   := StoD((cAlias)->C7_EMISSAO)
+            aList[nAux]['FORNECE']   := (cAlias)->C7_FORNECE
+            aList[nAux]['LOJA']      := (cAlias)->C7_LOJA
+            aList[nAux]['COND']      := (cAlias)->C7_COND
+            aList[nAux]['CONTATO']   := (cAlias)->C7_CONTATO
+            aList[nAux]['FILENT']    := (cAlias)->C7_FILENT
+            aList[nAux]['INTEGRADO'] := (cAlias)->C7_ZINTEGR
+			If Len(aList) >= self:pageSize
+				Exit
+			EndIf
+
+		EndIf
+
+		( cAlias )->( DBSkip() )
+
+	End
+
+	( cAlias )->( DBCloseArea() )
+
+	oJsonPdC['PDVS'] := aList
+
+	//-------------------------------------------------------------------
+	// Serializa objeto Json
+	//-------------------------------------------------------------------
+	cJsonPdC:= FwJsonSerialize( oJsonPdC )
+
+	//-------------------------------------------------------------------
+	// Elimina objeto da memoria
+	//-------------------------------------------------------------------
+	FreeObj(oJsonPdC)
+
+	Self:SetResponse( cJsonPdC ) //-- Seta resposta
+
+Return( lRet )

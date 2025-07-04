@@ -28,6 +28,13 @@ WSRESTFUL WSPEDVEND DESCRIPTION 'PEDIDO DE VENDAS'
     WSDATA solicitante AS STRING
     WSDATA emissao     AS STRING
     WSDATA item        AS ITEMPV
+
+	WSDATA page AS INTEGER OPTIONAL
+	WSDATA pageSize AS INTEGER OPTIONAL
+	WSDATA searchKey AS STRING OPTIONAL
+
+	//Métodos
+	WSMETHOD GET PDV DESCRIPTION "Retorna lista de Pedidos de Vendas" WSSYNTAX "/WSPEDVEND/pdvs " PATH '/WSPEDVEND/pdvs' PRODUCES APPLICATION_JSON
  
     //Métodos
     WSMETHOD GET ID      DESCRIPTION 'Retorna o registro pesquisado'                WSSYNTAX '/WSPEDVEND/{NUMPV}'          PATH '{NUMPV}'       PRODUCES APPLICATION_JSON
@@ -81,11 +88,12 @@ WSMETHOD GET ID WSRECEIVE NUMPV WSSERVICE WSPEDVEND
             DO WHILE !((cAlSC5)->(EOF())) .AND. (cAlSC5)->C5_NUM == NUMPV
                     jResponse['NUMPV']          := (cAlSC5)->C5_NUM
                     jResponse['EMISSAO']        := StoD((cAlSC5)->C5_EMISSAO)
-                    jResponse['FORNECE']        := (cAlSC5)->C5_CLIENTE
+                    jResponse['CLIENTE']        := (cAlSC5)->C5_CLIENTE
                     jResponse['LOJA']           := (cAlSC5)->C5_LOJACLI
                     jResponse['LOJAENTREGA']    := (cAlSC5)->C5_LOJAENT
                     jResponse['COND']           := (cAlSC5)->C5_CONDPAG
                     jResponse['INTEGRADO']	    := (cAlSC5)->C5_ZINTEGR
+                    jResponse['NATUREZA']  	    := Rtrim((cAlSC5)->C5_NATUREZ)
                     jResponse['ITENS']          := oWS:ITENSPV((cAlSC5)->C5_FILIAL, (cAlSC5)->C5_NUM, (cAlSC5)->C5_CLIENTE, (cAlSC5)->C5_LOJACLI )
                     (cAlSC5)->(DBSKIP())
                     LOOP
@@ -147,8 +155,8 @@ WSMETHOD POST NEW WSRECEIVE NUMPV WSSERVICE WSPEDVEND
     cError := jJson:FromJson(cJson)
 	cJason := cJson
     lTemPr := .T.
-    FOR NX := 1 TO LEN(jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS"))
-	    _cod   := jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO")
+    FOR NX := 1 TO LEN(jJson:GetJsonObject("ITENS"))
+	    _cod   := jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO")
         lTemPr := oWS:temProd(FWxFilial("SB1"), _cod) 
     Next
 
@@ -164,8 +172,8 @@ WSMETHOD POST NEW WSRECEIVE NUMPV WSSERVICE WSPEDVEND
         Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
         Return .F.
 	EndIF
-    _Cli    := jJson:GetJsonObject("PEDIDO"):GetJsonObject("CLIENTE")
-    _lojCli := jJson:GetJsonObject("PEDIDO"):GetJsonObject("LOJA")
+    _Cli    := jJson:GetJsonObject("CLIENTE")
+    _lojCli := jJson:GetJsonObject("LOJA")
 
     lTemCLi := ows:temCliCod(FWxFilial("SA1"), _Cli, _lojCli)
 	IF !lTemCLi 
@@ -193,25 +201,25 @@ WSMETHOD POST NEW WSRECEIVE NUMPV WSSERVICE WSPEDVEND
     Else		
       
 		//Adiciona os dados do ExecAuto
-        _cNumPed := jJson:GetJsonObject("PEDIDO"):GetJsonObject("NUMPV") 
+        _cNumPed := jJson:GetJsonObject("NUMPV") 
 
         aadd(aCab, {"C5_NUM"       , _cNumPed   ,Nil})
         aadd(aCab, {"C5_EMISSAO"   , ddatabase  ,Nil})
-        aadd(aCab, {"C5_CLIENTE"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("CLIENTE"), Nil})
-        aadd(aCab, {"C5_LOJACLI"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("LOJA"), Nil})
-        aadd(aCab, {"C5_LOJAENT"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("LOJAENTREGA"), Nil})
-        aadd(aCab, {"C5_CONDPAG"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("COND"), Nil})
-        aadd(aCab, {"C5_NATUREZ"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("NATUREZA"), Nil})
-        aadd(aCab, {"C5_ZINTEGR"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("INTEGRADO"), Nil})
+        aadd(aCab, {"C5_CLIENTE"   , jJson:GetJsonObject("CLIENTE"), Nil})
+        aadd(aCab, {"C5_LOJACLI"   , jJson:GetJsonObject("LOJA"), Nil})
+        aadd(aCab, {"C5_LOJAENT"   , jJson:GetJsonObject("LOJAENTREGA"), Nil})
+        aadd(aCab, {"C5_CONDPAG"   , jJson:GetJsonObject("COND"), Nil})
+        aadd(aCab, {"C5_NATUREZ"   , jJson:GetJsonObject("NATUREZA"), Nil})
+        aadd(aCab, {"C5_ZINTEGR"   , jJson:GetJsonObject("INTEGRADO"), Nil})
 
-        FOR Nx := 1 to len(jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS"))
+        FOR Nx := 1 to len(jJson:GetJsonObject("ITENS"))
             aLinhaC1 := {}
             aadd(aLinhaC1, {"C6_ITEM"     ,Strzero(Nx,4)               ,nil})
-            aadd(aLinhaC1, {"C6_PRODUTO"  , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"), NIL})
-            aadd(aLinhaC1, {"C6_QTDVEN"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT"), NIL})
-            aadd(aLinhaC1, {"C6_PRCVEN"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO"), NIL})
-            aadd(aLinhaC1, {"C6_VALOR"    , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("TOTAL"), NIL})
-            aadd(aLinhaC1, {"C6_TES"      , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("TES"), NIL})
+            aadd(aLinhaC1, {"C6_PRODUTO"  , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"), NIL})
+            aadd(aLinhaC1, {"C6_QTDVEN"   , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT"), NIL})
+            aadd(aLinhaC1, {"C6_PRCVEN"   , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO"), NIL})
+            aadd(aLinhaC1, {"C6_VALOR"    , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("TOTAL"), NIL})
+            aadd(aLinhaC1, {"C6_TES"      , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("TES"), NIL})
             aadd(aItens,aLinhaC1)
         Next
         aRetGrv := oWS:pedVendas(aCab, aItens, 3, _cNumPed) //pedCompra(aCab, aItens, 3) 
@@ -286,8 +294,8 @@ WSMETHOD PUT UPDATE WSRECEIVE NUMPV WSSERVICE WSPEDVEND
     cError := jJson:FromJson(cJson)
 	cJason := cJson
     lTemPr := .T.
-    FOR NX := 1 TO LEN(jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS"))
-	    _cod   := jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO")
+    FOR NX := 1 TO LEN(jJson:GetJsonObject("ITENS"))
+	    _cod   := jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO")
         lTemPr := oWS:temProd(FWxFilial("SB1"), _cod)//temFornec(, ::cnpj)
     Next
 
@@ -318,25 +326,25 @@ WSMETHOD PUT UPDATE WSRECEIVE NUMPV WSSERVICE WSPEDVEND
     Else
 
 		//Adiciona os dados do ExecAuto
-        _cNumPed := jJson:GetJsonObject("PEDIDO"):GetJsonObject("NUMPV") 
+        _cNumPed := jJson:GetJsonObject("NUMPV") 
 
         aadd(aCab, {"C5_NUM"       , _cNumPed   ,Nil})
         aadd(aCab, {"C5_EMISSAO"   , ddatabase  ,Nil})
-        aadd(aCab, {"C5_CLIENTE"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("CLIENTE"), Nil})
-        aadd(aCab, {"C5_LOJACLI"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("LOJA"), Nil})
-        aadd(aCab, {"C5_LOJAENT"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("LOJAENTREGA"), Nil})
-        aadd(aCab, {"C5_CONDPAG"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("COND"), Nil})
-        aadd(aCab, {"C5_NATUREZ"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("NATUREZA"), Nil})
-        aadd(aCab, {"C5_ZINTEGR"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("INTEGRADO"), Nil})
+        aadd(aCab, {"C5_CLIENTE"   , jJson:GetJsonObject("CLIENTE"), Nil})
+        aadd(aCab, {"C5_LOJACLI"   , jJson:GetJsonObject("LOJA"), Nil})
+        aadd(aCab, {"C5_LOJAENT"   , jJson:GetJsonObject("LOJAENTREGA"), Nil})
+        aadd(aCab, {"C5_CONDPAG"   , jJson:GetJsonObject("COND"), Nil})
+        aadd(aCab, {"C5_NATUREZ"   , jJson:GetJsonObject("NATUREZA"), Nil})
+        aadd(aCab, {"C5_ZINTEGR"   , jJson:GetJsonObject("INTEGRADO"), Nil})
 
-        FOR Nx := 1 to len(jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS"))
+        FOR Nx := 1 to len(jJson:GetJsonObject("ITENS"))
             aLinhaC1 := {}
             aadd(aLinhaC1, {"C6_ITEM"     ,Strzero(Nx,4)               ,nil})
-            aadd(aLinhaC1, {"C6_PRODUTO"  , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"), NIL})
-            aadd(aLinhaC1, {"C6_QTDVEN"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT"), NIL})
-            aadd(aLinhaC1, {"C6_PRCVEN"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO"), NIL})
-            aadd(aLinhaC1, {"C6_VALOR"    , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("TOTAL"), NIL})
-            aadd(aLinhaC1, {"C6_TES"      , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("TES"), NIL})
+            aadd(aLinhaC1, {"C6_PRODUTO"  , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"), NIL})
+            aadd(aLinhaC1, {"C6_QTDVEN"   , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT"), NIL})
+            aadd(aLinhaC1, {"C6_PRCVEN"   , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO"), NIL})
+            aadd(aLinhaC1, {"C6_VALOR"    , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("TOTAL"), NIL})
+            aadd(aLinhaC1, {"C6_TES"      , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("TES"), NIL})
             aadd(aItens,aLinhaC1)
         Next
         aRetGrv := oWS:pedVendas(aCab, aItens, 4, _cNumPed) //pedCompra(aCab, aItens, 3) 
@@ -411,8 +419,8 @@ WSMETHOD PUT ERASE WSRECEIVE NUMPV WSSERVICE WSPEDVEND
     cError := jJson:FromJson(cJson)
 	cJason := cJson
     lTemPr := .T.
-    FOR NX := 1 TO LEN(jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS"))
-	    _cod   := jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO")
+    FOR NX := 1 TO LEN(jJson:GetJsonObject("ITENS"))
+	    _cod   := jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO")
         lTemPr := oWS:temProd(FWxFilial("SB1"), _cod)//temFornec(, ::cnpj)
     Next
 
@@ -443,25 +451,25 @@ WSMETHOD PUT ERASE WSRECEIVE NUMPV WSSERVICE WSPEDVEND
     Else
 
 		//Adiciona os dados do ExecAuto
-        _cNumPed := jJson:GetJsonObject("PEDIDO"):GetJsonObject("NUMPV") 
+        _cNumPed := jJson:GetJsonObject("NUMPV") 
 		
         aadd(aCab, {"C5_NUM"       , _cNumPed   ,Nil})
         aadd(aCab, {"C5_EMISSAO"   , ddatabase  ,Nil})
-        aadd(aCab, {"C5_CLIENTE"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("CLIENTE"), Nil})
-        aadd(aCab, {"C5_LOJACLI"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("LOJA"), Nil})
-        aadd(aCab, {"C5_LOJAENT"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("LOJAENTREGA"), Nil})
-        aadd(aCab, {"C5_CONDPAG"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("COND"), Nil})
-        aadd(aCab, {"C5_NATUREZ"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("NATUREZA"), Nil})
-        aadd(aCab, {"C5_ZINTEGR"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("INTEGRADO"), Nil})
+        aadd(aCab, {"C5_CLIENTE"   , jJson:GetJsonObject("CLIENTE"), Nil})
+        aadd(aCab, {"C5_LOJACLI"   , jJson:GetJsonObject("LOJA"), Nil})
+        aadd(aCab, {"C5_LOJAENT"   , jJson:GetJsonObject("LOJAENTREGA"), Nil})
+        aadd(aCab, {"C5_CONDPAG"   , jJson:GetJsonObject("COND"), Nil})
+        aadd(aCab, {"C5_NATUREZ"   , jJson:GetJsonObject("NATUREZA"), Nil})
+        aadd(aCab, {"C5_ZINTEGR"   , jJson:GetJsonObject("INTEGRADO"), Nil})
 
-        FOR Nx := 1 to len(jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS"))
+        FOR Nx := 1 to len(jJson:GetJsonObject("ITENS"))
             aLinhaC1 := {}
             aadd(aLinhaC1, {"C6_ITEM"     ,Strzero(Nx,4)               ,nil})
-            aadd(aLinhaC1, {"C6_PRODUTO"  , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"), NIL})
-            aadd(aLinhaC1, {"C6_QTDVEN"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT"), NIL})
-            aadd(aLinhaC1, {"C6_PRCVEN"   , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO"), NIL})
-            aadd(aLinhaC1, {"C6_VALOR"    , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("TOTAL"), NIL})
-            aadd(aLinhaC1, {"C6_TES"      , jJson:GetJsonObject("PEDIDO"):GetJsonObject("ITENS")[nX]:GetJsonObject("TES"), NIL})
+            aadd(aLinhaC1, {"C6_PRODUTO"  , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"), NIL})
+            aadd(aLinhaC1, {"C6_QTDVEN"   , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT"), NIL})
+            aadd(aLinhaC1, {"C6_PRCVEN"   , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO"), NIL})
+            aadd(aLinhaC1, {"C6_VALOR"    , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("TOTAL"), NIL})
+            aadd(aLinhaC1, {"C6_TES"      , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("TES"), NIL})
             aadd(aItens,aLinhaC1)
         Next
         aRetGrv := oWS:pedVendas(aCab, aItens, 5, _cNumPed) //pedCompra(aCab, aItens, 3) 
@@ -499,3 +507,125 @@ WSMETHOD PUT ERASE WSRECEIVE NUMPV WSSERVICE WSPEDVEND
     //Define o retorno
     Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
 Return lRet
+
+WSMETHOD GET PDV WSRECEIVE searchKey, page, pageSize WSREST WSPEDVEND
+
+	Local aList := {}
+
+	Local cAlias := GetNextAlias()
+	Local cJsonPdv := ''
+	Local cWhere := "AND SC5.C5_FILIAL = '"+xFilial('SC5')+"'"
+
+	Local lRet := .T.
+
+	Local nCount := 0
+	Local nStart := 1
+	Local nReg := 0
+	Local nAux := 0
+
+	Local oJsonPdv := JsonObject():New()
+
+	Default self:searchKey := ''
+	Default self:page := 1
+	Default self:pageSize := 10
+    
+    cWhere += " AND SC5.C5_ZINTEGR <> 'S' "
+
+	cWhere := '%'+cWhere+'%'
+
+	//-------------------------------------------------------------------
+	// Query para selecionar clientes
+	//-------------------------------------------------------------------
+	BEGINSQL Alias cAlias
+ 
+	SELECT SC5.C5_NUM, SC5.C5_EMISSAO, SC5.C5_CLIENTE, SC5.C5_LOJACLI,;
+        SC5.C5_LOJAENT, SC5.C5_CONDPAG,SC5.C5_ZINTEGR, SC5.C5_NATUREZ;
+	FROM %table:SC5% SC5
+	WHERE SC5.%NotDel%
+	%exp:cWhere%
+	
+	ENDSQL
+
+	If ( cAlias )->( ! Eof() )
+
+		//-------------------------------------------------------------------
+		// Identifica a quantidade de registro no alias temporário
+		//-------------------------------------------------------------------
+		COUNT TO nRecord
+
+		//-------------------------------------------------------------------
+		// nStart -> primeiro registro da pagina
+		// nReg -> numero de registros do inicio da pagina ao fim do arquivo
+		//-------------------------------------------------------------------
+		If self:page > 1
+			nStart := ( ( self:page - 1 ) * self:pageSize ) + 1
+			nReg := nRecord - nStart + 1
+		Else
+			nReg := nRecord
+		EndIf
+
+		//-------------------------------------------------------------------
+		// Posiciona no primeiro registro.
+		//-------------------------------------------------------------------
+		( cAlias )->( DBGoTop() )
+
+		//-------------------------------------------------------------------
+		// Valida a exitencia de mais paginas
+		//-------------------------------------------------------------------
+		If nReg > self:pageSize
+			oJsonPdv['hasNext'] := .T.
+		Else
+			oJsonPdv['hasNext'] := .F.
+		EndIf
+	Else
+		//-------------------------------------------------------------------
+		// Nao encontrou registros
+		//-------------------------------------------------------------------
+		oJsonPdv['hasNext'] := .F.
+	EndIf
+
+	//-------------------------------------------------------------------
+	// Alimenta array de clientes
+	//-------------------------------------------------------------------
+	While ( cAlias )->( ! Eof() )
+
+		nCount++
+
+		If nCount >= nStart
+			nAux++
+			aAdd( aList , JsonObject():New() )
+            aList[nAux]['NUMPV']          := (cAlias)->C5_NUM
+            aList[nAux]['EMISSAO']        := StoD((cAlias)->C5_EMISSAO)
+            aList[nAux]['CLIENTE']        := (cAlias)->C5_CLIENTE
+            aList[nAux]['LOJA']           := (cAlias)->C5_LOJACLI
+            aList[nAux]['LOJAENTREGA']    := (cAlias)->C5_LOJAENT
+            aList[nAux]['COND']           := (cAlias)->C5_CONDPAG
+            aList[nAux]['INTEGRADO']	  := (cAlias)->C5_ZINTEGR
+            aList[nAux]['NATUREZA']  	  := Rtrim((cAlias)->C5_NATUREZ)
+			If Len(aList) >= self:pageSize
+				Exit
+			EndIf
+
+		EndIf
+
+		( cAlias )->( DBSkip() )
+
+	End
+
+	( cAlias )->( DBCloseArea() )
+
+	oJsonPdv['PDVS'] := aList
+
+	//-------------------------------------------------------------------
+	// Serializa objeto Json
+	//-------------------------------------------------------------------
+	cJsonPdv:= FwJsonSerialize( oJsonPdv )
+
+	//-------------------------------------------------------------------
+	// Elimina objeto da memoria
+	//-------------------------------------------------------------------
+	FreeObj(oJsonPdv)
+
+	Self:SetResponse( cJsonPdv ) //-- Seta resposta
+
+Return( lRet )

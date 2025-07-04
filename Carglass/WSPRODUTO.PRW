@@ -371,3 +371,4 @@ WSMETHOD PUT ERASE WSRECEIVE WSSERVICE WSPRODUTO
     //Define o retorno
     Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
 Return lRet
+

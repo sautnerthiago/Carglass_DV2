@@ -18,13 +18,18 @@ Cadastro de Cliente
 
 WSRESTFUL wsCliente DESCRIPTION 'Cadastro de Cliente' FORMAT APPLICATION_JSON
 	//Atributos
-	WSDATA cnpj       AS STRING OPTIONAL  
-	WSDATA estado     AS STRING OPTIONAL 
-	WSDATA dataDe     AS STRING OPTIONAL 
-	WSDATA dataAte    AS STRING OPTIONAL 
-	WSDATA tipo       AS STRING OPTIONAL 
+	WSDATA cnpj       AS STRING OPTIONAL
+	WSDATA estado     AS STRING OPTIONAL
+	WSDATA dataDe     AS STRING OPTIONAL
+	WSDATA dataAte    AS STRING OPTIONAL
+	WSDATA tipo       AS STRING OPTIONAL
 
-	//Métodos 
+	WSDATA page AS INTEGER OPTIONAL
+	WSDATA pageSize AS INTEGER OPTIONAL
+	WSDATA searchKey AS STRING OPTIONAL
+
+	//Métodos
+	WSMETHOD GET customers DESCRIPTION "Retorna lista de clientes" WSSYNTAX "/wsCliente/clientes " PATH '/wsCliente/clientes' PRODUCES APPLICATION_JSON
 	WSMETHOD GET CLICNPJ DESCRIPTION 'Retorna o Registro pesquisado - CNPJ'   		WSSYNTAX '/wsCliente/listcnpj/cnpj?{cnpj}' 			  	PATH '/wsCliente/cnpj/{cnpj}'  					PRODUCES APPLICATION_JSON
 	WSMETHOD GET TIPO    DESCRIPTION 'Retorna o registro pesquisado - TIPO'   		WSSYNTAX '/wsCliente/tipolist/{tipo}'   	 			PATH '/wsCliente/tipolist/{tipo}' 				PRODUCES APPLICATION_JSON
 	WSMETHOD GET ESTADO  DESCRIPTION 'Retorna o registro pesquisado - ESTADO' 		WSSYNTAX '/wsCliente/estadolist/{estado}'   			PATH '/wsCliente/estadolist/{estado}'        	PRODUCES APPLICATION_JSON
@@ -77,25 +82,25 @@ WSMETHOD GET CLICNPJ WSRECEIVE cnpj WSSERVICE wsCliente
 			jResponse['LOJA'] 			:= (cAliasWS)->A1_LOJA
 			jResponse['NOME'] 			:= Rtrim( (cAliasWS)->A1_NOME)
 			jResponse['NREDUZ'] 		:= Rtrim( (cAliasWs)->A1_NREDUZ )
-        	jResponse['BAIRRO'] 		:= Rtrim( (cAliasWs)->A1_BAIRRO )
-        	jResponse['EMAIL'] 			:= Rtrim( (cAliasWs)->A1_EMAIL  )
-        	jResponse['CEP']			:= Rtrim( (cAliasWs)->A1_CEP    )
-        	jResponse['CNPJ'] 			:= Rtrim( (cAliasWs)->A1_CGC    )
-        	jResponse['ESTADO']			:= Rtrim( (cAliasWs)->A1_ESTADO )
-        	jResponse['COD_MUN']		:= Rtrim( (cAliasWs)->A1_COD_MUN)
-        	jResponse['COND'] 			:= Rtrim( (cAliasWs)->A1_COND   )
-        	jResponse['DDD'] 			:= Rtrim( (cAliasWs)->A1_DDD    )
-        	jResponse['DTCAD'] 			:= (cAliasWs)->A1_DTCAD
-        	jResponse['END']			:= Rtrim( (cAliasWs)->A1_END    )
-        	jResponse['INSCR'] 			:= Rtrim( (cAliasWs)->A1_INSCR  )
-        	jResponse['MUNCIPIO'] 		:= Rtrim( (cAliasWs)->A1_MUN    )
-        	jResponse['NATUREZ']		:= Rtrim( (cAliasWs)->A1_NATUREZ)
-        	jResponse['PESSOA'] 		:= Rtrim( (cAliasWs)->A1_TPESSOA)
-        	jResponse['TIPO'] 			:= Rtrim( (cAliasWs)->A1_TIPCLI )
-        	jResponse['FONE'] 			:= Rtrim( (cAliasWs)->A1_TEL    )
-        	jResponse['TRANSP'] 		:= Rtrim( (cAliasWs)->A1_TRANSP )
-        	jResponse['PAIS'] 			:= Rtrim( (cAliasWS)->A1_PAIS   )
-        	jResponse['BLOQUEADO'] 		:= IF((cAliasWS)->A1_MSBLQL == "2", "NAO", "SIM")
+			jResponse['BAIRRO'] 		:= Rtrim( (cAliasWs)->A1_BAIRRO )
+			jResponse['EMAIL'] 			:= Rtrim( (cAliasWs)->A1_EMAIL  )
+			jResponse['CEP']			:= Rtrim( (cAliasWs)->A1_CEP    )
+			jResponse['CNPJ'] 			:= Rtrim( (cAliasWs)->A1_CGC    )
+			jResponse['ESTADO']			:= Rtrim( (cAliasWs)->A1_ESTADO )
+			jResponse['COD_MUN']		:= Rtrim( (cAliasWs)->A1_COD_MUN)
+			jResponse['COND'] 			:= Rtrim( (cAliasWs)->A1_COND   )
+			jResponse['DDD'] 			:= Rtrim( (cAliasWs)->A1_DDD    )
+			jResponse['DTCAD'] 			:= (cAliasWs)->A1_DTCAD
+			jResponse['END']			:= Rtrim( (cAliasWs)->A1_END    )
+			jResponse['INSCR'] 			:= Rtrim( (cAliasWs)->A1_INSCR  )
+			jResponse['MUNCIPIO'] 		:= Rtrim( (cAliasWs)->A1_MUN    )
+			jResponse['NATUREZ']		:= Rtrim( (cAliasWs)->A1_NATUREZ)
+			jResponse['PESSOA'] 		:= Rtrim( (cAliasWs)->A1_TPESSOA)
+			jResponse['TIPO'] 			:= Rtrim( (cAliasWs)->A1_TIPCLI )
+			jResponse['FONE'] 			:= Rtrim( (cAliasWs)->A1_TEL    )
+			jResponse['TRANSP'] 		:= Rtrim( (cAliasWs)->A1_TRANSP )
+			jResponse['PAIS'] 			:= Rtrim( (cAliasWS)->A1_PAIS   )
+			jResponse['BLOQUEADO'] 		:= IF((cAliasWS)->A1_MSBLQL == "2", "NAO", "SIM")
 			jResponse['MOVEL']			:= (cAliasWS)->A1_ZMOBILE
 			jResponse['TIPOVEICULO']	:= (cAliasWS)->A1_ZTPVEIC
 			jResponse['DTCRIACAO']		:= (cAliasWS)->A1_ZDTCRIA
@@ -144,8 +149,8 @@ WSMETHOD GET TIPO WSRECEIVE tipo WSSERVICE wsCliente
 			oWS:GRAVALOGMURO(cResponc, cJason, "wsClieTipo", "BLOQUEIO DE CLIENTE")
 		Else
 			// Converte para JSON
-   			//jResponse['CLIENTES'] := oWS:CLieTipo(::tipo)
-		    cJsonNfs:= FwJsonSerialize( oWS:CLieTipo(::tipo) )			
+			//jResponse['CLIENTES'] := oWS:CLieTipo(::tipo)
+			cJsonNfs:= FwJsonSerialize( oWS:CLieTipo(::tipo) )
 
 			Self:SetContentType('application/json')
 			Self:SetResponse(cJsonNfs)
@@ -189,8 +194,8 @@ WSMETHOD GET ESTADO WSRECEIVE estado WSSERVICE wsCliente
 			cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
 			oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "BLOQUEIO DE CLIENTE")
 		Else
-   			//jResponse['CLIENTES'] := oWS:CLieEst(::estado)
-		    cJsonNfs:= FwJsonSerialize( oWS:CLieEst(::estado) )			
+			//jResponse['CLIENTES'] := oWS:CLieEst(::estado)
+			cJsonNfs:= FwJsonSerialize( oWS:CLieEst(::estado) )
 
 			Self:SetContentType('application/json')
 			Self:SetResponse(cJsonNfs)
@@ -211,7 +216,7 @@ WSMETHOD GET CLIDATA WSRECEIVE dataDe, dataAte WSSERVICE wsCliente
 
 	Local dDataDe	 := self:dataDe
 	Local dDataAt	 := self:dataAte
-	
+
 	Local cJason	 := ""
 	oWS    := LIBGLASS():new()
 
@@ -225,8 +230,8 @@ WSMETHOD GET CLIDATA WSRECEIVE dataDe, dataAte WSSERVICE wsCliente
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
 		oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "NAO DIGITADAS AS DATAS")
 	Else
-		//jResponse['CLIENTES'] := oWS:CLieDatas( dDataDe, dDataAt) 
-		cJsonNfs:= FwJsonSerialize( oWS:CLieDatas( dDataDe, dDataAt)  )			
+		//jResponse['CLIENTES'] := oWS:CLieDatas( dDataDe, dDataAt)
+		cJsonNfs:= FwJsonSerialize( oWS:CLieDatas( dDataDe, dDataAt)  )
 
 		Self:SetContentType('application/json')
 		Self:SetResponse(cJsonNfs)
@@ -244,7 +249,7 @@ WSMETHOD GET INTEGRA WSRECEIVE WSSERVICE wsCliente
 	Local jResponse  := JsonObject():New()
 
 	oWS    := LIBGLASS():new()
-	cJsonNfs:= FwJsonSerialize( oWS:Integrado( "SA1" )  )			
+	cJsonNfs:= FwJsonSerialize( oWS:Integrado( "SA1" )  )
 
 	//Define o retorno
 	Self:SetContentType('application/json')
@@ -267,11 +272,11 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE wsCliente
 	Local nCampo            := 0
 	Local jResponse         := JsonObject():New()
 	Local cAliasWS          := 'SB1'
-	
+
 	Local cJason			:= ""
 	Local cResponc          := ""
 	Local lExtCli           := .F.
-	
+
 	Private lMsErroAuto     := .F.
 	Private lMsHelpAuto     := .T.
 	Private lAutoErrNoFile  := .T.
@@ -295,14 +300,14 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE wsCliente
 
 	lBloq  := iif(jJson:GetJsonObject('BLOQUEADO')=="NAO" .or. Empty(jJson:GetJsonObject('BLOQUEADO')), "2", "1")
 	lAtivo := iif( jJson:GetJsonObject('ATIVO')=="NAO" .or. Empty(jJson:GetJsonObject('ATIVO')), "N", "S")
-    cMOVEL := iif( jJson:GetJsonObject('MOVEL') == "" , "N", "S")
-    cTIPOV := iif( jJson:GetJsonObject('TIPOVEICULO')  == "" , "N", "S")
-    cPAGAM := iif( jJson:GetJsonObject('PAGAMENTOADT') == "" , "N", "S")
-    cREVEN := iif( jJson:GetJsonObject('REVENDEAFIAL') == "" , "N", "S")
-    cAFILI := iif( jJson:GetJsonObject('AFILIADOCONV') == "" , "N", "S")
-    cTIPOA := iif( jJson:GetJsonObject('TIPOAFILIADO') == "" , "N", "S")
+	cMOVEL := iif( jJson:GetJsonObject('MOVEL') == "" , "N", "S")
+	cTIPOV := iif( jJson:GetJsonObject('TIPOVEICULO')  == "" , "N", "S")
+	cPAGAM := iif( jJson:GetJsonObject('PAGAMENTOADT') == "" , "N", "S")
+	cREVEN := iif( jJson:GetJsonObject('REVENDEAFIAL') == "" , "N", "S")
+	cAFILI := iif( jJson:GetJsonObject('AFILIADOCONV') == "" , "N", "S")
+	cTIPOA := iif( jJson:GetJsonObject('TIPOAFILIADO') == "" , "N", "S")
 
-	IF oWS:temClient(FWxFilial(cAliasWS), ::cnpj) .OR. oWS:temCliCod(FWxFilial(cAliasWS), _cod, _loja)    
+	IF oWS:temClient(FWxFilial(cAliasWS), ::cnpj) .OR. oWS:temCliCod(FWxFilial(cAliasWS), _cod, _loja)
 		//SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
 		Self:setStatus(500)
 		jResponse['errorId']  := 'NEW0041'
@@ -332,27 +337,27 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE wsCliente
 		aAdd(aDados, {'A1_LOJA'   , jJson:GetJsonObject('LOJA')     , Nil} )
 		aAdd(aDados, {'A1_NOME'   , jJson:GetJsonObject('NOME')     , Nil} )
 		aAdd(aDados, {'A1_NREDUZ ', jJson:GetJsonObject('NREDUZ')   , Nil} )
-        aAdd(aDados, {'A1_BAIRRO ', jJson:GetJsonObject('BAIRRO')   , Nil} )
-        aAdd(aDados, {'A1_EMAIL  ', jJson:GetJsonObject('EMAIL')    , Nil} )
-        aAdd(aDados, {'A1_CEP    ', jJson:GetJsonObject('CEP')      , Nil} )
-        aAdd(aDados, {'A1_CGC    ', jJson:GetJsonObject('CNPJ')     , Nil} )
-        aAdd(aDados, {'A1_EST    ', jJson:GetJsonObject('ESTADO')   , Nil} )
-        aAdd(aDados, {'A1_COD_MUN', jJson:GetJsonObject('COD_MUN')  , Nil} )
-        aAdd(aDados, {'A1_COND   ', jJson:GetJsonObject('COND')     , Nil} )
-        aAdd(aDados, {'A1_DDD    ', jJson:GetJsonObject('DDD')      , Nil} )
-        aAdd(aDados, {'A1_DTCAD  ', jJson:GetJsonObject('DTCAD')    , Nil} )
-        aAdd(aDados, {'A1_END    ', jJson:GetJsonObject('END')      , Nil} )
-        aAdd(aDados, {'A1_INSCR  ', jJson:GetJsonObject('INSCR')    , Nil} )
-        aAdd(aDados, {'A1_MUN    ', jJson:GetJsonObject('MUNICIPIO'), Nil} )
-        aAdd(aDados, {'A1_NATUREZ', jJson:GetJsonObject('NATUREZ')  , Nil} )
-        aAdd(aDados, {'A1_OBS    ', 'WMSCLINTE'                     , Nil} )
-        aAdd(aDados, {'A1_PESSOA ', jJson:GetJsonObject('PESSOA')   , Nil} )
-        aAdd(aDados, {'A1_TIPCLI ', jJson:GetJsonObject('TIPO')   	, Nil} )
-        aAdd(aDados, {'A1_TIPO   ', jJson:GetJsonObject('TIPO') 	, Nil} )
-        aAdd(aDados, {'A1_TEL    ', jJson:GetJsonObject('FONE')     , Nil} )
-        aAdd(aDados, {'A1_TRANSP ', jJson:GetJsonObject('TRANSP')   , Nil} )
-        aAdd(aDados, {'A1_PAIS   ', '105'  							, Nil} )
-        aAdd(aDados, {'A1_ZINTEGR', jJson:GetJsonObject('INTEGRADO'), Nil} )
+		aAdd(aDados, {'A1_BAIRRO ', jJson:GetJsonObject('BAIRRO')   , Nil} )
+		aAdd(aDados, {'A1_EMAIL  ', jJson:GetJsonObject('EMAIL')    , Nil} )
+		aAdd(aDados, {'A1_CEP    ', jJson:GetJsonObject('CEP')      , Nil} )
+		aAdd(aDados, {'A1_CGC    ', jJson:GetJsonObject('CNPJ')     , Nil} )
+		aAdd(aDados, {'A1_EST    ', jJson:GetJsonObject('ESTADO')   , Nil} )
+		aAdd(aDados, {'A1_COD_MUN', jJson:GetJsonObject('COD_MUN')  , Nil} )
+		aAdd(aDados, {'A1_COND   ', jJson:GetJsonObject('COND')     , Nil} )
+		aAdd(aDados, {'A1_DDD    ', jJson:GetJsonObject('DDD')      , Nil} )
+		aAdd(aDados, {'A1_DTCAD  ', jJson:GetJsonObject('DTCAD')    , Nil} )
+		aAdd(aDados, {'A1_END    ', jJson:GetJsonObject('END')      , Nil} )
+		aAdd(aDados, {'A1_INSCR  ', jJson:GetJsonObject('INSCR')    , Nil} )
+		aAdd(aDados, {'A1_MUN    ', jJson:GetJsonObject('MUNICIPIO'), Nil} )
+		aAdd(aDados, {'A1_NATUREZ', jJson:GetJsonObject('NATUREZ')  , Nil} )
+		aAdd(aDados, {'A1_OBS    ', 'WMSCLINTE'                     , Nil} )
+		aAdd(aDados, {'A1_PESSOA ', jJson:GetJsonObject('PESSOA')   , Nil} )
+		aAdd(aDados, {'A1_TIPCLI ', jJson:GetJsonObject('TIPO')   	, Nil} )
+		aAdd(aDados, {'A1_TIPO   ', jJson:GetJsonObject('TIPO') 	, Nil} )
+		aAdd(aDados, {'A1_TEL    ', jJson:GetJsonObject('FONE')     , Nil} )
+		aAdd(aDados, {'A1_TRANSP ', jJson:GetJsonObject('TRANSP')   , Nil} )
+		aAdd(aDados, {'A1_PAIS   ', '105'  							, Nil} )
+		aAdd(aDados, {'A1_ZINTEGR', jJson:GetJsonObject('INTEGRADO'), Nil} )
 		aAdd(aDados, {'A1_ZMOBILE', cMOVEL							, Nil} )
 		aAdd(aDados, {'A1_ZTPVEIC', cTIPOV							, Nil} )
 		aAdd(aDados, {'A1_ZPGTADT', cPAGAM							, Nil} )
@@ -372,7 +377,7 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE wsCliente
 		Next
 
 		//Chama a inclusão automática
-        if !lExtCli
+		if !lExtCli
 			conout("antes do execaut")
 			MsExecAuto({|x, y| MATA030(x, y)}, aDados, 3)
 		Endif
@@ -454,21 +459,21 @@ WSMETHOD PUT UPDATE WSRECEIVE cnpj WSSERVICE wsCliente
 	lBloq  := iif(jJson:GetJsonObject('BLOQUEADO')=="NAO" .or. Empty(jJson:GetJsonObject('BLOQUEADO')), "2", "1")
 	lAtivo := iif( jJson:GetJsonObject('ATIVO')=="NAO" .or. Empty(jJson:GetJsonObject('ATIVO')), "N", "S")
 
-    cMOVEL := iif( jJson:GetJsonObject('MOVEL') == "" , "N", "S")
-    cTIPOV := iif( jJson:GetJsonObject('TIPOVEICULO')  == "" , "N", "S")
-    cPAGAM := iif( jJson:GetJsonObject('PAGAMENTOADT') == "" , "N", "S")
-    cREVEN := iif( jJson:GetJsonObject('REVENDEAFIAL') == "" , "N", "S")
-    cAFILI := iif( jJson:GetJsonObject('AFILIADOCONV') == "" , "N", "S")
-    cTIPOA := iif( jJson:GetJsonObject('TIPOAFILIADO') == "" , "N", "S")
+	cMOVEL := iif( jJson:GetJsonObject('MOVEL') == "" , "N", "S")
+	cTIPOV := iif( jJson:GetJsonObject('TIPOVEICULO')  == "" , "N", "S")
+	cPAGAM := iif( jJson:GetJsonObject('PAGAMENTOADT') == "" , "N", "S")
+	cREVEN := iif( jJson:GetJsonObject('REVENDEAFIAL') == "" , "N", "S")
+	cAFILI := iif( jJson:GetJsonObject('AFILIADOCONV') == "" , "N", "S")
+	cTIPOA := iif( jJson:GetJsonObject('TIPOAFILIADO') == "" , "N", "S")
 
 
 	//Se o id estiver vazio
-	If Empty(::cnpj) .OR. !oWS:temCliCod(FWxFilial(cAliasWS), cCodi, cLoja)    
+	If Empty(::cnpj) .OR. !oWS:temCliCod(FWxFilial(cAliasWS), cCodi, cLoja)
 		//SetRestFault(500, 'Falha ao consultar o registro') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
 		Self:setStatus(500)
-        jResponse['errorId']  := 'UPD006'
-        jResponse['error']    := 'CNPJ VAZIO E/OU CODIGO E LOJA VAZIOS'
-        jResponse['solution'] := 'Informe o CNPJ, CODIGO E LOJA'
+		jResponse['errorId']  := 'UPD006'
+		jResponse['error']    := 'CNPJ VAZIO E/OU CODIGO E LOJA VAZIOS'
+		jResponse['solution'] := 'Informe o CNPJ, CODIGO E LOJA'
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
 		oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "BLOQUEIO DE CLIENTE")
@@ -518,7 +523,7 @@ WSMETHOD PUT UPDATE WSRECEIVE cnpj WSSERVICE wsCliente
 				aAdd(aDadUpd, {'A1_NATUREZ'	, jJson:GetJsonObject('NATUREZ')  , Nil} )
 				aAdd(aDadUpd, {'A1_PESSOA'	, jJson:GetJsonObject('PESSOA')   , Nil} )
 				aAdd(aDadUpd, {'A1_TRANSP'	, jJson:GetJsonObject('TRANSP')   , Nil} )
-		        aAdd(aDadUpd, {'A1_ZINTEGR' , jJson:GetJsonObject('INTEGRADO'), Nil} )
+				aAdd(aDadUpd, {'A1_ZINTEGR' , jJson:GetJsonObject('INTEGRADO'), Nil} )
 				aAdd(aDadUpd, {'A1_ZMOBILE' , cMOVEL						  , Nil} )
 				aAdd(aDadUpd, {'A1_ZTPVEIC' , cTIPOV					  	  , Nil} )
 				aAdd(aDadUpd, {'A1_ZPGTADT' , cPAGAM						  , Nil} )
@@ -529,7 +534,7 @@ WSMETHOD PUT UPDATE WSRECEIVE cnpj WSSERVICE wsCliente
 				aAdd(aDadUpd, {'A1_ZATIVO'  , lAtivo	    				  , Nil} )
 
 				SA1->(DbGoTop())
-				SA1->(DbSetOrder(3)) 
+				SA1->(DbSetOrder(3))
 				if (SA1->( DbSeek( xFilial("SA1") + cCnpj ) ) )
 					lMsErroAuto :=  oWS:ATUSA1(aDadUpd, xFilial("SA1"),  cCnpj)
 					//MsExecAuto({|x, y| MATA030(x, y)}, aDadUpd, 4)
@@ -611,12 +616,12 @@ WSMETHOD PUT ERASE WSRECEIVE cnpj WSSERVICE wsCliente
 	cLoja  := jJson:GetJsonObject('LOJA')
 
 	//Se o id estiver vazio
-	If Empty(::cnpj) .OR. !oWS:temCliCod(FWxFilial(cAliasWS), cCodi, cLoja)    
+	If Empty(::cnpj) .OR. !oWS:temCliCod(FWxFilial(cAliasWS), cCodi, cLoja)
 		//SetRestFault(500, 'Falha ao consultar o registro') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
 		Self:setStatus(500)
 		jResponse['errorId']  := 'DEL010'
-        jResponse['error']    := 'CNPJ VAZIO E/OU CODIGO E LOJA VAZIOS'
-        jResponse['solution'] := 'Informe o CNPJ, CODIGO E LOJA'
+		jResponse['error']    := 'CNPJ VAZIO E/OU CODIGO E LOJA VAZIOS'
+		jResponse['solution'] := 'Informe o CNPJ, CODIGO E LOJA'
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
 		oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "BLOQUEIO DE CLIENTE")
@@ -630,7 +635,7 @@ WSMETHOD PUT ERASE WSRECEIVE cnpj WSSERVICE wsCliente
 			jResponse['solution'] := 'Código ID não encontrado na tabela ' + cAliasWS
 
 			cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
-			oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "BLOQUEIO DE CLIENTE")			
+			oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "BLOQUEIO DE CLIENTE")
 		Else
 
 			//Se tiver algum erro no Parse, encerra a execução
@@ -659,7 +664,7 @@ WSMETHOD PUT ERASE WSRECEIVE cnpj WSSERVICE wsCliente
 				Next
 
 				SA1->(DbGoTop())
-				SA1->(DbSetOrder(3)) 
+				SA1->(DbSetOrder(3))
 				if (SA1->( DbSeek( xFilial("SA1") + cCnpj ) ) )
 					lMsErroAuto :=  oWS:ATUSA1(aDados, xFilial("SA1"),  cCnpj)
 					//MsExecAuto({|x, y| MATA030(x, y)}, aDados, 4)
@@ -699,3 +704,168 @@ WSMETHOD PUT ERASE WSRECEIVE cnpj WSSERVICE wsCliente
 	//Define o retorno
 	Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
 Return lRet
+
+
+
+
+WSMETHOD GET customers WSRECEIVE searchKey, page, pageSize WSREST wsCliente
+
+	Local aListCli := {}
+
+	Local cAliasSA1 := GetNextAlias()
+	Local cJsonCli := ''
+	Local cSearch := ''
+	Local cWhere := "AND SA1.A1_FILIAL = '"+xFilial('SA1')+"' AND SA1.A1_ZINTEGR <> 'S' "
+
+	Local lRet := .T.
+
+	Local nCount := 0
+	Local nStart := 1
+	Local nReg := 0
+	Local nAux := 0
+
+	Local oJsonCli := JsonObject():New()
+
+	Default self:searchKey := ''
+	Default self:page := 1
+	Default self:pageSize := 10
+
+	//-------------------------------------------------------------------
+	// Tratativas para a chave de busca
+	//-------------------------------------------------------------------
+	If !Empty(self:searchKey)
+		cSearch := AllTrim( Upper( Self:SearchKey ) )
+		cWhere += " AND ( SA1.A1_COD LIKE '%" + cSearch + "%' OR "
+		cWhere += " SA1.A1_LOJA LIKE '%" + cSearch + "%' OR "
+		cWhere += " SA1.A1_NOME LIKE '%" + FwNoAccent( cSearch ) + "%' OR "
+		cWhere += " SA1.A1_NOME LIKE '%" + cSearch + "%' ) "
+	EndIf
+
+	cWhere := '%'+cWhere+'%'
+
+	//-------------------------------------------------------------------
+	// Query para selecionar clientes
+	//-------------------------------------------------------------------
+	BEGINSQL Alias cAliasSA1
+ 
+	SELECT SA1.A1_FILIAL,SA1.A1_COD,SA1.A1_LOJA,SA1.A1_NOME,SA1.A1_NREDUZ ,SA1.A1_BAIRRO,;
+	SA1.A1_EMAIL  ,SA1.A1_CEP    ,SA1.A1_CGC    ,SA1.A1_ESTADO ,SA1.A1_COD_MUN,SA1.A1_COND,;
+	SA1.A1_DDD    ,SA1.A1_DTCAD,SA1.A1_END    ,SA1.A1_INSCR  ,SA1.A1_MUN    ,SA1.A1_NATUREZ,;
+	SA1.A1_TPESSOA,SA1.A1_TIPCLI ,SA1.A1_TEL    ,SA1.A1_TRANSP ,SA1.A1_PAIS   ,SA1.A1_MSBLQL,;
+	SA1.A1_ZMOBILE,SA1.A1_ZTPVEIC,SA1.A1_ZDTCRIA,SA1.A1_ZATIVO,SA1.A1_ZPGTADT,SA1.A1_ZREVAFI,;
+	SA1.A1_ZAFICON,SA1.A1_ZTPAFIL,SA1.A1_ZINTEGR
+	FROM %table:SA1% SA1
+	WHERE SA1.%NotDel%
+	%exp:cWhere%
+	
+	ENDSQL
+
+	If ( cAliasSA1 )->( ! Eof() )
+
+		//-------------------------------------------------------------------
+		// Identifica a quantidade de registro no alias temporário
+		//-------------------------------------------------------------------
+		COUNT TO nRecord
+
+		//-------------------------------------------------------------------
+		// nStart -> primeiro registro da pagina
+		// nReg -> numero de registros do inicio da pagina ao fim do arquivo
+		//-------------------------------------------------------------------
+		If self:page > 1
+			nStart := ( ( self:page - 1 ) * self:pageSize ) + 1
+			nReg := nRecord - nStart + 1
+		Else
+			nReg := nRecord
+		EndIf
+
+		//-------------------------------------------------------------------
+		// Posiciona no primeiro registro.
+		//-------------------------------------------------------------------
+		( cAliasSA1 )->( DBGoTop() )
+
+		//-------------------------------------------------------------------
+		// Valida a exitencia de mais paginas
+		//-------------------------------------------------------------------
+		If nReg > self:pageSize
+			oJsonCli['hasNext'] := .T.
+		Else
+			oJsonCli['hasNext'] := .F.
+		EndIf
+	Else
+		//-------------------------------------------------------------------
+		// Nao encontrou registros
+		//-------------------------------------------------------------------
+		oJsonCli['hasNext'] := .F.
+	EndIf
+
+	//-------------------------------------------------------------------
+	// Alimenta array de clientes
+	//-------------------------------------------------------------------
+	While ( cAliasSA1 )->( ! Eof() )
+
+		nCount++
+
+		If nCount >= nStart
+
+			nAux++
+			aAdd( aListCli , JsonObject():New() )
+			aListCli[nAux]['FILIAL'] 	:= (cAliasSA1)->A1_FILIAL
+			aListCli[nAux]['CODIGO']	:= (cAliasSA1)->A1_COD
+			aListCli[nAux]['LOJA'] 		:= (cAliasSA1)->A1_LOJA
+			aListCli[nAux]['NOME'] 		:= Rtrim( (cAliasSA1)->A1_NOME)
+			aListCli[nAux]['NREDUZ'] 	:= Rtrim( (cAliasSA1)->A1_NREDUZ )
+			aListCli[nAux]['BAIRRO'] 	:= Rtrim( (cAliasSA1)->A1_BAIRRO )
+			aListCli[nAux]['EMAIL'] 	:= Rtrim( (cAliasSA1)->A1_EMAIL  )
+			aListCli[nAux]['CEP']		:= Rtrim( (cAliasSA1)->A1_CEP    )
+			aListCli[nAux]['CNPJ'] 		:= Rtrim( (cAliasSA1)->A1_CGC    )
+			aListCli[nAux]['ESTADO']	:= Rtrim( (cAliasSA1)->A1_ESTADO )
+			aListCli[nAux]['COD_MUN']	:= Rtrim( (cAliasSA1)->A1_COD_MUN)
+			aListCli[nAux]['COND'] 		:= Rtrim( (cAliasSA1)->A1_COND   )
+			aListCli[nAux]['DDD'] 		:= Rtrim( (cAliasSA1)->A1_DDD    )
+			aListCli[nAux]['DTCAD'] 	:= (cAliasSA1)->A1_DTCAD
+			aListCli[nAux]['END']		:= Rtrim( (cAliasSA1)->A1_END    )
+			aListCli[nAux]['INSCR'] 	:= Rtrim( (cAliasSA1)->A1_INSCR  )
+			aListCli[nAux]['MUNCIPIO'] 	:= Rtrim( (cAliasSA1)->A1_MUN    )
+			aListCli[nAux]['NATUREZ']	:= Rtrim( (cAliasSA1)->A1_NATUREZ)
+			aListCli[nAux]['PESSOA'] 	:= Rtrim( (cAliasSA1)->A1_TPESSOA)
+			aListCli[nAux]['TIPO'] 	    := Rtrim( (cAliasSA1)->A1_TIPCLI )
+			aListCli[nAux]['FONE'] 		:= Rtrim( (cAliasSA1)->A1_TEL    )
+			aListCli[nAux]['TRANSP'] 	:= Rtrim( (cAliasSA1)->A1_TRANSP )
+			aListCli[nAux]['PAIS'] 		:= Rtrim( (cAliasSA1)->A1_PAIS   )
+			aListCli[nAux]['BLOQUEADO']	:= IF((cAliasSA1)->A1_MSBLQL == "2", "NAO", "SIM")
+			aListCli[nAux]['MOVEL']		:= (cAliasSA1)->A1_ZMOBILE
+			aListCli[nAux]['TIPOVEICULO']	:= (cAliasSA1)->A1_ZTPVEIC
+			aListCli[nAux]['DTCRIACAO']	:= (cAliasSA1)->A1_ZDTCRIA
+			aListCli[nAux]['ATIVO']		:= (cAliasSA1)->A1_ZATIVO
+			aListCli[nAux]['PAGAMENTOADT']	:= (cAliasSA1)->A1_ZPGTADT
+			aListCli[nAux]['REVENDEAFIAL']	:= (cAliasSA1)->A1_ZREVAFI
+			aListCli[nAux]['AFILIADOCONV']	:= (cAliasSA1)->A1_ZAFICON
+			aListCli[nAux]['TIPOAFILIADO']	:= (cAliasSA1)->A1_ZTPAFIL
+			aListCli[nAux]['INTEGRADO']	:= (cAliasSA1)->A1_ZINTEGR
+			If Len(aListCli) >= self:pageSize
+				Exit
+			EndIf
+
+		EndIf
+
+		( cAliasSA1 )->( DBSkip() )
+
+	End
+
+	( cAliasSA1 )->( DBCloseArea() )
+
+	oJsonCli['clients'] := aListCli
+
+	//-------------------------------------------------------------------
+	// Serializa objeto Json
+	//-------------------------------------------------------------------
+	cJsonCli:= FwJsonSerialize( oJsonCli )
+
+	//-------------------------------------------------------------------
+	// Elimina objeto da memoria
+	//-------------------------------------------------------------------
+	FreeObj(oJsonCli)
+
+	Self:SetResponse( cJsonCli ) //-- Seta resposta
+
+Return( lRet )

@@ -107,7 +107,7 @@ method temClient(_fili, _cnpj) class LIBGLASS
 	cQuery += " WHERE A1_FILIAL = '" + _fili + "' "
     cQuery += " AND SA1.A1_CGC = '"+_cnpj+"' "
 	cQuery += " AND SA1.D_E_L_E_T_ = '' "
-	cAlSB1:= CriaTrab(Nil,.F.)
+	cAlSA1:= CriaTrab(Nil,.F.)
 	DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSA1, .F., .T.)    
 
 	If (cAlSA1)->(Eof())
@@ -728,7 +728,7 @@ Return aRet
 
 method Integrado( tabela ) class LIBGLASS
     Local aTmp := {}
-
+    
     if tabela == "SA2"
         cQuery := " SELECT * "
         cQuery += " FROM "+RetSQLName("SA2") + " AS SA2 "
@@ -822,6 +822,7 @@ method Integrado( tabela ) class LIBGLASS
             aTmp[nItem]['AFILIADOCONV']	:= (cAlSA1)->A1_ZAFICON
             aTmp[nItem]['TIPOAFILIADO']	:= (cAlSA1)->A1_ZTPAFIL
             aTmp[nItem]['INTEGRADO']	:= (cAlSA1)->A1_ZINTEGR
+
             (cAlSA1)->(DBSKIP())
             LOOP
         ENDDO

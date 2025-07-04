@@ -19,6 +19,12 @@ WSRESTFUL WSFORNEC DESCRIPTION 'CADASTRO DE FORNECEDOR'
 	WSDATA dataAte    AS STRING OPTIONAL
 	WSDATA tipo       AS STRING OPTIONAL
 
+	WSDATA page AS INTEGER OPTIONAL
+	WSDATA pageSize AS INTEGER OPTIONAL
+	WSDATA searchKey AS STRING OPTIONAL
+
+	//Métodos
+	WSMETHOD GET supplier DESCRIPTION "Retorna lista de Fornecedores" WSSYNTAX "/WSFORNEC/fornecedores " PATH '/WSFORNEC/fornecedores' PRODUCES APPLICATION_JSON
 	//Métodos 
 	WSMETHOD GET CNPJ    DESCRIPTION 'Retorna o Registro pesquisado - CNPJ'   		WSSYNTAX '/WSFORNEC/listcnpj/cnpj?{cnpj}' 			  	PATH '/WSFORNEC/cnpj/{cnpj}'  					PRODUCES APPLICATION_JSON
 	WSMETHOD GET TIPO    DESCRIPTION 'Retorna o registro pesquisado - TIPO'   		WSSYNTAX '/WSFORNEC/tipolist/{tipo}'   	 			  	PATH '/WSFORNEC/tipolist/{tipo}' 					PRODUCES APPLICATION_JSON
@@ -674,3 +680,167 @@ WSMETHOD PUT ERASE WSRECEIVE id WSSERVICE WSFORNEC
     //Define o retorno
     Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
 Return lRet
+
+WSMETHOD GET supplier WSRECEIVE searchKey, page, pageSize WSREST WSFORNEC
+
+	Local aList := {}
+
+	Local cAlias := GetNextAlias()
+	Local cJsonFor := ''
+	Local cSearch := ''
+	Local cWhere := "AND SA2.A2_FILIAL = '"+xFilial('SA2')+"' AND SA2.A2_ZINTEGR <> 'S' "
+
+	Local lRet := .T.
+
+	Local nCount := 0
+	Local nStart := 1
+	Local nReg := 0
+	Local nAux := 0
+
+	Local oJsonFor := JsonObject():New()
+
+	Default self:searchKey := ''
+	Default self:page := 1
+	Default self:pageSize := 10
+
+	//-------------------------------------------------------------------
+	// Tratativas para a chave de busca
+	//-------------------------------------------------------------------
+	If !Empty(self:searchKey)
+		cSearch := AllTrim( Upper( Self:SearchKey ) )
+		cWhere += " AND ( SA2.A2_COD LIKE '%" + cSearch + "%' OR "
+		cWhere += " SA2.A2_LOJA LIKE '%" + cSearch + "%' OR "
+		cWhere += " SA2.A2_NOME LIKE '%" + FwNoAccent( cSearch ) + "%' OR "
+		cWhere += " SA2.A2_NOME LIKE '%" + cSearch + "%' ) "
+	EndIf
+
+	cWhere := '%'+cWhere+'%'
+
+	//-------------------------------------------------------------------
+	// Query para selecionar clientes
+	//-------------------------------------------------------------------
+	BEGINSQL Alias cAlias
+ 
+	SELECT SA2.A2_FILIAL,SA2.A2_COD,SA2.A2_LOJA ,SA2.A2_NOME,SA2.A2_NREDUZ,;
+	SA2.A2_BAIRRO ,SA2.A2_EMAIL  ,SA2.A2_CEP    ,SA2.A2_CGC,;
+	SA2.A2_ESTADO ,SA2.A2_COD_MUN,SA2.A2_COND   ,SA2.A2_DDD,;
+	SA2.A2_DTNASC,SA2.A2_END    ,SA2.A2_INSCR  ,SA2.A2_MUN,;
+	SA2.A2_NATUREZ,SA2.A2_TPESSOA,SA2.A2_TIPO ,SA2.A2_TEL,;
+	SA2.A2_TRANSP ,SA2.A2_PAIS   ,SA2.A2_MSBLQL,SA2.A2_ZMOBILE,;
+	SA2.A2_ZTPVEIC,SA2.A2_ZDTCRIA,SA2.A2_ZATIVO,SA2.A2_ZPGTADT,;
+	SA2.A2_ZREVAFI,SA2.A2_ZAFICON,SA2.A2_ZTPAFIL,SA2.A2_ZINTEGR
+	FROM %table:SA2% SA2
+	WHERE SA2.%NotDel%
+	%exp:cWhere%
+	
+	ENDSQL
+
+	If ( cAlias )->( ! Eof() )
+
+		//-------------------------------------------------------------------
+		// Identifica a quantidade de registro no alias temporário
+		//-------------------------------------------------------------------
+		COUNT TO nRecord
+
+		//-------------------------------------------------------------------
+		// nStart -> primeiro registro da pagina
+		// nReg -> numero de registros do inicio da pagina ao fim do arquivo
+		//-------------------------------------------------------------------
+		If self:page > 1
+			nStart := ( ( self:page - 1 ) * self:pageSize ) + 1
+			nReg := nRecord - nStart + 1
+		Else
+			nReg := nRecord
+		EndIf
+
+		//-------------------------------------------------------------------
+		// Posiciona no primeiro registro.
+		//-------------------------------------------------------------------
+		( cAlias )->( DBGoTop() )
+
+		//-------------------------------------------------------------------
+		// Valida a exitencia de mais paginas
+		//-------------------------------------------------------------------
+		If nReg > self:pageSize
+			oJsonFor['hasNext'] := .T.
+		Else
+			oJsonFor['hasNext'] := .F.
+		EndIf
+	Else
+		//-------------------------------------------------------------------
+		// Nao encontrou registros
+		//-------------------------------------------------------------------
+		oJsonFor['hasNext'] := .F.
+	EndIf
+
+	//-------------------------------------------------------------------
+	// Alimenta array de clientes
+	//-------------------------------------------------------------------
+	While ( cAlias )->( ! Eof() )
+
+		nCount++
+
+		If nCount >= nStart
+
+			nAux++
+			aAdd( aList , JsonObject():New() )
+            aList[nAux]['FILIAL'] 	:= Rtrim( (cAlias)->A2_FILIAL)
+            aList[nAux]['CODIGO']	:= Rtrim( (cAlias)->A2_COD)
+            aList[nAux]['LOJA'] 	:= Rtrim( (cAlias)->A2_LOJA )
+			aList[nAux]['NOME'] 	:= Rtrim( (cAlias)->A2_NOME)
+			aList[nAux]['NREDUZ'] 	:= Rtrim( (cAlias)->A2_NREDUZ )
+        	aList[nAux]['BAIRRO'] 	:= Rtrim( (cAlias)->A2_BAIRRO )
+        	aList[nAux]['EMAIL'] 	:= Rtrim( (cAlias)->A2_EMAIL  )
+        	aList[nAux]['CEP'] 		:= Rtrim( (cAlias)->A2_CEP    )
+        	aList[nAux]['CNPJ'] 	:= Rtrim( (cAlias)->A2_CGC    )
+        	aList[nAux]['ESTADO']	:= Rtrim( (cAlias)->A2_ESTADO )
+        	aList[nAux]['COD_MUN']	:= Rtrim( (cAlias)->A2_COD_MUN)
+        	aList[nAux]['COND'] 	:= Rtrim( (cAlias)->A2_COND   )
+        	aList[nAux]['DDD'] 		:= Rtrim( (cAlias)->A2_DDD    )
+        	aList[nAux]['DTCAD'] 	:= (cAlias)->A2_DTNASC
+        	aList[nAux]['END']		:= Rtrim( (cAlias)->A2_END    )
+        	aList[nAux]['INSCR'] 	:= Rtrim( (cAlias)->A2_INSCR  )
+        	aList[nAux]['MUNICIPIO']:= Rtrim( (cAlias)->A2_MUN    )
+        	aList[nAux]['NATUREZ']	:= Rtrim( (cAlias)->A2_NATUREZ)
+        	aList[nAux]['PESSOA'] 	:= Rtrim( (cAlias)->A2_TPESSOA)
+        	aList[nAux]['TIPO']	 	:= Rtrim( (cAlias)->A2_TIPO )
+        	aList[nAux]['FONE'] 	:= Rtrim( (cAlias)->A2_TEL    )
+        	aList[nAux]['TRANSP'] 	:= Rtrim( (cAlias)->A2_TRANSP )
+        	aList[nAux]['PAIS']		:= Rtrim( (cAlias)->A2_PAIS   )
+        	aList[nAux]['BLOQUEADO']:= IF ((cAlias)->A2_MSBLQL == "2", "NAO", "SIM")
+			aList[nAux]['MOVEL']	:= (cAlias)->A2_ZMOBILE
+			aList[nAux]['TIPOVEICULO']	:= (cAlias)->A2_ZTPVEIC
+			aList[nAux]['DTCRIACAO']	:= (cAlias)->A2_ZDTCRIA
+			aList[nAux]['ATIVO']		:= (cAlias)->A2_ZATIVO
+			aList[nAux]['PAGAMENTOADT']	:= (cAlias)->A2_ZPGTADT
+			aList[nAux]['REVENDEAFIAL']	:= (cAlias)->A2_ZREVAFI
+			aList[nAux]['AFILIADOCONV']	:= (cAlias)->A2_ZAFICON
+			aList[nAux]['TIPOAFILIADO']	:= (cAlias)->A2_ZTPAFIL
+			aList[nAux]['INTEGRADO']    := (cAlias)->A2_ZINTEGR
+			If Len(aList) >= self:pageSize
+				Exit
+			EndIf
+
+		EndIf
+
+		( cAlias )->( DBSkip() )
+
+	End
+
+	( cAlias )->( DBCloseArea() )
+
+	oJsonFor['Fornecedores'] := aList
+
+	//-------------------------------------------------------------------
+	// Serializa objeto Json
+	//-------------------------------------------------------------------
+	cJsonFor:= FwJsonSerialize( oJsonFor )
+
+	//-------------------------------------------------------------------
+	// Elimina objeto da memoria
+	//-------------------------------------------------------------------
+	FreeObj(oJsonFor)
+
+	Self:SetResponse( cJsonFor ) //-- Seta resposta
+
+Return( lRet )
