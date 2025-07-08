@@ -162,8 +162,9 @@ WSMETHOD POST NEW WSRECEIVE NUMPV WSSERVICE WSPEDVEND
 
 	IF !lTemPr 
 		Self:setStatus(500)
-		jResponse['errorId']  := 'NEW0041'
+		jResponse['errorId']  := 'NEW0006'
 		jResponse['error']    := 'PRODUTO NÃO EXISTE'
+        jResponse['errorLog'] := cErrorLog
 		jResponse['solution'] := 'CADASTRE UM PRODUTO QUE DESEJA PEDIR'
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
@@ -180,6 +181,7 @@ WSMETHOD POST NEW WSRECEIVE NUMPV WSSERVICE WSPEDVEND
 		Self:setStatus(500)
 		jResponse['errorId']  := 'NEW0044'
 		jResponse['error']    := 'CLIENTE NÃO EXISTE'
+        jResponse['errorLog'] := cErrorLog
 		jResponse['solution'] := 'CADASTRE UM CLIENTE QUE DESEJA VENDER'
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
@@ -194,6 +196,7 @@ WSMETHOD POST NEW WSRECEIVE NUMPV WSSERVICE WSPEDVEND
         Self:setStatus(500) 
         jResponse['errorId']  := 'NEW004'
         jResponse['error']    := 'Parse do JSON'
+        jResponse['errorLog'] := cErrorLog
         jResponse['solution'] := 'Erro ao fazer o Parse do JSON'
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
@@ -211,6 +214,9 @@ WSMETHOD POST NEW WSRECEIVE NUMPV WSSERVICE WSPEDVEND
         aadd(aCab, {"C5_CONDPAG"   , jJson:GetJsonObject("COND"), Nil})
         aadd(aCab, {"C5_NATUREZ"   , jJson:GetJsonObject("NATUREZA"), Nil})
         aadd(aCab, {"C5_ZINTEGR"   , jJson:GetJsonObject("INTEGRADO"), Nil})
+        aadd(aCab, {"C5_INDPRES"   , jJson:GetJsonObject("INDICAPRES"), Nil})
+        aadd(aCab, {"C5_TPFRETE"   , jJson:GetJsonObject("TIPOFRETE"), Nil})
+        aadd(aCab, {"C5_MENNOTA"   , jJson:GetJsonObject("MENSAGENOTA"), Nil})
 
         FOR Nx := 1 to len(jJson:GetJsonObject("ITENS"))
             aLinhaC1 := {}
@@ -241,6 +247,7 @@ WSMETHOD POST NEW WSRECEIVE NUMPV WSSERVICE WSPEDVEND
            Self:setStatus(500) 
 			jResponse['errorId']  := 'NEW005'
 			jResponse['error']    := 'Erro na inclusão do registro'
+			jResponse['errorLog'] := cErrorLog
 			jResponse['solution'] := 'Nao foi possivel incluir o registro, foi gerado um arquivo de log em ' + cDirLog + cArqLog + ' '
 			lRet := .F.
 
@@ -302,8 +309,9 @@ WSMETHOD PUT UPDATE WSRECEIVE NUMPV WSSERVICE WSPEDVEND
 	IF !lTemPr //oWS:temProd(FWxFilial("SB1"), _cod)//temFornec(, ::cnpj)
 		//SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
 		Self:setStatus(500)
-		jResponse['errorId']  := 'NEW0041'
+		jResponse['errorId']  := 'UPD010'
 		jResponse['error']    := 'PRODUTO NÃO EXISTE'
+        jResponse['errorLog'] := cErrorLog
 		jResponse['solution'] := 'CADASTRE UM PRODUTO QUE DESEJA SOLICITAR'
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
@@ -317,8 +325,9 @@ WSMETHOD PUT UPDATE WSRECEIVE NUMPV WSSERVICE WSPEDVEND
     IF !Empty(cError)
         //SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
         Self:setStatus(500) 
-        jResponse['errorId']  := 'NEW004'
+        jResponse['errorId']  := 'UPD008'
         jResponse['error']    := 'Parse do JSON'
+        jResponse['errorLog'] := cErrorLog
         jResponse['solution'] := 'Erro ao fazer o Parse do JSON'
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
@@ -336,6 +345,9 @@ WSMETHOD PUT UPDATE WSRECEIVE NUMPV WSSERVICE WSPEDVEND
         aadd(aCab, {"C5_CONDPAG"   , jJson:GetJsonObject("COND"), Nil})
         aadd(aCab, {"C5_NATUREZ"   , jJson:GetJsonObject("NATUREZA"), Nil})
         aadd(aCab, {"C5_ZINTEGR"   , jJson:GetJsonObject("INTEGRADO"), Nil})
+        aadd(aCab, {"C5_INDPRES"   , jJson:GetJsonObject("INDICAPRES"), Nil})
+        aadd(aCab, {"C5_TPFRETE"   , jJson:GetJsonObject("TIPOFRETE"), Nil})
+        aadd(aCab, {"C5_MENNOTA"   , jJson:GetJsonObject("MENSAGENOTA"), Nil})
 
         FOR Nx := 1 to len(jJson:GetJsonObject("ITENS"))
             aLinhaC1 := {}
@@ -364,8 +376,9 @@ WSMETHOD PUT UPDATE WSRECEIVE NUMPV WSSERVICE WSPEDVEND
 			//Define o retorno para o WebService
 			//SetRestFault(500, cErrorLog) //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
            Self:setStatus(500) 
-			jResponse['errorId']  := 'NEW005'
+			jResponse['errorId']  := 'UPD009'
 			jResponse['error']    := 'Erro na alteração do registro'
+			jResponse['errorLog'] := cErrorLog
 			jResponse['solution'] := 'Nao foi possivel incluir o registro, foi gerado um arquivo de log em ' + cDirLog + cArqLog + ' '
 			lRet := .F.
 
@@ -427,8 +440,9 @@ WSMETHOD PUT ERASE WSRECEIVE NUMPV WSSERVICE WSPEDVEND
 	IF !lTemPr //oWS:temProd(FWxFilial("SB1"), _cod)//temFornec(, ::cnpj)
 		//SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
 		Self:setStatus(500)
-		jResponse['errorId']  := 'NEW0041'
+		jResponse['errorId']  := 'DEL014'
 		jResponse['error']    := 'PRODUTO NÃO EXISTE'
+        jResponse['errorLog'] := cErrorLog
 		jResponse['solution'] := 'CADASTRE UM PRODUTO QUE DESEJA SOLICITAR'
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
@@ -442,8 +456,9 @@ WSMETHOD PUT ERASE WSRECEIVE NUMPV WSSERVICE WSPEDVEND
     IF !Empty(cError)
         //SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
         Self:setStatus(500) 
-        jResponse['errorId']  := 'NEW004'
+        jResponse['errorId']  := 'DEL012'
         jResponse['error']    := 'Parse do JSON'
+        jResponse['errorLog'] := cErrorLog
         jResponse['solution'] := 'Erro ao fazer o Parse do JSON'
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
@@ -461,6 +476,9 @@ WSMETHOD PUT ERASE WSRECEIVE NUMPV WSSERVICE WSPEDVEND
         aadd(aCab, {"C5_CONDPAG"   , jJson:GetJsonObject("COND"), Nil})
         aadd(aCab, {"C5_NATUREZ"   , jJson:GetJsonObject("NATUREZA"), Nil})
         aadd(aCab, {"C5_ZINTEGR"   , jJson:GetJsonObject("INTEGRADO"), Nil})
+        aadd(aCab, {"C5_INDPRES"   , jJson:GetJsonObject("INDICAPRES"), Nil})
+        aadd(aCab, {"C5_TPFRETE"   , jJson:GetJsonObject("TIPOFRETE"), Nil})
+        aadd(aCab, {"C5_MENNOTA"   , jJson:GetJsonObject("MENSAGENOTA"), Nil})
 
         FOR Nx := 1 to len(jJson:GetJsonObject("ITENS"))
             aLinhaC1 := {}
@@ -489,8 +507,9 @@ WSMETHOD PUT ERASE WSRECEIVE NUMPV WSSERVICE WSPEDVEND
 			//Define o retorno para o WebService
 			//SetRestFault(500, cErrorLog) //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
            Self:setStatus(500) 
-			jResponse['errorId']  := 'NEW005'
+			jResponse['errorId']  := 'DEL013'
 			jResponse['error']    := 'Erro na exclusao do registro'
+			jResponse['errorLog'] := cErrorLog
 			jResponse['solution'] := 'Nao foi possivel excluir o registro, foi gerado um arquivo de log em ' + cDirLog + cArqLog + ' '
 			lRet := .F.
 

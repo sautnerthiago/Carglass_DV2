@@ -310,6 +310,7 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE WSFORNEC
 		Self:setStatus(500)
 		jResponse['errorId']  := 'NEW0041'
 		jResponse['error']    := 'FORNECEDOR JA EXISTE'
+		jResponse['errorLog'] := cErrorLog
 		jResponse['solution'] := 'CADASTRE UM FORNECEDOR CUJO CNPJ NÃO SEJA O MESMO'
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
@@ -323,6 +324,7 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE WSFORNEC
         Self:setStatus(500) 
         jResponse['errorId']  := 'NEW004'
         jResponse['error']    := 'Parse do JSON'
+		jResponse['errorLog'] := cErrorLog
         jResponse['solution'] := 'Erro ao fazer o Parse do JSON'
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
@@ -395,6 +397,7 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE WSFORNEC
            Self:setStatus(500) 
 			jResponse['errorId']  := 'NEW005'
 			jResponse['error']    := 'Erro na inclusão do registro'
+			jResponse['errorLog'] := cErrorLog
 			jResponse['solution'] := 'Nao foi possivel incluir o registro, foi gerado um arquivo de log em ' + cDirLog + cArqLog + ' '
 			lRet := .F.
 
@@ -466,6 +469,7 @@ WSMETHOD PUT UPDATE WSRECEIVE cnpj WSSERVICE WSFORNEC
         Self:setStatus(500) 
         jResponse['errorId']  := 'UPD006'
         jResponse['error']    := 'CNPJ VAZIO E/OU CODIGO E LOJA VAZIOS'
+		jResponse['errorLog'] := cErrorLog
         jResponse['solution'] := 'Informe o CNPJ, CODIGO E LOJA'
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
@@ -479,8 +483,9 @@ WSMETHOD PUT UPDATE WSRECEIVE cnpj WSSERVICE WSFORNEC
             //SetRestFault(500, 'Falha ao consultar ID') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
             Self:setStatus(500) 
             jResponse['errorId']  := 'UPD007'
-            jResponse['error']    := 'ID não encontrado'
-            jResponse['solution'] := 'Código ID não encontrado na tabela ' + cAliasWS
+            jResponse['error']    := 'CNPJ não encontrado'
+			jResponse['errorLog'] := cErrorLog
+            jResponse['solution'] := 'CNPJ não encontrado na tabela ' + cAliasWS
 
 			cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
 			oWS:GRAVALOGMURO(cResponc, cJason, "WSFORNC", "ATUALIZAÇÃO DE FORNECEDOR")
@@ -492,6 +497,7 @@ WSMETHOD PUT UPDATE WSRECEIVE cnpj WSSERVICE WSFORNEC
                 Self:setStatus(500) 
                 jResponse['errorId']  := 'UPD008'
                 jResponse['error']    := 'Parse do JSON'
+				jResponse['errorLog'] := cErrorLog
                 jResponse['solution'] := 'Erro ao fazer o Parse do JSON'
 
 				cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
@@ -545,6 +551,7 @@ WSMETHOD PUT UPDATE WSRECEIVE cnpj WSSERVICE WSFORNEC
 		            Self:setStatus(500) 
 		            jResponse['errorId']  := 'UPD009'
 		            jResponse['error']    := 'Erro na atualização do registro'
+					jResponse['errorLog'] := cErrorLog
 		            jResponse['solution'] := 'Nao foi possivel incluir o registro, foi gerado um arquivo de log em ' + cDirLog + cArqLog + ' '
 		            lRet := .F.
 
@@ -608,6 +615,7 @@ WSMETHOD PUT ERASE WSRECEIVE id WSSERVICE WSFORNEC
         Self:setStatus(500) 
         jResponse['errorId']  := 'DEL010'
         jResponse['error']    := 'CNPJ VAZIO E/OU CODIGO E LOJA VAZIOS'
+		jResponse['errorLog'] := cErrorLog
         jResponse['solution'] := 'Informe o CNPJ, CODIGO E LOJA'
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
@@ -618,8 +626,9 @@ WSMETHOD PUT ERASE WSRECEIVE id WSSERVICE WSFORNEC
             //SetRestFault(500, 'Falha ao consultar ID') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
             Self:setStatus(500) 
             jResponse['errorId']  := 'DEL011'
-            jResponse['error']    := 'ID não encontrado'
-            jResponse['solution'] := 'Código ID não encontrado na tabela ' + cAliasWS
+            jResponse['error']    := 'CNPJ não encontrado'
+			jResponse['errorLog'] := cErrorLog
+            jResponse['solution'] := 'CNPJ não encontrado na tabela ' + cAliasWS
 	
 			cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
 			oWS:GRAVALOGMURO(cResponc, cJason, "WSFORNC", "BLOQUEIO DE FORNECEDOR")
@@ -631,6 +640,7 @@ WSMETHOD PUT ERASE WSRECEIVE id WSSERVICE WSFORNEC
                 Self:setStatus(500) 
                 jResponse['errorId']  := 'DEL012'
                 jResponse['error']    := 'Parse do JSON'
+				jResponse['errorLog'] := cErrorLog
                 jResponse['solution'] := 'Erro ao fazer o Parse do JSON'
 
 				cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
@@ -665,6 +675,7 @@ WSMETHOD PUT ERASE WSRECEIVE id WSSERVICE WSFORNEC
 		            Self:setStatus(500) 
 		            jResponse['errorId']  := 'DEL013'
 		            jResponse['error']    := 'Erro na exclusão do registro'
+					jResponse['errorLog'] := cErrorLog
 		            jResponse['solution'] := 'Nao foi possivel incluir o registro, foi gerado um arquivo de log em ' + cDirLog + cArqLog + ' '
 		            lRet := .F.
 					cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']

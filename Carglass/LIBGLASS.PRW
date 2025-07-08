@@ -980,3 +980,7 @@ method Integrado( tabela ) class LIBGLASS
         (cAlSB1)->(dbclosearea())
     EndIF
 Return aTmp
+
+
+
+

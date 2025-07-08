@@ -167,6 +167,7 @@ WSMETHOD POST NEW WSRECEIVE NUMPC WSSERVICE WSPEDCOM
 		Self:setStatus(500)
 		jResponse['errorId']  := 'NEW0041'
 		jResponse['error']    := 'PRODUTO NÃO EXISTE'
+        jResponse['errorLog'] := cErrorLog
 		jResponse['solution'] := 'CADASTRE UM PRODUTO QUE DESEJA PEDIR'
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
@@ -182,6 +183,7 @@ WSMETHOD POST NEW WSRECEIVE NUMPC WSSERVICE WSPEDCOM
         Self:setStatus(500) 
         jResponse['errorId']  := 'NEW004'
         jResponse['error']    := 'Parse do JSON'
+        jResponse['errorLog'] := cErrorLog
         jResponse['solution'] := 'Erro ao fazer o Parse do JSON'
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
@@ -253,6 +255,7 @@ WSMETHOD POST NEW WSRECEIVE NUMPC WSSERVICE WSPEDCOM
            Self:setStatus(500) 
 			jResponse['errorId']  := 'NEW005'
 			jResponse['error']    := 'Erro na inclusão do registro'
+			jResponse['errorLog'] := cErrorLog
 			jResponse['solution'] := 'Nao foi possivel incluir o registro, foi gerado um arquivo de log em ' + cDirLog + cArqLog + ' '
 			lRet := .F.
 
@@ -314,8 +317,9 @@ WSMETHOD PUT UPDATE WSRECEIVE NUMPC WSSERVICE WSPEDCOM
 	IF !lTemPr //oWS:temProd(FWxFilial("SB1"), _cod)//temFornec(, ::cnpj)
 		//SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
 		Self:setStatus(500)
-		jResponse['errorId']  := 'NEW0041'
+		jResponse['errorId']  := 'UPD010'
 		jResponse['error']    := 'PRODUTO NÃO EXISTE'
+        jResponse['errorLog'] := cErrorLog
 		jResponse['solution'] := 'CADASTRE UM PRODUTO QUE DESEJA SOLICITAR'
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
@@ -329,8 +333,9 @@ WSMETHOD PUT UPDATE WSRECEIVE NUMPC WSSERVICE WSPEDCOM
     IF !Empty(cError)
         //SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
         Self:setStatus(500) 
-        jResponse['errorId']  := 'NEW004'
+        jResponse['errorId']  := 'UPD008'
         jResponse['error']    := 'Parse do JSON'
+        jResponse['errorLog'] := cErrorLog
         jResponse['solution'] := 'Erro ao fazer o Parse do JSON'
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
@@ -396,8 +401,9 @@ WSMETHOD PUT UPDATE WSRECEIVE NUMPC WSSERVICE WSPEDCOM
 			//Define o retorno para o WebService
 			//SetRestFault(500, cErrorLog) //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
            Self:setStatus(500) 
-			jResponse['errorId']  := 'NEW005'
-			jResponse['error']    := 'Erro na inclusão do registro'
+			jResponse['errorId']  := 'UPD009'
+			jResponse['error']    := 'Erro na Alteracao do registro'
+			jResponse['errorLog'] := cErrorLog
 			jResponse['solution'] := 'Nao foi possivel alterar o registro, foi gerado um arquivo de log em ' + cDirLog + cArqLog + ' '
 			lRet := .F.
 
@@ -459,8 +465,9 @@ WSMETHOD PUT ERASE WSRECEIVE NUMPC WSSERVICE WSPEDCOM
 	IF !lTemPr //oWS:temProd(FWxFilial("SB1"), _cod)//temFornec(, ::cnpj)
 		//SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
 		Self:setStatus(500)
-		jResponse['errorId']  := 'NEW0041'
+		jResponse['errorId']  := 'DEL014'
 		jResponse['error']    := 'PRODUTO NÃO EXISTE'
+        jResponse['errorLog'] := cErrorLog
 		jResponse['solution'] := 'CADASTRE UM PRODUTO QUE DESEJA SOLICITAR'
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
@@ -474,8 +481,9 @@ WSMETHOD PUT ERASE WSRECEIVE NUMPC WSSERVICE WSPEDCOM
     IF !Empty(cError)
         //SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
         Self:setStatus(500) 
-        jResponse['errorId']  := 'NEW004'
+        jResponse['errorId']  := 'DEL012'
         jResponse['error']    := 'Parse do JSON'
+        jResponse['errorLog'] := cErrorLog
         jResponse['solution'] := 'Erro ao fazer o Parse do JSON'
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
@@ -541,8 +549,9 @@ WSMETHOD PUT ERASE WSRECEIVE NUMPC WSSERVICE WSPEDCOM
 			//Define o retorno para o WebService
 			//SetRestFault(500, cErrorLog) //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
            Self:setStatus(500) 
-			jResponse['errorId']  := 'NEW005'
-			jResponse['error']    := 'Erro na inclusão do registro'
+			jResponse['errorId']  := 'DEL013'
+			jResponse['error']    := 'Erro na exclusao do registro'
+			jResponse['errorLog'] := cErrorLog
 			jResponse['solution'] := 'Nao foi possivel excluir o registro, foi gerado um arquivo de log em ' + cDirLog + cArqLog + ' '
 			lRet := .F.
 
@@ -559,8 +568,6 @@ WSMETHOD PUT ERASE WSRECEIVE NUMPC WSSERVICE WSPEDCOM
     //Define o retorno
     Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
 Return lRet
-
-
 
 WSMETHOD GET PDC WSRECEIVE searchKey, page, pageSize WSREST WSPEDCOM
 
