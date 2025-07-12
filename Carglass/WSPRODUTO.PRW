@@ -18,8 +18,8 @@ WSRESTFUL WSPRODUTO DESCRIPTION 'CADASTRO DE PRODUTOS'
 	//M�todos 
 	WSMETHOD GET  INTEGRA DESCRIPTION 'Retorna o registro pesquisado - INTEGRADO'   WSSYNTAX '/WSPRODUTO/integrado' 				PATH '/WSPRODUTO/integrado'  				PRODUCES APPLICATION_JSON
     WSMETHOD GET  CODIGO  DESCRIPTION 'Retorna o registro pesquisado'               WSSYNTAX '/WSPRODUTO/codigo/?{produto}'         PATH '/WSPRODUTO/codigo/{produto}'          PRODUCES APPLICATION_JSON
-    WSMETHOD POST NEW     DESCRIPTION 'Inclusão de registro'                       WSSYNTAX '/WSPRODUTO/new'                       PATH 'new'                                  PRODUCES APPLICATION_JSON
-    WSMETHOD PUT  UPDATE  DESCRIPTION 'Atualização de registro'                   WSSYNTAX '/WSPRODUTO/update'                    PATH 'update'                               PRODUCES APPLICATION_JSON
+    WSMETHOD POST NEW     DESCRIPTION 'Inclusao de registro'                        WSSYNTAX '/WSPRODUTO/new'                       PATH 'new'                                  PRODUCES APPLICATION_JSON
+    WSMETHOD PUT  UPDATE  DESCRIPTION 'Atualizacao de registro'                     WSSYNTAX '/WSPRODUTO/update'                    PATH 'update'                               PRODUCES APPLICATION_JSON
     WSMETHOD PUT  ERASE   DESCRIPTION 'Bloqueio de registro'                        WSSYNTAX '/WSPRODUTO/delete'                    PATH 'delete'                               PRODUCES APPLICATION_JSON
 END WSRESTFUL
 

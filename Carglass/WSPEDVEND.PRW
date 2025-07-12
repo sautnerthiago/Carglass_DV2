@@ -94,6 +94,8 @@ WSMETHOD GET ID WSRECEIVE NUMPV WSSERVICE WSPEDVEND
                     jResponse['COND']           := (cAlSC5)->C5_CONDPAG
                     jResponse['INTEGRADO']	    := (cAlSC5)->C5_ZINTEGR
                     jResponse['NATUREZA']  	    := Rtrim((cAlSC5)->C5_NATUREZ)
+                    jResponse['NOTA']  	        := Rtrim((cAlSC5)->C5_NOTA)
+                    jResponse['SERIE'] 	        := Rtrim((cAlSC5)->C5_SERIE)
                     jResponse['ITENS']          := oWS:ITENSPV((cAlSC5)->C5_FILIAL, (cAlSC5)->C5_NUM, (cAlSC5)->C5_CLIENTE, (cAlSC5)->C5_LOJACLI )
                     (cAlSC5)->(DBSKIP())
                     LOOP
@@ -223,6 +225,7 @@ WSMETHOD POST NEW WSRECEIVE NUMPV WSSERVICE WSPEDVEND
             aadd(aLinhaC1, {"C6_ITEM"     ,Strzero(Nx,4)               ,nil})
             aadd(aLinhaC1, {"C6_PRODUTO"  , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"), NIL})
             aadd(aLinhaC1, {"C6_QTDVEN"   , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT"), NIL})
+            aadd(aLinhaC1, {"C6_QTDLIB"   , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT"), NIL})
             aadd(aLinhaC1, {"C6_PRCVEN"   , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO"), NIL})
             aadd(aLinhaC1, {"C6_VALOR"    , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("TOTAL"), NIL})
             aadd(aLinhaC1, {"C6_TES"      , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("TES"), NIL})
@@ -256,6 +259,7 @@ WSMETHOD POST NEW WSRECEIVE NUMPV WSSERVICE WSPEDVEND
 
 		//Senão, define o retorno
 		Else
+            aNf := oWS:GerarNota(_cNumPed, FwXFilial("SC5") ) //ROTINA DE GERAÇÃO DE NOTA
 			jResponse['note']     := 'Registro incluido com sucesso'
 		EndIf
 

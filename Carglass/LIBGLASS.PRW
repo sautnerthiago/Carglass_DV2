@@ -46,6 +46,10 @@ class LIBGLASS
 
     method Integrado(_Tabela)    //verifica se na tabela selecionada ha registros não integrados
 
+    method GerarNota(cPdv, cFilpv)       //Geração da Nota - de Saida
+    method TrsMitNot(aDados)        //Transmissão da Nota Gerada
+    METHOD MonitNf(aDocGer)  //Temporizador - para geração etransmissão da nota - versão 02
+
 endclass
 
 method new() class LIBGLASS
@@ -982,5 +986,243 @@ method Integrado( tabela ) class LIBGLASS
 Return aTmp
 
 
+METHOD GerarNota(cPdv, cFilpv) class LIBGLASS
+ 
+    Local aPvlDocS := {}
+    Local nPrcVen  := 0
+    Local cSerie   := "1"
+    Local cEmbExp  := ""
+    Local cDoc     := ""
+    Local aRet     := {}
+    Local aNota    := {}
+    //Local aMonit   := {}
 
+    cC5Num := cPdv
+    cFili  := cFilpv
 
+    SC5->(DbSetOrder(1))
+    SC5->(MsSeek(cFili+cC5Num))
+
+    SC6->(dbSetOrder(1))
+    SC6->(MsSeek(cFili+SC5->C5_NUM))
+
+    While SC6->(!Eof() .And. SC6->C6_FILIAL == cFili) .And. SC6->C6_NUM == SC5->C5_NUM
+
+        SC9->(DbSetOrder(1))
+        SC9->(MsSeek(cFili+SC6->(C6_NUM+C6_ITEM))) //FILIAL+NUMERO+ITEM
+
+        SE4->(DbSetOrder(1))
+        SE4->(MsSeek(cFili+SC5->C5_CONDPAG) )  //FILIAL+CONDICAO PAGTO
+
+        SB1->(DbSetOrder(1))
+        SB1->(MsSeek(cFili+SC6->C6_PRODUTO))    //FILIAL+PRODUTO
+
+        SB2->(DbSetOrder(1))
+        SB2->(MsSeek(cFili+SC6->(C6_PRODUTO+C6_LOCAL))) //FILIAL+PRODUTO+LOCAL
+
+        SF4->(DbSetOrder(1))
+        SF4->(MsSeek(cFili+SC6->C6_TES))   //FILIAL+TES
+
+        nPrcVen := SC9->C9_PRCVEN
+        If ( SC5->C5_MOEDA <> 1 )
+            nPrcVen := xMoeda(nPrcVen,SC5->C5_MOEDA,1,dDataBase)
+        EndIf
+
+        If ( AllTrim(SC9->C9_BLEST)  == "" .OR. AllTrim(SC9->C9_BLEST)  == "01" .OR. AllTrim(SC9->C9_BLEST)  == "02" .OR. AllTrim(SC9->C9_BLEST)  == "10") .And. ;
+        ( AllTrim(SC9->C9_BLCRED) == "" .OR. AllTrim(SC9->C9_BLCRED) == "01" .OR. AllTrim(SC9->C9_BLCRED) == "02" .OR. AllTrim(SC9->C9_BLCRED) == "10")
+            AAdd(aPvlDocS,{ SC9->C9_PEDIDO,;
+                            SC9->C9_ITEM,;
+                            SC9->C9_SEQUEN,;
+                            SC9->C9_QTDLIB,;
+                            nPrcVen,;
+                            SC9->C9_PRODUTO,;
+                            .F.,;
+                            SC9->(RecNo()),;
+                            SC5->(RecNo()),;
+                            SC6->(RecNo()),;
+                            SE4->(RecNo()),;
+                            SB1->(RecNo()),;
+                            SB2->(RecNo()),;
+                            SF4->(RecNo())})
+        EndIf
+
+        SC6->(DbSkip())
+    EndDo
+
+    SetFunName("MATA461")
+    cDoc := MaPvlNfs(  /*aPvlNfs*/      aPvlDocS,;  // 01 - Array com os itens a serem gerados
+                    /*cSerieNFS*/       cSerie,;    // 02 - Serie da Nota Fiscal
+                    /*lMostraCtb*/      .F.,;       // 03 - Mostra Lançamento Contábil
+                    /*lAglutCtb*/       .F.,;       // 04 - Aglutina Lançamento Contábil
+                    /*lCtbOnLine*/      .F.,;       // 05 - Contabiliza On-Line
+                    /*lCtbCusto*/       .T.,;       // 06 - Contabiliza Custo On-Line
+                    /*lReajuste*/       .F.,;       // 07 - Reajuste de preço na Nota Fiscal
+                    /*nCalAcrs*/        0,;         // 08 - Tipo de Acréscimo Financeiro
+                    /*nArredPrcLis*/    0,;         // 09 - Tipo de Arredondamento
+                    /*lAtuSA7*/         .T.,;       // 10 - Atualiza Amarração Cliente x Produto
+                    /*lECF*/            .F.,;       // 11 - Cupom Fiscal
+                    /*cEmbExp*/         cEmbExp,;   // 12 - Número do Embarque de Exportação
+                    /*bAtuFin*/         {||},;      // 13 - Bloco de Código para complemento de atualização dos títulos financeiros
+                    /*bAtuPGerNF*/      {||},;      // 14 - Bloco de Código para complemento de atualização dos dados após a geração da Nota Fiscal
+                    /*bAtuPvl*/         {||},;      // 15 - Bloco de Código de atualização do Pedido de Venda antes da geração da Nota Fiscal
+                    /*bFatSE1*/         {|| .T. },; // 16 - Bloco de Código para indicar se o valor do Titulo a Receber será gravado no campo F2_VALFAT quando o parâmetro MV_TMSMFAT estiver com o valor igual a "2".
+                    /*dDataMoe*/        dDatabase,; // 17 - Data da cotação para conversão dos valores da Moeda do Pedido de Venda para a Moeda Forte
+                    /*lJunta*/          .F.)        // 18 - Aglutina Pedido Iguais
+    
+    If !Empty(cDoc)
+        Conout("Documento de Saída: " + cSerie + "-" + cDoc + ", gerado com sucesso!!!")
+        AADD(aRet,  { PadR(Alltrim(cDoc), TamSx3('F2_DOC')[1]), PadR(Alltrim(cSerie), TamSx3('F2_SERIE')[1]) })
+        AADD(aNota, { PadR(Alltrim(cDoc), TamSx3('F2_DOC')[1]), PadR(Alltrim(cSerie), TamSx3('F2_SERIE')[1]) })
+        
+        //cFilNF  := Xfilial("SF2")
+        //cMensa  := oWMS:TrsMitNot( aNota )
+        //Conout("Transmissao da nota: " + cDoc + " - " + cMensa + "  , gerado com sucesso!!!")
+
+        //aMonit  := oWMS:MonitNf(aNota)
+
+        aNota    := {}
+        aPvlDocS := {}
+    EndIf
+
+Return aRet
+
+METHOD TrsMitNot(aDados) class LIBGLASS
+    Local cRetorno      := ''
+    Local cIDEnt        := ''
+    Local cAmbiente     := ''
+    Local cModalidade   := ''
+    Local cVersao       := ''
+    Local lCte          := .F.
+    Local cURL          := PadR(GetNewPar("MV_SPEDURL","http://"),250)
+    Local x
+
+    Private lEnd		:= .F.
+    Private bFiltraBrw	:= {||}
+    
+    cIdEnt := GetIdEnt()
+
+    oWS := WsSpedCfgNFe():New()
+    oWS:cUSERTOKEN := "TOTVS"
+    oWS:cID_ENT    := cIdEnt
+    oWS:nAmbiente  := 0
+    oWS:_URL       := AllTrim(cURL)+"/SPEDCFGNFe.apw"
+    lOk			   := execWSRet( oWS, "CFGAMBIENTE")
+    If lOk
+        cAmbiente := oWS:cCfgAmbienteResult
+    Else
+        Conout(IIf(Empty(GetWscError(3)),GetWscError(1),GetWscError(3)))
+    EndIf    
+ 
+    If lOk
+        // oWS:cUSERTOKEN := "TOTVS"
+        // oWS:cID_ENT    := cIdEnt
+        // oWS:_URL       := AllTrim(cURL)+"/SPEDCFGNFe.apw"
+        oWS:nModalidade:= 0
+        oWs:cModelo	   := "55"
+        lOk 		   := execWSRet( oWS, "CFGModalidade" )
+        If lOk
+            cModalidade:= oWS:cCfgModalidadeResult
+        Else
+            Conout(IIf(Empty(GetWscError(3)),GetWscError(1),GetWscError(3)))
+        EndIf
+    EndIf
+    If lOk
+        // oWS:cUSERTOKEN := "TOTVS"
+        // oWS:cID_ENT    := cIdEnt
+        // oWS:_URL       := AllTrim(cURL)+"/SPEDCFGNFe.apw"
+        oWS:cVersao    := "0.00"
+        lOk			   := execWSRet( oWs, "CFGVersao" )
+        If lOk
+            cVersao    := oWS:cCfgVersaoResult
+        Else
+            Conout(IIf(Empty(GetWscError(3)),GetWscError(1),GetWscError(3)))
+        EndIf
+    EndIf
+
+    for X:=1 TO LEN(aDados)
+        cNotaIni := aDados[X,1] //aProcessa[1][3]
+        cNotaFim := aDados[X,1] //aProcessa[Len(aProcessa)][3]
+        cSerie   := aDados[X,2]   
+        cRetorno := SpedNFeTrf("SF2",cSerie,cNotaIni,cNotaFim,cIdEnt,cAmbiente,cModalidade,cVersao,@lEnd,lCte,.F.)
+        CONOUT("LIBGLASS TRNASMITIU " + cRetorno +" "+ STR(X) )
+                    // SpedNFeTrf("SF2",cSerie,cNota,cNota,cIDEnt,cAmbiente,cModalidade,cVersao,.F.,.F., .F.)
+    Next
+     CONOUT("SAIU DA TRANSMISSÃO " )
+
+RETURN cRetorno
+
+Method MonitNf(aNotas) class LIBGLASS
+    Local lOk := {.F., ''}
+    Local cLockFile   as character
+    Local cProcesso   as character
+    Local aNFDeAte    as array
+    Local aMonDocs    as array
+    Local aInfMonNFe  as array
+    Local cCodEmp     as character
+    Local cCodFil     as character
+    Local cIDEnt      as character
+    Local cURL        as character
+    Local cModelo     as character
+    Local cSerie      as character
+    Local cAviso      as character
+    Local nI          as numeric
+    Local nTentantiva as numeric
+ 
+    cLockFile   := ""
+    cProcesso   := "Transmissão"
+    aNFDeAte    := {}
+    aadd(aNFDeAte, {"", "", aNotas[1,1]}) // nota inicial
+    aadd(aNFDeAte, {"", "", aNotas[1,1]}) // nota final
+    aMonDocs    := {aNotas[1,2], aNotas[1,1], aNotas[1,1]} // serie, nota inicial, nota final
+    aInfMonNFe  := {}
+    cCodEmp     := cEmpAnt
+    cCodFil     := cFilAnt
+    cIDEnt      := RetIdEnti()
+    cURL        := SuperGetMV("MV_SPEDURL",.F.,"") // precisa existir
+    cModelo     := "55" // NFe
+    cSerie      := aNotas[1,2]
+    cAviso      := ""
+    nTentantiva := SuperGetMv("MV_XOFIMON",,5)
+ 
+    transmiteAutoNFE(;
+        cLockFile,; // lock de registros
+        cProcesso,;     // descrição do processo
+        aNFDeAte,;      // array com a nota inicial e nota final
+        cCodEmp,;       // código da empresa que esta fazendo a transmissão
+        cCodFil,;       // código da filial que esta fazendo a transmissão
+        cIDEnt,;        // identificador da entidade que está transmitindo
+        cURL,;          // URL da NFE SEFAZ
+        cModelo,;       // modelo dos documentos
+        cSerie;         // série dos documentos
+    )
+ 
+    Sleep(1000)
+    CONOUT("Monitorando Notas Transmitidas...")
+ 
+    For nI := 1 To nTentantiva
+ 
+        CONOUT("Monitorando... Tentativa: " + cValToChar(nI) + " de " + cValToChar(nTentantiva))
+ 
+        aInfMonNFe := procMonitorDoc(;
+            cIdEnt,;      // identificador da entidade que está transmitindo
+            cUrl,;        // URL da NFE SEFAZ
+            aMonDocs,;    // array com a nota a ser monitorada
+            1,;           // tipo de monitoramento - usar por faixa de notas
+            cModelo,;     // modelo dos documentos
+            .F.,;         // usado para CTE
+            @cAviso)      // mensagem de retorno quando tiver erro no WS
+ 
+        If !Empty(cAviso)
+            CONOUT(cAviso,"TOTVS")
+            Exit
+        ElseIf !Empty(aInfMonNFe) .And. !(SubStr(aInfMonNFe[1][9],1,3) $ "003-004-009-025")
+            CONOUT("Nota trasmitada com sucesso!","TOTVS")
+            RETURN lOk := {.T., "serie e Nota: "+aInfMonNFe[1,1] + " trasmitada com sucesso!"}
+        ElseIf nI == nTentantiva
+            CONOUT("Não foi possível obter informações da nota fiscal transmitida!","TOTVS")
+        EndIf
+        Sleep(1000)
+ 
+    Next
+
+Return lOk
