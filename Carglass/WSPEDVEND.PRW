@@ -114,11 +114,21 @@ WSMETHOD GET INTEGRA WSRECEIVE WSSERVICE WSPEDVEND
 	Local jResponse  := JsonObject():New()
 
 	oWS    := LIBGLASS():new()
-	cJsonNfs:= FwJsonSerialize( oWS:Integrado( "SC5" )  )			
+	cJsonNfs:= FwJsonSerialize( oWS:Integrado( "SC5", "" )  )			
 
-	//Define o retorno
-	Self:SetContentType('application/json')
-	Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
+    If Empty(cJsonNfs) 
+		Self:setStatus(500)
+		jResponse['errorId']  := 'Tipo016'
+		jResponse['error']    := 'Não ha dados a serem integrados'
+		jResponse['solution'] := 'Não ha dados a Integrar'
+
+		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
+		oWS:GRAVALOGMURO(cResponc, cJason, "WSPEDVEND", "NAO HA DADOS A SEREM INTEGRADOS")
+	Else
+    	//Define o retorno
+		Self:SetContentType('application/json')
+		Self:SetResponse(cJsonNfs)
+	ENDIF	
 
 Return lRet
 
@@ -259,7 +269,7 @@ WSMETHOD POST NEW WSRECEIVE NUMPV WSSERVICE WSPEDVEND
 
 		//Senão, define o retorno
 		Else
-            aNf := oWS:GerarNota(_cNumPed, FwXFilial("SC5") ) //ROTINA DE GERAÇÃO DE NOTA
+            //aNf := oWS:GerarNota(_cNumPed, FwXFilial("SC5") ) //ROTINA DE GERAÇÃO DE NOTA - 14/07/2025 - retirado por solicitação do Sr. George
 			jResponse['note']     := 'Registro incluido com sucesso'
 		EndIf
 

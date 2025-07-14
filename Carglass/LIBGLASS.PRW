@@ -44,7 +44,7 @@ class LIBGLASS
     method ITENSPV(_FILIAL, _NUM, _CLIENTE, _LOJACLI)
     Method ItensPC(_FILIAL, _NUM, _FORNECE, _LOJAFOR)
 
-    method Integrado(_Tabela)    //verifica se na tabela selecionada ha registros não integrados
+    method Integrado(_Tabela, ctpFild)    //verifica se na tabela selecionada ha registros não integrados
 
     method GerarNota(cPdv, cFilpv)       //Geração da Nota - de Saida
     method TrsMitNot(aDados)        //Transmissão da Nota Gerada
@@ -730,14 +730,22 @@ method ITENSPC(_FILIAL, _NUM, _FORNECE, _LOJAFOR ) class LIBGLASS
 Return aRet
 
 
-method Integrado( tabela ) class LIBGLASS
+method Integrado( tabela, ctpFild ) class LIBGLASS
     Local aTmp := {}
-    
+    oWS := LIBGLASS():new()
+
     if tabela == "SA2"
         cQuery := " SELECT * "
         cQuery += " FROM "+RetSQLName("SA2") + " AS SA2 "
         cQuery += " WHERE SA2.A2_ZINTEGR <> 'S' "
-        cQuery += " AND SA2.D_E_L_E_T_ = '' "
+        IF !EMPTY(ctpFild) 
+            if ctpFild == "S"
+                cQuery += " AND A2_ZTPAFIL = 'S' "
+            else
+                cQuery += " AND A2_ZTPAFIL <> 'S' "
+            endif
+        Endif       
+        cQuery += " AND SA2.D_E_L_E_T_ <> '*' "
         cAlS:= CriaTrab(Nil,.F.)
         DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlS, .F., .T.)    
 
@@ -785,7 +793,14 @@ method Integrado( tabela ) class LIBGLASS
         cQuery := " SELECT * "
         cQuery += " FROM "+RetSQLName("SA1") + " AS SA1 WITH (NOLOCK) "
         cQuery += " WHERE SA1.A1_ZINTEGR <> 'S' "
-        cQuery += " AND SA1.D_E_L_E_T_ = '' "
+        IF !EMPTY(ctpFild) 
+            if ctpFild == "S"
+                cQuery += " AND A1_ZTPAFIL = 'S' "
+            else
+                cQuery += " AND A1_ZTPAFIL <> 'S' "
+            endif
+        Endif       
+        cQuery += " AND SA1.D_E_L_E_T_ <> '*' "
         cAlSA1 := CriaTrab(Nil,.F.)
         DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSA1, .F., .T.)    
 
@@ -836,21 +851,25 @@ method Integrado( tabela ) class LIBGLASS
         cQuery := " SELECT * "
         cQuery += " FROM "+RetSQLName("SC5") + " AS SC5 "
         cQuery += " WHERE C5_ZINTEGR <> 'S' "
-        cQuery += " AND SC5.D_E_L_E_T_ = '' "
+        cQuery += " AND SC5.D_E_L_E_T_ <> '*' "
         cAlSC5:= CriaTrab(Nil,.F.)
         DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSC5, .F., .T.)                
 
-        nItem := 0                
+        nIt := 0                
         DO WHILE !((cAlSC5)->(EOF()))
             aAdd( aTmp , JsonObject():New() )
-            nItem++
-            aTmp[nItem]['NUMPV']          := (cAlSC5)->C5_NUM
-            aTmp[nItem]['EMISSAO']        := StoD((cAlSC5)->C5_EMISSAO)
-            aTmp[nItem]['FORNECE']        := (cAlSC5)->C5_CLIENTE
-            aTmp[nItem]['LOJA']           := (cAlSC5)->C5_LOJACLI
-            aTmp[nItem]['LOJAENTREGA']    := (cAlSC5)->C5_LOJAENT
-            aTmp[nItem]['COND']           := (cAlSC5)->C5_CONDPAG
-            aTmp[nItem]['INTEGRADO']	  := (cAlSC5)->C5_ZINTEGR
+            nIt++
+            aTmp[nIt]['NUMPV']          := (cAlSC5)->C5_NUM
+            aTmp[nIt]['EMISSAO']        := (cAlSC5)->C5_EMISSAO
+            aTmp[nIt]['CLIENTE']        := (cAlSC5)->C5_CLIENTE
+            aTmp[nIt]['LOJA']           := (cAlSC5)->C5_LOJACLI
+            aTmp[nIt]['LOJAENTREGA']    := (cAlSC5)->C5_LOJAENT
+            aTmp[nIt]['COND']           := (cAlSC5)->C5_CONDPAG
+            aTmp[nIt]['INTEGRADO']	  := (cAlSC5)->C5_ZINTEGR
+            aTmp[nIt]['NATUREZA']  	  := Rtrim((cAlSC5)->C5_NATUREZ)
+            aTmp[nIt]['NOTA']  	      := Rtrim((cAlSC5)->C5_NOTA)
+            aTmp[nIt]['SERIE'] 	      := Rtrim((cAlSC5)->C5_SERIE)
+            aTmp[nIt]['ITENS']          := oWS:ITENSPV((cAlSC5)->C5_FILIAL, (cAlSC5)->C5_NUM, (cAlSC5)->C5_CLIENTE, (cAlSC5)->C5_LOJACLI )
             (cAlSC5)->(DBSKIP())
             LOOP
         ENDDO
@@ -860,28 +879,25 @@ method Integrado( tabela ) class LIBGLASS
         cQuery := " SELECT * "
         cQuery += " FROM "+RetSQLName("SC7") + " AS SC7 "
         cQuery += " WHERE C7_ZINTEGR <> 'S' "
-        cQuery += " AND SC7.D_E_L_E_T_ = '' "
+        cQuery += " AND SC7.D_E_L_E_T_ <> '*' "
         cAlSC7:= CriaTrab(Nil,.F.)
         DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSC7, .F., .T.)                
 
-        nItem := 0                
+        nIt := 0                
         DO WHILE !((cAlSC7)->(EOF()))
             aAdd( aTmp , JsonObject():New() )
-            nItem++
-            aTmp[nItem]['NUMPC']     := (cAlSC7)->C7_NUM
-            aTmp[nItem]['EMISSAO']   := StoD((cAlSC7)->C7_EMISSAO)
-            aTmp[nItem]['FORNECE']   := (cAlSC7)->C7_FORNECE
-            aTmp[nItem]['LOJA']      := (cAlSC7)->C7_LOJA
-            aTmp[nItem]['COND']      := (cAlSC7)->C7_COND
-            aTmp[nItem]['CONTATO']   := (cAlSC7)->C7_CONTATO
-            aTmp[nItem]['FILENT']    := (cAlSC7)->C7_FILENT
-            aTmp[nItem]['TPFRETE']   := (cAlSC7)->C7_TPFRETE
-            aTmp[nItem]['FRETE']     := (cAlSC7)->C7_FRETE
-            aTmp[nItem]['PRODUTO']   := (cAlSC7)->C7_PRODUTO
-            aTmp[nItem]['QUANT']     := TRANSFORM( (cAlSC7)->C7_QUANT, "@e 999,999,999.99")
-            aTmp[nItem]['PRECO']     := TRANSFORM( (cAlSC7)->C7_PRECO, "@e 999,999,999.99")
-            aTmp[nItem]['TOTAL']     := TRANSFORM( (cAlSC7)->C7_TOTAL, "@e 999,999,999.99")
-            aTmp[nItem]['INTEGRADO'] := (cAlSC7)->C7_ZINTEGR
+            nIt++
+            aTmp[nIt]['NUMPC']     := (cAlSC7)->C7_NUM
+            aTmp[nIt]['EMISSAO']   := (cAlSC7)->C7_EMISSAO
+            aTmp[nIt]['FORNECE']   := (cAlSC7)->C7_FORNECE
+            aTmp[nIt]['LOJA']      := (cAlSC7)->C7_LOJA
+            aTmp[nIt]['COND']      := (cAlSC7)->C7_COND
+            aTmp[nIt]['CONTATO']   := (cAlSC7)->C7_CONTATO
+            aTmp[nIt]['FILENT']    := (cAlSC7)->C7_FILENT
+            aTmp[nIt]['TPFRETE']   := (cAlSC7)->C7_TPFRETE
+            aTmp[nIt]['FRETE']     := (cAlSC7)->C7_FRETE
+            aTmp[nIt]['INTEGRADO'] := (cAlSC7)->C7_ZINTEGR
+            aTmp[nIt]['ITENS']     := oWS:ITENSPC((cAlSC7)->C7_FILIAL, (cAlSC7)->C7_NUM, (cAlSC7)->C7_FORNECE, (cAlSC7)->C7_LOJA )
             (cAlSC7)->(DBSKIP())
             LOOP
         ENDDO
@@ -890,7 +906,7 @@ method Integrado( tabela ) class LIBGLASS
         cQuery := " SELECT * "
         cQuery += " FROM "+RetSQLName("SC1") + " AS SC1 "
         cQuery += " WHERE C1_ZINTEGR <> 'S' "
-        cQuery += " AND SC1.D_E_L_E_T_ = '' "
+        cQuery += " AND SC1.D_E_L_E_T_ <> '*' "
         cAlSC1:= CriaTrab(Nil,.F.)
         DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSC1, .F., .T.)                
 
@@ -910,7 +926,7 @@ method Integrado( tabela ) class LIBGLASS
         cQuery := " SELECT * "
         cQuery += " FROM "+RetSQLName("SA1") + " AS SA1 WITH (NOLOCK) "
         cQuery += " WHERE SA1.A1_ZINTEGR <> 'S' "
-        cQuery += " AND SA1.D_E_L_E_T_ = '' "
+        cQuery += " AND SA1.D_E_L_E_T_ <> '*' "
         cAlSA1 := CriaTrab(Nil,.F.)
         DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSA1, .F., .T.)    
 
@@ -984,7 +1000,6 @@ method Integrado( tabela ) class LIBGLASS
         (cAlSB1)->(dbclosearea())
     EndIF
 Return aTmp
-
 
 METHOD GerarNota(cPdv, cFilpv) class LIBGLASS
  

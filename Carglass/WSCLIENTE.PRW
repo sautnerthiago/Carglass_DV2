@@ -23,6 +23,7 @@ WSRESTFUL wsCliente DESCRIPTION 'Cadastro de Cliente' FORMAT APPLICATION_JSON
 	WSDATA dataDe     AS STRING OPTIONAL
 	WSDATA dataAte    AS STRING OPTIONAL
 	WSDATA tipo       AS STRING OPTIONAL
+	WSDATA tpFiliado  AS STRING 
 
 	WSDATA page AS INTEGER OPTIONAL
 	WSDATA pageSize AS INTEGER OPTIONAL
@@ -34,7 +35,7 @@ WSRESTFUL wsCliente DESCRIPTION 'Cadastro de Cliente' FORMAT APPLICATION_JSON
 	WSMETHOD GET TIPO    DESCRIPTION 'Retorna o registro pesquisado - TIPO'   		WSSYNTAX '/wsCliente/tipolist/{tipo}'   	 			PATH '/wsCliente/tipolist/{tipo}' 				PRODUCES APPLICATION_JSON
 	WSMETHOD GET ESTADO  DESCRIPTION 'Retorna o registro pesquisado - ESTADO' 		WSSYNTAX '/wsCliente/estadolist/{estado}'   			PATH '/wsCliente/estadolist/{estado}'        	PRODUCES APPLICATION_JSON
 	WSMETHOD GET CLIDATA DESCRIPTION 'Retorna o registro pesquisado - DATA'   		WSSYNTAX '/wsCliente/dataslist/data?{dataDe}&{dataAte}' PATH '/wsCliente/dataslist/{dataDe}/{dataAte}'  PRODUCES APPLICATION_JSON
-	WSMETHOD GET INTEGRA DESCRIPTION 'Retorna o registro pesquisado - INTEGRADO'   	WSSYNTAX '/wsCliente/integrado' 						PATH '/wsCliente/integrado'  					PRODUCES APPLICATION_JSON
+	WSMETHOD GET INTEGRA DESCRIPTION 'Retorna o registro pesquisado - INTEGRADO'   	WSSYNTAX '/wsCliente/integrado/{tpFiliado}'				PATH '/wsCliente/integrado/{tpFiliado}'			PRODUCES APPLICATION_JSON
 	WSMETHOD POST NEW    DESCRIPTION 'Inclusão de registro'          		  		WSSYNTAX '/wsCliente/new'      							PATH 'new'        								PRODUCES APPLICATION_JSON
 	WSMETHOD PUT  UPDATE DESCRIPTION 'Atualização de registro'       		  		WSSYNTAX '/wsCliente/update'   							PATH 'update'     								PRODUCES APPLICATION_JSON
 	WSMETHOD PUT  ERASE  DESCRIPTION 'Bloquear Registro'             		  		WSSYNTAX '/wsCliente/delete'    						PATH 'delete'     								PRODUCES APPLICATION_JSON
@@ -244,16 +245,28 @@ WSMETHOD GET CLIDATA WSRECEIVE dataDe, dataAte WSSERVICE wsCliente
 	Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
 Return lRet
 
-WSMETHOD GET INTEGRA WSRECEIVE WSSERVICE wsCliente
+WSMETHOD GET INTEGRA WSRECEIVE tpFiliado  WSSERVICE wsCliente
 	Local lRet       := .T.
 	Local jResponse  := JsonObject():New()
+	
+	Local cTpFld	 := self:tpFiliado
 
-	oWS    := LIBGLASS():new()
-	cJsonNfs:= FwJsonSerialize( oWS:Integrado( "SA1" )  )
+	oWS     := LIBGLASS():new()
+	cJsonNfs:= FwJsonSerialize( oWS:Integrado( "SA1", cTpFld )  )
 
+	If Empty(cJsonNfs) 
+		Self:setStatus(500)
+		jResponse['errorId']  := 'Tipo016'
+		jResponse['error']    := 'Não ha dados a serem integrados'
+		jResponse['solution'] := 'Não ha dados a Integrar'
+
+		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
+		oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "NAO HA DADOS A SEREM INTEGRADOS")
+	Else
 	//Define o retorno
-	Self:SetContentType('application/json')
-	Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
+		Self:SetContentType('application/json')
+		Self:SetResponse(cJsonNfs)
+	ENDIF
 
 Return lRet
 
@@ -877,3 +890,4 @@ WSMETHOD GET customers WSRECEIVE searchKey, page, pageSize WSREST wsCliente
 	Self:SetResponse( cJsonCli ) //-- Seta resposta
 
 Return( lRet )
+

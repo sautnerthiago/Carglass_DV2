@@ -113,11 +113,21 @@ WSMETHOD GET INTEGRA WSRECEIVE WSSERVICE WSPEDCOM
 	Local jResponse  := JsonObject():New()
 
 	oWS    := LIBGLASS():new()
-	cJsonNfs:= FwJsonSerialize( oWS:Integrado( "SC7" )  )			
+	cJsonNfs:= FwJsonSerialize( oWS:Integrado( "SC7", "" )  )			
 
-	//Define o retorno
-	Self:SetContentType('application/json')
-	Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
+    If Empty(cJsonNfs) 
+		Self:setStatus(500)
+		jResponse['errorId']  := 'Tipo016'
+		jResponse['error']    := 'Não ha dados a serem integrados'
+		jResponse['solution'] := 'Não ha dados a Integrar'
+
+		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
+		oWS:GRAVALOGMURO(cResponc, cJason, "WSPEDCOM", "NAO HA DADOS A SEREM INTEGRADOS")
+	Else
+    	//Define o retorno
+		Self:SetContentType('application/json')
+		Self:SetResponse(cJsonNfs)
+	ENDIF	
 
 Return lRet
 

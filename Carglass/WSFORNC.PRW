@@ -18,6 +18,8 @@ WSRESTFUL WSFORNEC DESCRIPTION 'CADASTRO DE FORNECEDOR'
 	WSDATA dataDe     AS STRING OPTIONAL
 	WSDATA dataAte    AS STRING OPTIONAL
 	WSDATA tipo       AS STRING OPTIONAL
+	WSDATA tpFiliado  AS STRING 
+
 
 	WSDATA page AS INTEGER OPTIONAL
 	WSDATA pageSize AS INTEGER OPTIONAL
@@ -27,10 +29,10 @@ WSRESTFUL WSFORNEC DESCRIPTION 'CADASTRO DE FORNECEDOR'
 	WSMETHOD GET supplier DESCRIPTION "Retorna lista de Fornecedores" WSSYNTAX "/WSFORNEC/fornecedores " PATH '/WSFORNEC/fornecedores' PRODUCES APPLICATION_JSON
 	//Métodos 
 	WSMETHOD GET CNPJ    DESCRIPTION 'Retorna o Registro pesquisado - CNPJ'   		WSSYNTAX '/WSFORNEC/listcnpj/cnpj?{cnpj}' 			  	PATH '/WSFORNEC/cnpj/{cnpj}'  					PRODUCES APPLICATION_JSON
-	WSMETHOD GET TIPO    DESCRIPTION 'Retorna o registro pesquisado - TIPO'   		WSSYNTAX '/WSFORNEC/tipolist/{tipo}'   	 			  	PATH '/WSFORNEC/tipolist/{tipo}' 					PRODUCES APPLICATION_JSON
-	WSMETHOD GET ESTADO  DESCRIPTION 'Retorna o registro pesquisado - ESTADO' 		WSSYNTAX '/WSFORNEC/estadolist/{estado}'   			  	PATH '/WSFORNEC/estadolist/{estado}'        		PRODUCES APPLICATION_JSON
+	WSMETHOD GET TIPO    DESCRIPTION 'Retorna o registro pesquisado - TIPO'   		WSSYNTAX '/WSFORNEC/tipolist/{tipo}'   	 			  	PATH '/WSFORNEC/tipolist/{tipo}' 				PRODUCES APPLICATION_JSON
+	WSMETHOD GET ESTADO  DESCRIPTION 'Retorna o registro pesquisado - ESTADO' 		WSSYNTAX '/WSFORNEC/estadolist/{estado}'   			  	PATH '/WSFORNEC/estadolist/{estado}'        	PRODUCES APPLICATION_JSON
 	WSMETHOD GET FORDATA DESCRIPTION 'Retorna o registro pesquisado - DATA'   		WSSYNTAX '/WSFORNEC/dataslist/data?{dataDe}&{dataAte}'  PATH '/WSFORNEC/dataslist/{dataDe}/{dataAte}'  	PRODUCES APPLICATION_JSON
-	WSMETHOD GET INTEGRA DESCRIPTION 'Retorna o registro pesquisado - INTEGRADO'   	WSSYNTAX '/WSFORNEC/integrado' 							PATH '/wsCliente/integrado'  					PRODUCES APPLICATION_JSON
+	WSMETHOD GET INTEGRA DESCRIPTION 'Retorna o registro pesquisado - INTEGRADO'   	WSSYNTAX '/WSFORNEC/integrado/{tpFiliado}'				PATH '/WSFORNEC/integrado/{tpFiliado}'			PRODUCES APPLICATION_JSON
 
     WSMETHOD POST NEW    DESCRIPTION 'Inclusão de registro'                   WSSYNTAX '/WSFORNEC/new'              PATH 'new'      PRODUCES APPLICATION_JSON
     WSMETHOD PUT  UPDATE DESCRIPTION 'Atualização de registro'                WSSYNTAX '/WSFORNEC/update'           PATH 'update'   PRODUCES APPLICATION_JSON
@@ -241,16 +243,27 @@ WSMETHOD GET FORDATA WSRECEIVE dataDe, dataAte WSSERVICE WSFORNEC
 	Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
 Return lRet
 
-WSMETHOD GET INTEGRA WSRECEIVE WSSERVICE WSFORNEC
+WSMETHOD GET INTEGRA WSRECEIVE tpFiliado WSSERVICE WSFORNEC
 	Local lRet       := .T.
 	Local jResponse  := JsonObject():New()
+	Local cTpFld	 := self:tpFiliado
 
-	oWS    := LIBGLASS():new()
-	cJsonNfs:= FwJsonSerialize( oWS:Integrado( "SA2" )  )			
+	oWS     := LIBGLASS():new()
+	cJsonNfs:= FwJsonSerialize( oWS:Integrado( "SA2", cTpFld )  )
 
+	If Empty(cJsonNfs) 
+		Self:setStatus(500)
+		jResponse['errorId']  := 'Tipo016'
+		jResponse['error']    := 'Não ha dados a serem integrados'
+		jResponse['solution'] := 'Não ha dados a Integrar'
+
+		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
+		oWS:GRAVALOGMURO(cResponc, cJason, "WSFORNECE", "NAO HA DADOS A SEREM INTEGRADOS")
+	Else
 	//Define o retorno
-	Self:SetContentType('application/json')
-	Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
+		Self:SetContentType('application/json')
+		Self:SetResponse(cJsonNfs)
+	ENDIF	
 
 Return lRet
 
