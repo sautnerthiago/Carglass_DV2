@@ -50,6 +50,11 @@ class LIBGLASS
     method TrsMitNot(aDados)        //Transmissão da Nota Gerada
     METHOD MonitNf(aDocGer)  //Temporizador - para geração etransmissão da nota - versão 02
 
+    METHOD pgClient(_cnpj)
+    METHOD pgFornec(_cnpj)
+
+    METHOD TesPDV( _prod, _client, _loja, _operac )
+
 endclass
 
 method new() class LIBGLASS
@@ -1241,3 +1246,61 @@ Method MonitNf(aNotas) class LIBGLASS
     Next
 
 Return lOk
+
+Method pgClient(_cnpj) class LIBGLASS
+    Local aRet := {}
+
+    cQuery := " SELECT A1_FILIAL, A1_COD, A1_LOJA, A1_NOME, A1_NREDUZ, A1_CGC, A1_END "
+	cQuery += " FROM "+RetSQLName("SA1") + " AS SA1 WITH (NOLOCK) "
+	cQuery += " WHERE A1_FILIAL = '" + FWxFilial("SA1") + "' "
+    cQuery += " AND SA1.A1_CGC = '"+_cnpj+"' "
+	cQuery += " AND SA1.D_E_L_E_T_ = '' AND SA1.A1_MSBLQL <> '1' "
+	cAlSA1:= CriaTrab(Nil,.F.)
+	DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSA1, .F., .T.)    
+
+    aadd(aRet, {(cAlSA1)->A1_COD, (cAlSA1)->A1_LOJA})
+
+    (cAlSA1)->(dbclosearea())
+
+Return aRet
+
+Method pgFornec(_cnpj) class LIBGLASS
+    Local aRet := {}
+    cQuery := " SELECT A2_FILIAL, A2_COD, A2_LOJA, A2_NOME, A2_NREDUZ, A2_CGC, A2_END "
+	cQuery += " FROM "+RetSQLName("SA2") + " AS SA2 WITH (NOLOCK) "
+	cQuery += " WHERE A2_FILIAL = '" + FWxFilial("SA1") + "' AND SA2.A2_CGC = '"+_cnpj+"' "
+	cQuery += " AND SA2.D_E_L_E_T_ = '' AND SA2.A2_MSBLQL <> '1' "
+	cAlSA2:= CriaTrab(Nil,.F.)
+	DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSA2, .F., .T.)    
+
+    aadd(aRet, {(cAlSA2)->A2_COD, (cAlSA2)->A2_LOJA})
+
+    (cAlSA2)->(dbclosearea())
+
+Return aRet
+
+
+Method TesPDV(_prod, _client, _loja, _operac) CLASS LIBGLASS
+	Local cTesIntel := ""
+
+    cQuery := " SELECT * "
+	cQuery += " FROM "+RetSQLName("SFM") + " WITH (NOLOCK) "
+	cQuery += " WHERE FM_FILIAL = '" + FWxFilial("SFM") + "' AND  FM_TIPO = '"+_operac+"' "
+	cQuery += " AND D_E_L_E_T_ = '' "
+	cAlSFM:= CriaTrab(Nil,.F.)
+	DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSFM, .F., .T.)    
+
+    cEstCli := Posicione("SA1", 1, xFilial("SA1")+_client+_loja,"A1_EST")
+
+    DO WHILE !((cAlSFM)->(EOF()))
+        IF (cAlSFM)->FM_CLIENTE == _client .AND. (cAlSFM)->FM_LOJACLI == _loja .AND. (cAlSFM)->FM_PRODUTO == _prod .AND. (cAlSFM)->FM_EST == cEstCli
+            cTesIntel := (cAlSFM)->FM_TS
+        Else
+            cTesIntel := (cAlSFM)->FM_TS
+        ENDIF    
+        (cAlSFM)->(DBSKIP())
+        LOOP
+    ENDDO
+    (cAlSFM)->(dbclosearea())
+
+Return (cTesIntel)

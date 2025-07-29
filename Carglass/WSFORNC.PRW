@@ -304,8 +304,11 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE WSFORNEC
 	cJason := cJson
 	::cnpj := jJson:GetJsonObject('CNPJ')
 
-	cCodi  := jJson:GetJsonObject('CODIGO')
-	cLoja  := jJson:GetJsonObject('LOJA')
+	//cCodi  := jJson:GetJsonObject('CODIGO')
+	//cLoja  := jJson:GetJsonObject('LOJA')
+
+	cCodi  := Iif(empty(jJson:GetJsonObject('CODIGO')), GetSXENum('SA2', 'A2_COD') , jJson:GetJsonObject('CODIGO'))
+	cLoja  := iif(empty(jJson:GetJsonObject('LOJA')), "01", jJson:GetJsonObject('LOJA'))
 
 	lBloq  := iif(jJson:GetJsonObject('BLOQUEADO')=="NAO" .or. Empty(jJson:GetJsonObject('BLOQUEADO')), "2", "1")
 	lAtivo := iif( jJson:GetJsonObject('ATIVO')=="NAO" .or. Empty(jJson:GetJsonObject('ATIVO')), "N", "S")
@@ -344,11 +347,11 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE WSFORNEC
 		oWS:GRAVALOGMURO(cResponc, cJason, "WSFORNC", "INCLUSÃO DE FORNECEDOR")
     Else
 		DbSelectArea(cAliasWS)
-       
+
 		//Adiciona os dados do ExecAuto
 		aAdd(aDados, {'A2_FILIAL' , FWCodFil()                      , Nil} )
-		aAdd(aDados, {'A2_COD'    , jJson:GetJsonObject('CODIGO')   , Nil} )
-		aAdd(aDados, {'A2_LOJA'   , jJson:GetJsonObject('LOJA')     , Nil} )
+		aAdd(aDados, {'A2_COD'    , cCodi   						, Nil} )
+		aAdd(aDados, {'A2_LOJA'   , cLoja   						, Nil} )
 		aAdd(aDados, {'A2_NOME'   , jJson:GetJsonObject('NOME')     , Nil} )
 		aAdd(aDados, {'A2_NREDUZ ', jJson:GetJsonObject('NREDUZ')   , Nil} )
         aAdd(aDados, {'A2_BAIRRO ', jJson:GetJsonObject('BAIRRO')   , Nil} )
@@ -357,16 +360,15 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE WSFORNEC
         aAdd(aDados, {'A2_CGC    ', jJson:GetJsonObject('CNPJ')     , Nil} )
         aAdd(aDados, {'A2_EST    ', jJson:GetJsonObject('ESTADO')   , Nil} )
         aAdd(aDados, {'A2_COD_MUN', jJson:GetJsonObject('COD_MUN')  , Nil} )
-        aAdd(aDados, {'A2_COND   ', jJson:GetJsonObject('COND')     , Nil} )
+        //aAdd(aDados, {'A2_COND   ', jJson:GetJsonObject('COND')     , Nil} )
         aAdd(aDados, {'A2_DDD    ', jJson:GetJsonObject('DDD')      , Nil} )
-        aAdd(aDados, {'A2_EMAIL  ', jJson:GetJsonObject('EMAIL')    , Nil} )
         aAdd(aDados, {'A2_END    ', jJson:GetJsonObject('END')      , Nil} )
         aAdd(aDados, {'A2_INSCR  ', jJson:GetJsonObject('INSCR')    , Nil} )
         aAdd(aDados, {'A2_MUN    ', jJson:GetJsonObject('MUNICIPIO'), Nil} )
-        aAdd(aDados, {'A2_NATUREZ', jJson:GetJsonObject('NATUREZ')  , Nil} )
+        //aAdd(aDados, {'A2_NATUREZ', jJson:GetJsonObject('NATUREZ')  , Nil} )
         aAdd(aDados, {'A2_TIPO   ', jJson:GetJsonObject('TIPO')     , Nil} )
         aAdd(aDados, {'A2_TEL    ', jJson:GetJsonObject('FONE')     , Nil} )
-        aAdd(aDados, {'A2_TRANSP ', jJson:GetJsonObject('TRANSP')   , Nil} )
+        //aAdd(aDados, {'A2_TRANSP ', jJson:GetJsonObject('TRANSP')   , Nil} )
         aAdd(aDados, {'A2_PAIS   ', '105'  							, Nil} )
 		aAdd(aDados, {'A2_ZINTEGR', jJson:GetJsonObject('INTEGRADO'), Nil} )
 		aAdd(aDados, {'A2_ZMOBILE', cMOVEL							, Nil} )

@@ -307,8 +307,8 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE wsCliente
 	cError := jJson:FromJson(cJson)
 	cJason := cJson
 	::cnpj := jJson:GetJsonObject('CNPJ')
-	_COD   := jJson:GetJsonObject('CODIGO')
-	_LOJA  := jJson:GetJsonObject('LOJA')
+	_COD   := Iif(empty(jJson:GetJsonObject('CODIGO')), GetSXENum('SA1', 'A1_COD') , jJson:GetJsonObject('CODIGO'))
+	_LOJA  := iif(empty(jJson:GetJsonObject('LOJA')), "01", jJson:GetJsonObject('LOJA'))
 
 	lBloq  := iif(jJson:GetJsonObject('BLOQUEADO')=="NAO" .or. Empty(jJson:GetJsonObject('BLOQUEADO')), "2", "1")
 	lAtivo := iif( jJson:GetJsonObject('ATIVO')=="NAO" .or. Empty(jJson:GetJsonObject('ATIVO')), "N", "S")
@@ -344,11 +344,12 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE wsCliente
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
 		oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "INCLUSÃO DE CLIENTE")
 	Else
+
 		DbSelectArea(cAliasWS)
 		//Adiciona os dados do ExecAuto
 		aAdd(aDados, {'A1_FILIAL' , FWCodFil()                      , Nil} )
-		aAdd(aDados, {'A1_COD'    , jJson:GetJsonObject('CODIGO')   , Nil} )
-		aAdd(aDados, {'A1_LOJA'   , jJson:GetJsonObject('LOJA')     , Nil} )
+		aAdd(aDados, {'A1_COD'    , _cod   							, Nil} )
+		aAdd(aDados, {'A1_LOJA'   , _loja   						, Nil} )
 		aAdd(aDados, {'A1_NOME'   , jJson:GetJsonObject('NOME')     , Nil} )
 		aAdd(aDados, {'A1_NREDUZ ', jJson:GetJsonObject('NREDUZ')   , Nil} )
 		aAdd(aDados, {'A1_BAIRRO ', jJson:GetJsonObject('BAIRRO')   , Nil} )
@@ -363,13 +364,13 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE wsCliente
 		aAdd(aDados, {'A1_END    ', jJson:GetJsonObject('END')      , Nil} )
 		aAdd(aDados, {'A1_INSCR  ', jJson:GetJsonObject('INSCR')    , Nil} )
 		aAdd(aDados, {'A1_MUN    ', jJson:GetJsonObject('MUNICIPIO'), Nil} )
-		aAdd(aDados, {'A1_NATUREZ', jJson:GetJsonObject('NATUREZ')  , Nil} )
+		//aAdd(aDados, {'A1_NATUREZ', jJson:GetJsonObject('NATUREZ')  , Nil} )
 		aAdd(aDados, {'A1_OBS    ', 'WMSCLINTE'                     , Nil} )
 		aAdd(aDados, {'A1_PESSOA ', jJson:GetJsonObject('PESSOA')   , Nil} )
 		aAdd(aDados, {'A1_TIPCLI ', jJson:GetJsonObject('TIPO')   	, Nil} )
 		aAdd(aDados, {'A1_TIPO   ', jJson:GetJsonObject('TIPO') 	, Nil} )
 		aAdd(aDados, {'A1_TEL    ', jJson:GetJsonObject('FONE')     , Nil} )
-		aAdd(aDados, {'A1_TRANSP ', jJson:GetJsonObject('TRANSP')   , Nil} )
+		//aAdd(aDados, {'A1_TRANSP ', jJson:GetJsonObject('TRANSP')   , Nil} )
 		aAdd(aDados, {'A1_PAIS   ', '105'  							, Nil} )
 		aAdd(aDados, {'A1_ZINTEGR', jJson:GetJsonObject('INTEGRADO'), Nil} )
 		aAdd(aDados, {'A1_ZMOBILE', cMOVEL							, Nil} )
@@ -728,7 +729,6 @@ WSMETHOD PUT ERASE WSRECEIVE cnpj WSSERVICE wsCliente
 	Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
 Return lRet
 
-
 WSMETHOD GET customers WSRECEIVE searchKey, page, pageSize WSREST wsCliente
 
 	Local aListCli := {}
@@ -890,4 +890,3 @@ WSMETHOD GET customers WSRECEIVE searchKey, page, pageSize WSREST wsCliente
 	Self:SetResponse( cJsonCli ) //-- Seta resposta
 
 Return( lRet )
-
