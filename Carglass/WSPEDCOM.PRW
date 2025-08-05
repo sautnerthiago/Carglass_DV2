@@ -4,7 +4,7 @@
 #Include "TopConn.ch"
 #Include 'Protheus.ch'
 #INCLUDE 'APWEBSRV.CH'
-
+#Include "tbiconn.ch"
 /*/{Protheus.doc} WSRESTFUL WSPEDCOM
 CADASTRO DE FORNECEDOR
 @author JOSE EDILSON DE LIMA PINTO
@@ -149,7 +149,7 @@ WSMETHOD POST NEW WSRECEIVE NUMPC WSSERVICE WSPEDCOM
     Local nX
     Local aItens            := {}
     Local aCab              := {}
-    Local aFornec           := {}
+    //Local aFornec           := {}
 
     Private lMsErroAuto     := .F.
     Private lMsHelpAuto     := .T.
@@ -167,26 +167,33 @@ WSMETHOD POST NEW WSRECEIVE NUMPC WSSERVICE WSPEDCOM
     jJson  := JsonObject():New()
     cError := jJson:FromJson(cJson)
 	cJason := cJson
-    lTemPr := .T.
+    lTemPr := .F.
     FOR NX := 1 TO LEN(jJson:GetJsonObject("ITENS"))
 	    _cod   := jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO")
         lTemPr := oWS:temProd(FWxFilial("SB1"), _cod)//temFornec(, ::cnpj)
     Next
 
     //VALIDAÇÃO DO FORNECEDOR PELO cnpj
-    aFornec := oWS:pgFornec(jJson:GetJsonObject("CNPJ"))  //16/07/2025 - inclusão do CNPJ
-    if len(aFornec) > 0
-        _For    := aFornec[1,1] //jJson:GetJsonObject("CLIENTE")
-        _lojFor := aFornec[1,2] //jJson:GetJsonObject("LOJA")
-        lTemFor := ows:temCliCod(FWxFilial("SA1"), _Cli, _lojCli)
-    else
-        lTemFor := .F.
-    endif
+    //aFornec := oWS:pgFornec(jJson:GetJsonObject("CNPJ"))  //16/07/2025 - inclusão do CNPJ
+    //if len(aFornec) > 0
+    _For    := jJson:GetJsonObject("FORNECE")
+    _lojFor := "01"//jJson:GetJsonObject("LOJA")
+    lTemFor := ows:temForCod(FWxFilial("SA2"), _For, _lojFor)
+    //else
+    //    lTemFor := .F.
+    //endif
     //VALIDAÇÃO DO FORNECEDOR PELO cnpj
 
-    cEmpAt := Iif(EMPTY(jJson:GetJsonObject("GRUPO") ), "01", jJson:GetJsonObject("GRUPO" ))
-    cFilAt := Iif(EMPTY(jJson:GetJsonObject("FILIAL")), "01", jJson:GetJsonObject("FILIAL"))
-    rpcSetEnv(cEmpAt, cFilAt)
+    cEmpAt1 := cEmpAnt
+    cFilAt1 := cFilAnt
+
+    cEmpAt   := Iif(EMPTY(jJson:GetJsonObject("GRUPO") ), "01", jJson:GetJsonObject("GRUPO" ))
+    cFilAt   := Iif(EMPTY(jJson:GetJsonObject("FILIAL")), "01", jJson:GetJsonObject("FILIAL"))
+
+    cEmpAnt  := cEmpAt
+    cFilAnt  := cFilAt
+    
+    RPCSetEnv(cEmpAt, cFilAt)
 
     IF !lTemFor
 		//SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
@@ -232,11 +239,12 @@ WSMETHOD POST NEW WSRECEIVE NUMPC WSSERVICE WSPEDCOM
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
 		oWS:GRAVALOGMURO(cResponc, cJason, "WSPEDCOM", "INCLUSÃO DE PEDIDO DE COMPRAS")
     Else		
-      
+
 		//Adiciona os dados do ExecAuto
-        _cNumPed := GetSXENum("SC7","C7_NUM") //jJson:GetJsonObject("NUMPC")
+        _cNumPed := oWs:GrPedCom(cFilAt) //GetSXENum("SC7","C7_NUM") //jJson:GetJsonObject("NUMPC")
         cTes     := jJson:GetJsonObject("TES")
 
+        aadd(aCab, {"C7_FILIAL"    , cFilAt     ,Nil})
         aadd(aCab, {"C7_NUM"       , _cNumPed   ,Nil})
         aadd(aCab, {"C7_EMISSAO"   , ddatabase  ,Nil})
         aadd(aCab, {"C7_MOEDA"     , 1			,Nil})
@@ -247,21 +255,23 @@ WSMETHOD POST NEW WSRECEIVE NUMPC WSSERVICE WSPEDCOM
         aadd(aCab, {"C7_CONTATO"   , jJson:GetJsonObject("CONTATO"), Nil})
         aadd(aCab, {"C7_FILENT"    , jJson:GetJsonObject("FILENT"), Nil})
         aadd(aCab, {"C7_ZINTEGR"   , jJson:GetJsonObject("INTEGRADO"), Nil})
-        aadd(aCab, {"C7_ZEXTID"    , jJson:GetJsonObject("EXTERNID"), Nil})
         IF !Empty(cTes)
-            aadd(aCab, {"C7_TES"       , jJson:GetJsonObject("TES"), Nil})
+            aadd(aCab, {"C7_TES"   , jJson:GetJsonObject("TES"), Nil})
         EndIF
+
+        _ZEXTID := jJson:GetJsonObject("EXTERNID")
                             
         FOR Nx := 1 to len(jJson:GetJsonObject("ITENS"))
             aLinhaC1 := {}
 
-            nTotal := (jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT") * jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO")) - jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("DESCONTO")
+            nTotal := (jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT") * jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO")) - jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("DESC")
             
             aadd(aLinhaC1, {"C7_PRODUTO" , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"), NIL})
             aadd(aLinhaC1, {"C7_QUANT"   , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT"), NIL})
             aadd(aLinhaC1, {"C7_PRECO"   , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO"), NIL})
-            aadd(aLinhaC1, {"C7_DESC01"  , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("DESCONTO"), NIL})
+            aadd(aLinhaC1, {"C7_DESC01"  , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("DESC"), NIL})
             aadd(aLinhaC1, {"C7_TOTAL"   , nTotal, NIL})
+            aadd(aLinhaC1, {"C7_OPER"    , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("OPERACAO"), NIL}) //05/08/2025 - INCLUIDO
 
             cUM    := POSICIONE("SB1",1,xFilial("SB1")+jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"),"B1_UM")
             cDesc  := POSICIONE("SB1",1,xFilial("SB1")+jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"),"B1_DESC")
@@ -282,6 +292,7 @@ WSMETHOD POST NEW WSRECEIVE NUMPC WSSERVICE WSPEDCOM
             aadd(aLinhaC1,{"C7_TXMOEDA" ,0.00                        ,NIL})              
             aadd(aLinhaC1,{"C7_VALFRE"  ,0.00                        ,NIL})         
             aadd(aLinhaC1,{"C7_BASESOL" ,0.00                        ,NIL})
+            aadd(aLinhaC1,{"C7_ZEXTID"  ,_ZEXTID                     ,Nil})            
             aadd(aItens,aLinhaC1)
         Next
         aRetGrv := oWS:pedCompra(aCab, aItens, 3) 
@@ -291,7 +302,7 @@ WSMETHOD POST NEW WSRECEIVE NUMPC WSSERVICE WSPEDCOM
 			cErrorLog   := ''
 			aLogAuto    := aRetGrv // GetAutoGrLog()
 			For nLinha := 1 To Len(aLogAuto)
-				cErrorLog += aLogAuto[nLinha] + CRLF
+				cErrorLog += aLogAuto[nLinha,1] + CRLF
 			Next nLinha
 
 			//Grava o arquivo de log
@@ -317,6 +328,8 @@ WSMETHOD POST NEW WSRECEIVE NUMPC WSSERVICE WSPEDCOM
 
     EndIf
     rpcClearEnv()
+    cEmpAnt  := cEmpAt1
+    cFilAnt  := cFilAt1
 
     //Define o retorno
     Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
@@ -363,15 +376,20 @@ WSMETHOD PUT UPDATE WSRECEIVE NUMPC WSSERVICE WSPEDCOM
         lTemPr := oWS:temProd(FWxFilial("SB1"), _cod)//temFornec(, ::cnpj)
     Next
 
-    //VALIDAÇÃO DO FORNECEDOR PELO cnpj
-    aFornec := oWS:pgFornec(jJson:GetJsonObject("CNPJ"))  //16/07/2025 - inclusão do CNPJ
-    _For    := aFornec[1,1] //jJson:GetJsonObject("CLIENTE")
-    _lojFor := aFornec[1,2] //jJson:GetJsonObject("LOJA")
-    //VALIDAÇÃO DO FORNECEDOR PELO cnpj
+    _For    := jJson:GetJsonObject("FORNECE")
+    _lojFor := "01"//jJson:GetJsonObject("LOJA")
+    lTemFor := ows:temForCod(FWxFilial("SA2"), _For, _lojFor)
 
-    cEmpAt := Iif(EMPTY(jJson:GetJsonObject("GRUPO") ), "01", jJson:GetJsonObject("GRUPO" ))
-    cFilAt := Iif(EMPTY(jJson:GetJsonObject("FILIAL")), "01", jJson:GetJsonObject("FILIAL"))
-    rpcSetEnv(cEmpAt, cFilAt)
+    cEmpAt1 := cEmpAnt
+    cFilAt1 := cFilAnt
+
+    cEmpAt   := Iif(EMPTY(jJson:GetJsonObject("GRUPO") ), "01", jJson:GetJsonObject("GRUPO" ))
+    cFilAt   := Iif(EMPTY(jJson:GetJsonObject("FILIAL")), "01", jJson:GetJsonObject("FILIAL"))
+
+    cEmpAnt  := cEmpAt
+    cFilAnt  := cFilAt
+    
+    RPCSetEnv(cEmpAt, cFilAt)
 
 	IF !lTemPr //oWS:temProd(FWxFilial("SB1"), _cod)//temFornec(, ::cnpj)
 		//SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
@@ -402,7 +420,7 @@ WSMETHOD PUT UPDATE WSRECEIVE NUMPC WSSERVICE WSPEDCOM
     Else
 
 		//Adiciona os dados do ExecAuto
-        _cNumPed := jJson:GetJsonObject("NUMPC") //GetSx8Num("SC7","C7_NUM")
+        _cNumPed := oWs:PGExtrt(jJson:GetJsonObject("EXTERNID")) //jJson:GetJsonObject("NUMPC") //GetSx8Num("SC7","C7_NUM")
 
         aadd(aCab, {"C7_NUM"       , _cNumPed   ,Nil})
         aadd(aCab, {"C7_EMISSAO"   , ddatabase  ,Nil})
@@ -414,18 +432,18 @@ WSMETHOD PUT UPDATE WSRECEIVE NUMPC WSSERVICE WSPEDCOM
         aadd(aCab, {"C7_CONTATO"   , jJson:GetJsonObject("CONTATO"), Nil})
         aadd(aCab, {"C7_FILENT"    , jJson:GetJsonObject("FILENT"), Nil})
         aadd(aCab, {"C7_ZINTEGR"   , jJson:GetJsonObject("INTEGRADO"), Nil})
-        aadd(aCab, {"C7_ZEXTID"    , jJson:GetJsonObject("EXTERNID"), Nil})
 
+        _ZEXTID  := jJson:GetJsonObject("EXTERNID")
+        
         FOR Nx := 1 to len(jJson:GetJsonObject("ITENS"))
             aLinhaC1 := {}
-            nTotal := (jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT") * jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO")) - jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("DESCONTO")
-           
+            nTotal   := (jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT") * jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO")) - jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("DESC")
+            
             aadd(aLinhaC1, {"C7_PRODUTO" , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"), NIL})
             aadd(aLinhaC1, {"C7_QUANT"   , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT"), NIL})
             aadd(aLinhaC1, {"C7_PRECO"   , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO"), NIL})
-            aadd(aLinhaC1, {"C7_DESC01"  , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("DESCONTO"), NIL})
+            aadd(aLinhaC1, {"C7_DESC01"  , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("DESC"), NIL})
             aadd(aLinhaC1, {"C7_TOTAL"   , nTotal, NIL})
-            //aadd(aLinhaC1, {"C7_TOTAL"   , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("TOTAL"), NIL})
 
             cUM    := POSICIONE("SB1",1,xFilial("SB1")+jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"),"B1_UM")
             cDesc  := POSICIONE("SB1",1,xFilial("SB1")+jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"),"B1_DESC")
@@ -446,6 +464,7 @@ WSMETHOD PUT UPDATE WSRECEIVE NUMPC WSSERVICE WSPEDCOM
             aadd(aLinhaC1,{"C7_TXMOEDA" ,0.00                        ,NIL})              
             aadd(aLinhaC1,{"C7_VALFRE"  ,0.00                        ,NIL})         
             aadd(aLinhaC1,{"C7_BASESOL" ,0.00                        ,NIL})
+            aadd(aLinhaC1,{"C7_ZEXTID"  ,_ZEXTID                     ,Nil})            
             aadd(aItens,aLinhaC1)
         Next
         aRetGrv := oWS:pedCompra(aCab, aItens, 4) 
@@ -527,15 +546,20 @@ WSMETHOD PUT ERASE WSRECEIVE NUMPC WSSERVICE WSPEDCOM
         lTemPr := oWS:temProd(FWxFilial("SB1"), _cod)//temFornec(, ::cnpj)
     Next
 
-    //VALIDAÇÃO DO FORNECEDOR PELO cnpj
-    aFornec := oWS:pgFornec(jJson:GetJsonObject("CNPJ"))  //16/07/2025 - inclusão do CNPJ
-    _For    := aFornec[1,1] //jJson:GetJsonObject("CLIENTE")
-    _lojFor := aFornec[1,2] //jJson:GetJsonObject("LOJA")
-    //VALIDAÇÃO DO FORNECEDOR PELO cnpj
+    _For    := jJson:GetJsonObject("FORNECE")
+    _lojFor := "01"//jJson:GetJsonObject("LOJA")
+    lTemFor := ows:temForCod(FWxFilial("SA2"), _For, _lojFor)
 
-    cEmpAt := Iif(EMPTY(jJson:GetJsonObject("GRUPO") ), "01", jJson:GetJsonObject("GRUPO" ))
-    cFilAt := Iif(EMPTY(jJson:GetJsonObject("FILIAL")), "01", jJson:GetJsonObject("FILIAL"))
-    rpcSetEnv(cEmpAt, cFilAt)
+    cEmpAt1 := cEmpAnt
+    cFilAt1 := cFilAnt
+
+    cEmpAt   := Iif(EMPTY(jJson:GetJsonObject("GRUPO") ), "01", jJson:GetJsonObject("GRUPO" ))
+    cFilAt   := Iif(EMPTY(jJson:GetJsonObject("FILIAL")), "01", jJson:GetJsonObject("FILIAL"))
+
+    cEmpAnt  := cEmpAt
+    cFilAnt  := cFilAt
+    
+    RPCSetEnv(cEmpAt, cFilAt)
 
 	IF !lTemPr //oWS:temProd(FWxFilial("SB1"), _cod)//temFornec(, ::cnpj)
 		//SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
@@ -566,7 +590,10 @@ WSMETHOD PUT ERASE WSRECEIVE NUMPC WSSERVICE WSPEDCOM
     Else
 		
 		//Adiciona os dados do ExecAuto
-        _cNumPed := jJson:GetJsonObject("NUMPC") //GetSx8Num("SC7","C7_NUM")
+        //_cNumPed := jJson:GetJsonObject("NUMPC") //GetSx8Num("SC7","C7_NUM")
+
+		//Adiciona os dados do ExecAuto
+        _cNumPed := oWs:PGExtrt(jJson:GetJsonObject("EXTERNID")) //jJson:GetJsonObject("NUMPC") //GetSx8Num("SC7","C7_NUM")
 
         aadd(aCab, {"C7_NUM"       , _cNumPed   ,Nil})
         aadd(aCab, {"C7_EMISSAO"   , ddatabase  ,Nil})
@@ -582,12 +609,12 @@ WSMETHOD PUT ERASE WSRECEIVE NUMPC WSSERVICE WSPEDCOM
         FOR Nx := 1 to len(jJson:GetJsonObject("ITENS"))
             aLinhaC1 := {}
 
-            nTotal := (jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT") * jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO")) - jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("DESCONTO")
+            nTotal := (jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT") * jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO")) - jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("DESC")
             
             aadd(aLinhaC1, {"C7_PRODUTO" , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"), NIL})
             aadd(aLinhaC1, {"C7_QUANT"   , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT"), NIL})
             aadd(aLinhaC1, {"C7_PRECO"   , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO"), NIL})
-            aadd(aLinhaC1, {"C7_DESC01"  , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("DESCONTO"), NIL})
+            aadd(aLinhaC1, {"C7_DESC01"  , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("DESC"), NIL})
             aadd(aLinhaC1, {"C7_TOTAL"   , nTotal, NIL})
             //aadd(aLinhaC1, {"C7_TOTAL"   , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("TOTAL"), NIL})
 

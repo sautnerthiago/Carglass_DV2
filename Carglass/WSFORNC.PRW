@@ -66,7 +66,7 @@ WSMETHOD GET CNPJ WSRECEIVE cnpj WSSERVICE WSFORNEC
 		oWS:GRAVALOGMURO(cResponc, cJason, "WSFORNC", "NAO DIGITADO O FORNECEDOR")
 
     Else
-        DbSelectArea(cAliasWS)
+        //DbSelectArea(cAliasWS)
         (cAliasWS)->(DbSetOrder(3))
 
         //Se não encontrar o registro
@@ -306,22 +306,24 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE WSFORNEC
 
 	//cCodi  := jJson:GetJsonObject('CODIGO')
 	//cLoja  := jJson:GetJsonObject('LOJA')
-
-	cCodi  := Iif(empty(jJson:GetJsonObject('CODIGO')), GetSXENum('SA2', 'A2_COD') , jJson:GetJsonObject('CODIGO'))
+  
+	cCodi  := Iif(empty(jJson:GetJsonObject('CODIGO')), oWS:GerCdFor() , jJson:GetJsonObject('CODIGO'))
 	cLoja  := iif(empty(jJson:GetJsonObject('LOJA')), "01", jJson:GetJsonObject('LOJA'))
 
-	lBloq  := iif(jJson:GetJsonObject('BLOQUEADO')=="NAO" .or. Empty(jJson:GetJsonObject('BLOQUEADO')), "2", "1")
-	lAtivo := iif( jJson:GetJsonObject('ATIVO')=="NAO" .or. Empty(jJson:GetJsonObject('ATIVO')), "N", "S")
+	lBloq  := iif(jJson:GetJsonObject('BLOQUEADO')=="N" .or. Empty(jJson:GetJsonObject('BLOQUEADO')), "2", "1")
+	lAtivo := iif( jJson:GetJsonObject('ATIVO')=="N" .or. Empty(jJson:GetJsonObject('ATIVO')), "N", "S")
 
-    cMOVEL := iif( jJson:GetJsonObject('MOVEL') == "" , "N", "S")
-    cTIPOV := iif( jJson:GetJsonObject('TIPOVEICULO')  == "" , "N", "S")
-    cPAGAM := iif( jJson:GetJsonObject('PAGAMENTOADT') == "" , "N", "S")
-    cREVEN := iif( jJson:GetJsonObject('REVENDEAFIAL') == "" , "N", "S")
-    cAFILI := iif( jJson:GetJsonObject('AFILIADOCONV') == "" , "N", "S")
-    cTIPOA := iif( jJson:GetJsonObject('TIPOAFILIADO') == "" , "N", "S")
+    cMOVEL := iif( jJson:GetJsonObject('MOVEL') == "" 		 , "N", jJson:GetJsonObject('MOVEL') )
+    cTIPOV := iif( jJson:GetJsonObject('TIPOVEICULO')  == "" , "N", jJson:GetJsonObject('TIPOVEICULO') )
+    cPAGAM := iif( jJson:GetJsonObject('PAGAMENTOADT') == "" , "N", jJson:GetJsonObject('PAGAMENTOADT') )
+    cREVEN := iif( jJson:GetJsonObject('REVENDEAFIAL') == "" , "N", jJson:GetJsonObject('REVENDEAFIAL') )
+    cAFILI := iif( jJson:GetJsonObject('AFILIADOCONV') == "" , "N", jJson:GetJsonObject('AFILIADOCONV') )
+    cTIPOA := iif( jJson:GetJsonObject('TIPOAFILIADO') == "" , "N", jJson:GetJsonObject('TIPOAFILIADO') )
+
+   	CONFIRMSX8()
 
 
-	IF oWS:temFornec(FWxFilial(cAliasWS), ::cnpj) .OR. oWS:temForCod(FWxFilial(cAliasWS), cCodi, cLoja)    
+	IF oWS:temFornec(FWxFilial(cAliasWS), ::cnpj) //.OR. oWS:temForCod(FWxFilial(cAliasWS), cCodi, cLoja)    
 		//SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
 		Self:setStatus(500)
 		jResponse['errorId']  := 'NEW0041'
@@ -468,18 +470,26 @@ WSMETHOD PUT UPDATE WSRECEIVE cnpj WSSERVICE WSFORNEC
 	cLoja  := jJson:GetJsonObject('LOJA')
 	::cnpj := jJson:GetJsonObject('CNPJ')
 
-	lBloq  := iif(jJson:GetJsonObject('BLOQUEADO')=="NAO" .or. Empty(jJson:GetJsonObject('BLOQUEADO')), "2", "1")
-	lAtivo := iif( jJson:GetJsonObject('ATIVO')=="NAO" .or. Empty(jJson:GetJsonObject('ATIVO')), "N", "S")
+	lBloq  := iif(jJson:GetJsonObject('BLOQUEADO')=="N" .or. Empty(jJson:GetJsonObject('BLOQUEADO')), "2", "1")
+	lAtivo := iif( jJson:GetJsonObject('ATIVO')=="N" .or. Empty(jJson:GetJsonObject('ATIVO')), "N", "S")
 
-    cMOVEL := iif( jJson:GetJsonObject('MOVEL') == "" , "N", "S")
-    cTIPOV := iif( jJson:GetJsonObject('TIPOVEICULO')  == "" , "N", "S")
-    cPAGAM := iif( jJson:GetJsonObject('PAGAMENTOADT') == "" , "N", "S")
-    cREVEN := iif( jJson:GetJsonObject('REVENDEAFIAL') == "" , "N", "S")
-    cAFILI := iif( jJson:GetJsonObject('AFILIADOCONV') == "" , "N", "S")
-    cTIPOA := iif( jJson:GetJsonObject('TIPOAFILIADO') == "" , "N", "S")
+    //cMOVEL := iif( jJson:GetJsonObject('MOVEL') == "" , "N", "S")
+    //cTIPOV := iif( jJson:GetJsonObject('TIPOVEICULO')  == "" , "N", "S")
+    //cPAGAM := iif( jJson:GetJsonObject('PAGAMENTOADT') == "" , "N", "S")
+    //cREVEN := iif( jJson:GetJsonObject('REVENDEAFIAL') == "" , "N", "S")
+    //cAFILI := iif( jJson:GetJsonObject('AFILIADOCONV') == "" , "N", "S")
+    //cTIPOA := iif( jJson:GetJsonObject('TIPOAFILIADO') == "" , "N", "S")
+
+    cMOVEL := iif( jJson:GetJsonObject('MOVEL') == "" 		 , "N", jJson:GetJsonObject('MOVEL') )
+    cTIPOV := iif( jJson:GetJsonObject('TIPOVEICULO')  == "" , "N", jJson:GetJsonObject('TIPOVEICULO') )
+    cPAGAM := iif( jJson:GetJsonObject('PAGAMENTOADT') == "" , "N", jJson:GetJsonObject('PAGAMENTOADT') )
+    cREVEN := iif( jJson:GetJsonObject('REVENDEAFIAL') == "" , "N", jJson:GetJsonObject('REVENDEAFIAL') )
+    cAFILI := iif( jJson:GetJsonObject('AFILIADOCONV') == "" , "N", jJson:GetJsonObject('AFILIADOCONV') )
+    cTIPOA := iif( jJson:GetJsonObject('TIPOAFILIADO') == "" , "N", jJson:GetJsonObject('TIPOAFILIADO') )
+
 
     //Se o id estiver vazio
-    If Empty(::cnpj) .OR. !oWS:temForCod(FWxFilial(cAliasWS), cCodi, cLoja)    
+    If Empty(::cnpj) 
         //SetRestFault(500, 'Falha ao consultar o registro') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
         Self:setStatus(500) 
         jResponse['errorId']  := 'UPD006'

@@ -55,6 +55,14 @@ class LIBGLASS
 
     METHOD TesPDV( _prod, _client, _loja, _operac )
 
+    METHOD GerCdFor()
+
+    METHOD GerCdCli()
+
+    METHOD GrPedCom(cFilAt)
+    
+    METHOD PGExtrt(_EXTERNID)
+
 endclass
 
 method new() class LIBGLASS
@@ -1304,3 +1312,89 @@ Method TesPDV(_prod, _client, _loja, _operac) CLASS LIBGLASS
     (cAlSFM)->(dbclosearea())
 
 Return (cTesIntel)
+
+
+METHOD GerCdFor() class LIBGLASS
+    Local cCod  := ""
+    Local lTest := .T.
+
+    DO WHILE lTest
+        _COD := GetSXENum("SA2","A2_COD")
+
+        cQuery := " SELECT COUNT(*) AS NUM "
+        cQuery += " FROM "+RetSQLName("SA2") + " AS SA2 WITH (NOLOCK) "
+        cQuery += " WHERE A2_FILIAL = '" + FWxFilial("SA2") + "' AND A2_COD = '"+_COD+"' "
+        cAlSA2:= CriaTrab(Nil,.F.)
+        DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSA2, .F., .T.)    
+
+        IF (cAlSA2)->NUM > 0
+            (cAlSA2)->(dbclosearea())
+            CONFIRMSX8()
+        ELSE
+            cCod  := _COD
+            lTest := .F.
+        ENDIF
+    ENDDO
+
+Return cCod
+
+
+METHOD GerCdCli() class LIBGLASS
+    Local lTest := .T.
+
+    DO WHILE lTest
+        _COD := GetSXENum("SA1","A1_COD")
+
+        cQuery := " SELECT COUNT(*) AS NUM "
+        cQuery += " FROM "+RetSQLName("SA1") + " AS SA1 WITH (NOLOCK) "
+        cQuery += " WHERE A1_FILIAL = '" + FWxFilial("SA1") + "' AND A1_COD = '"+_COD+"' "
+        cAlSA1:= CriaTrab(Nil,.F.)
+        DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSA1, .F., .T.)    
+
+        IF (cAlSA1)->NUM > 0
+            (cAlSA1)->(dbclosearea())
+            CONFIRMSX8()
+        ELSE
+            cCod  := _COD
+            lTest := .F.
+        ENDIF
+    ENDDO
+
+Return cCod
+
+METHOD GrPedCom(cFilAt) class LIBGLASS
+    Local lTest := .T.
+
+    DO WHILE lTest
+        _CODPED := GetSXENum("SC7","C7_NUM")
+
+        cQuery := " SELECT COUNT(*) AS NUM "
+        cQuery += " FROM "+RetSQLName("SC7") + " AS C7 WITH (NOLOCK) "
+        cQuery += " WHERE C7_NUM = '"+_CODPED+"' "
+        cAlSC7:= CriaTrab(Nil,.F.)
+        DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSC7, .F., .T.)    
+
+        IF (cAlSC7)->NUM > 0
+            (cAlSC7)->(dbclosearea())
+            CONFIRMSX8()
+        ELSE
+            cCod  := _CODPED
+            lTest := .F.
+        ENDIF
+    ENDDO
+    (cAlSC7)->(dbclosearea())
+
+Return cCod
+
+METHOD PGExtrt(_EXTERNID) class LIBGLASS
+    Local cPed := ""
+    cQuery := " SELECT C7_NUM AS NUM "
+    cQuery += " FROM "+RetSQLName("SC7") + " AS C7 WITH (NOLOCK) "
+    cQuery += " WHERE C7_ZEXTID = '"+_EXTERNID+"' "
+    cAlSC7:= CriaTrab(Nil,.F.)
+    DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSC7, .F., .T.)    
+
+    cPed := (cAlSC7)->NUM 
+    (cAlSC7)->(dbclosearea())
+
+Return cPed
