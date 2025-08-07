@@ -60,8 +60,10 @@ class LIBGLASS
     METHOD GerCdCli()
 
     METHOD GrPedCom(cFilAt)
-    
     METHOD PGExtrt(_EXTERNID)
+
+    METHOD GrPedVd(cFilAt)
+    METHOD PGExtrtV(_EXTERNID)
 
 endclass
 
@@ -234,7 +236,6 @@ method ATUSA2(aDads, _fili, _cnpj) class LIBGLASS
     endif
 
 Return lRet
-
 
 method temProd(_fili, _cod) class LIBGLASS
     Local lRet := .T.
@@ -680,7 +681,6 @@ method FornDatas( dtIni, DtFin) class LIBGLASS
 
 Return aFornTmp
 
-
 method ITENSPV(_FILIAL, _NUM, _CLIENTE, _LOJACLI) class LIBGLASS
     Local aRet := {}
 
@@ -710,7 +710,6 @@ method ITENSPV(_FILIAL, _NUM, _CLIENTE, _LOJACLI) class LIBGLASS
     (cAlSC6)->(DBCLOSEAREA())
 
 Return aRet
-
 
 method ITENSPC(_FILIAL, _NUM, _FORNECE, _LOJAFOR ) class LIBGLASS
     Local aRet := {}
@@ -1287,7 +1286,6 @@ Method pgFornec(_cnpj) class LIBGLASS
 
 Return aRet
 
-
 Method TesPDV(_prod, _client, _loja, _operac) CLASS LIBGLASS
 	Local cTesIntel := ""
 
@@ -1313,7 +1311,6 @@ Method TesPDV(_prod, _client, _loja, _operac) CLASS LIBGLASS
 
 Return (cTesIntel)
 
-
 METHOD GerCdFor() class LIBGLASS
     Local cCod  := ""
     Local lTest := .T.
@@ -1333,11 +1330,11 @@ METHOD GerCdFor() class LIBGLASS
         ELSE
             cCod  := _COD
             lTest := .F.
+            (cAlSA2)->(dbclosearea())
         ENDIF
     ENDDO
 
 Return cCod
-
 
 METHOD GerCdCli() class LIBGLASS
     Local lTest := .T.
@@ -1357,6 +1354,7 @@ METHOD GerCdCli() class LIBGLASS
         ELSE
             cCod  := _COD
             lTest := .F.
+            (cAlSA1)->(dbclosearea())
         ENDIF
     ENDDO
 
@@ -1380,9 +1378,9 @@ METHOD GrPedCom(cFilAt) class LIBGLASS
         ELSE
             cCod  := _CODPED
             lTest := .F.
+            (cAlSC7)->(dbclosearea())
         ENDIF
     ENDDO
-    (cAlSC7)->(dbclosearea())
 
 Return cCod
 
@@ -1396,5 +1394,42 @@ METHOD PGExtrt(_EXTERNID) class LIBGLASS
 
     cPed := (cAlSC7)->NUM 
     (cAlSC7)->(dbclosearea())
+
+Return cPed
+
+METHOD GrPedVd(cFilAt) class LIBGLASS
+    Local lTest := .T.
+
+    DO WHILE lTest
+        _CODPED := GetSXENum("SC5","C5_NUM")
+
+        cQuery := " SELECT COUNT(*) AS NUM "
+        cQuery += " FROM "+RetSQLName("SC5") + " AS C5 WITH (NOLOCK) "
+        cQuery += " WHERE C5_NUM = '"+_CODPED+"' "
+        cAlSC5:= CriaTrab(Nil,.F.)
+        DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSC5, .F., .T.)    
+
+        IF (cAlSC5)->NUM > 0
+            (cAlSC5)->(dbclosearea())
+            CONFIRMSX8()
+        ELSE
+            cCod  := _CODPED
+            lTest := .F.
+            (cAlSC5)->(dbclosearea())
+        ENDIF
+    ENDDO
+
+Return cCod
+
+METHOD PGExtrtV(_EXTERNID) class LIBGLASS
+    Local cPed := ""
+    cQuery := " SELECT C5_NUM AS NUM "
+    cQuery += " FROM "+RetSQLName("SC5") + " AS C5 WITH (NOLOCK) "
+    cQuery += " WHERE C5_ZEXTID = '"+_EXTERNID+"' "
+    cAlSC5:= CriaTrab(Nil,.F.)
+    DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSC5, .F., .T.)    
+
+    cPed := (cAlSC5)->NUM 
+    (cAlSC5)->(dbclosearea())
 
 Return cPed

@@ -18,15 +18,15 @@ WSRESTFUL WSPRODUTO DESCRIPTION 'CADASTRO DE PRODUTOS'
 	//M�todos 
 	WSMETHOD GET  INTEGRA DESCRIPTION 'Retorna o registro pesquisado - INTEGRADO'   WSSYNTAX '/WSPRODUTO/integrado' 				PATH '/WSPRODUTO/integrado'  				PRODUCES APPLICATION_JSON
     WSMETHOD GET  CODIGO  DESCRIPTION 'Retorna o registro pesquisado'               WSSYNTAX '/WSPRODUTO/codigo/?{produto}'         PATH '/WSPRODUTO/codigo/{produto}'          PRODUCES APPLICATION_JSON
-    WSMETHOD POST NEW     DESCRIPTION 'Inclusao de registro'                        WSSYNTAX '/WSPRODUTO/new'                       PATH 'new'                                  PRODUCES APPLICATION_JSON
-    WSMETHOD PUT  UPDATE  DESCRIPTION 'Atualizacao de registro'                     WSSYNTAX '/WSPRODUTO/update'                    PATH 'update'                               PRODUCES APPLICATION_JSON
-    WSMETHOD PUT  ERASE   DESCRIPTION 'Bloqueio de registro'                        WSSYNTAX '/WSPRODUTO/delete'                    PATH 'delete'                               PRODUCES APPLICATION_JSON
+    //WSMETHOD POST NEW     DESCRIPTION 'Inclusao de registro'                        WSSYNTAX '/WSPRODUTO/new'                       PATH 'new'                                  PRODUCES APPLICATION_JSON
+    //WSMETHOD PUT  UPDATE  DESCRIPTION 'Atualizacao de registro'                     WSSYNTAX '/WSPRODUTO/update'                    PATH 'update'                               PRODUCES APPLICATION_JSON
+    //WSMETHOD PUT  ERASE   DESCRIPTION 'Bloqueio de registro'                        WSSYNTAX '/WSPRODUTO/delete'                    PATH 'delete'                               PRODUCES APPLICATION_JSON
 END WSRESTFUL
 
 WSMETHOD GET CODIGO WSRECEIVE produto WSSERVICE WSPRODUTO
     Local lRet       := .T.
     Local jResponse  := JsonObject():New()
-    Local cAliasWS   := 'SB1'
+    Local cAliasWS   := 'ZA2'
     ::produto		 := self:produto
     oWS              := LIBGLASS():new()
 
@@ -38,10 +38,10 @@ WSMETHOD GET CODIGO WSRECEIVE produto WSSERVICE WSPRODUTO
         jResponse['solution'] := 'Informe o Codigo'
     Else
         DbSelectArea(cAliasWS)
-        (cAliasWS)->(DbSetOrder(1))
+        (cAliasWS)->(DbSetOrder(2))
 
         //Se não encontrar o registro
-        If ! (cAliasWS)->(MsSeek(FWxFilial(cAliasWS) + ::produto))
+        If !(cAliasWS)->(MsSeek(FWxFilial(cAliasWS) + ::produto))
             //SetRestFault(500, 'Falha ao consultar ID') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
             Self:setStatus(500) 
             jResponse['errorId']  := 'ID002'
@@ -49,15 +49,29 @@ WSMETHOD GET CODIGO WSRECEIVE produto WSSERVICE WSPRODUTO
             jResponse['solution'] := 'Digite um codigo valido. - tabela ' + cAliasWS
         Else
             //Define o retorno
-            jResponse['CODIGO']         := Rtrim((cAliasWS)->B1_COD)
-            jResponse['DESCRICAO']      := Rtrim((cAliasWS)->B1_DESC)
-            jResponse['TIPO']           := (cAliasWS)->B1_TIPO 
-            jResponse['UM']             := (cAliasWS)->B1_UM 
-            jResponse['ALMOXARIF']      := (cAliasWS)->B1_LOCPAD 
-            jResponse['PERICMS']        := (cAliasWS)->B1_PICM 
-            jResponse['PERIPI']         := (cAliasWS)->B1_IPI 
-            jResponse['LOCALIZACAO']    := (cAliasWS)->B1_LOCALIZ 
-        	jResponse['BLOQUEADO'] 		:= IF((cAliasWS)->B1_MSBLQL == "2", "NAO", "SIM")
+
+            cQuery := " SELECT B1_COD, B1_DESC, B1_TIPO, B1_UM, B1_LOCPAD, B1_PICM, B1_IPI, B1_LOCALIZ, B1_MSBLQL, B1_ZCODPRD "
+            cQuery += " FROM "+RetSQLName("SB1") + " AS SB1 WITH (NOLOCK) "
+            cQuery += " WHERE B1_FILIAL = '" + FWxFilial("SB1") + "' "
+            cQuery += " AND SB1.B1_ZCODPRD = '"+::produto+"' "
+            cQuery += " AND SB1.D_E_L_E_T_ = '' "
+            cAlSB1:= CriaTrab(Nil,.F.)
+            DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSB1, .F., .T.)    
+
+            jResponse['CODIGO']         := Rtrim((cAlSB1)->B1_COD)
+            jResponse['DESCRICAO']      := Rtrim((cAlSB1)->B1_DESC)
+            jResponse['TIPO']           := (cAlSB1)->B1_TIPO 
+            jResponse['UM']             := (cAlSB1)->B1_UM 
+            jResponse['ALMOXARIF']      := (cAlSB1)->B1_LOCPAD 
+            jResponse['PERICMS']        := (cAlSB1)->B1_PICM 
+            jResponse['PERIPI']         := (cAlSB1)->B1_IPI 
+            jResponse['LOCALIZACAO']    := (cAlSB1)->B1_LOCALIZ 
+        	jResponse['BLOQUEADO'] 		:= IF((cAlSB1)->B1_MSBLQL == "2", "NAO", "SIM")
+            jResponse['CODLEGADO']      := Rtrim((cAlSB1)->B1_ZCODPRD)
+
+            (cAlSB1)->(dbclosearea())
+
+
         EndIf
     EndIf
 
@@ -79,6 +93,7 @@ WSMETHOD GET INTEGRA WSRECEIVE WSSERVICE WSPRODUTO
 
 Return lRet
 
+/*
 WSMETHOD POST NEW WSRECEIVE WSSERVICE WSPRODUTO
     Local lRet              := .T.
     Local aDados            := {}
@@ -371,4 +386,4 @@ WSMETHOD PUT ERASE WSRECEIVE WSSERVICE WSPRODUTO
     //Define o retorno
     Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
 Return lRet
-
+*/
