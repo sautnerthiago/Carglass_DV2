@@ -301,6 +301,17 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE wsCliente
 		MakeDir(cDirLog)
 	EndIF
 
+ 	cEmpAt1 := cEmpAnt
+    cFilAt1 := cFilAnt
+
+    cEmpAt   := Iif(EMPTY(jJson:GetJsonObject("GRUPO") ), "01", jJson:GetJsonObject("GRUPO" ))
+    cFilAt   := Iif(EMPTY(jJson:GetJsonObject("FILIAL")), "01", jJson:GetJsonObject("FILIAL"))
+
+    cEmpAnt  := cEmpAt
+    cFilAnt  := cFilAt
+    
+    RPCSetEnv(cEmpAt, cFilAt)
+
 	//Definindo o conteúdo como JSON, e pegando o content e dando um parse para ver se a estrutura está ok
 	Self:SetContentType('application/json')
 	jJson  := JsonObject():New()
@@ -428,6 +439,9 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE wsCliente
 		EndIf
 
 	EndIf
+	rpcClearEnv()
+    cEmpAnt  := cEmpAt1
+    cFilAnt  := cFilAt1
 
 	//Define o retorno
 	Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
