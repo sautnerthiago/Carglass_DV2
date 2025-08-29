@@ -14,5 +14,12 @@
 				"charDetails": false
 			}
 		}
+	],
+	"lastProgramExecuted": "SIGAMDI",
+	"lastProgramArguments": [],
+	"lastPrograms": [
+		{
+			"label": "SIGAMDI"
+		}
 	]
 }

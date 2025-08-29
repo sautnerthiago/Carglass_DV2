@@ -29,15 +29,15 @@ WSRESTFUL wsCliente DESCRIPTION 'Cadastro de Cliente' FORMAT APPLICATION_JSON
 	WSDATA pageSize AS INTEGER OPTIONAL
 	WSDATA searchKey AS STRING OPTIONAL
 
-	//MÈtodos
+	//M√©todos
 	WSMETHOD GET customers DESCRIPTION "Retorna lista de clientes" WSSYNTAX "/wsCliente/clientes " PATH '/wsCliente/clientes' PRODUCES APPLICATION_JSON
 	WSMETHOD GET CLICNPJ DESCRIPTION 'Retorna o Registro pesquisado - CNPJ'   		WSSYNTAX '/wsCliente/listcnpj/cnpj?{cnpj}' 			  	PATH '/wsCliente/cnpj/{cnpj}'  					PRODUCES APPLICATION_JSON
 	WSMETHOD GET TIPO    DESCRIPTION 'Retorna o registro pesquisado - TIPO'   		WSSYNTAX '/wsCliente/tipolist/{tipo}'   	 			PATH '/wsCliente/tipolist/{tipo}' 				PRODUCES APPLICATION_JSON
 	WSMETHOD GET ESTADO  DESCRIPTION 'Retorna o registro pesquisado - ESTADO' 		WSSYNTAX '/wsCliente/estadolist/{estado}'   			PATH '/wsCliente/estadolist/{estado}'        	PRODUCES APPLICATION_JSON
 	WSMETHOD GET CLIDATA DESCRIPTION 'Retorna o registro pesquisado - DATA'   		WSSYNTAX '/wsCliente/dataslist/data?{dataDe}&{dataAte}' PATH '/wsCliente/dataslist/{dataDe}/{dataAte}'  PRODUCES APPLICATION_JSON
 	WSMETHOD GET INTEGRA DESCRIPTION 'Retorna o registro pesquisado - INTEGRADO'   	WSSYNTAX '/wsCliente/integrado/{tpFiliado}'				PATH '/wsCliente/integrado/{tpFiliado}'			PRODUCES APPLICATION_JSON
-	WSMETHOD POST NEW    DESCRIPTION 'Inclus„o de registro'          		  		WSSYNTAX '/wsCliente/new'      							PATH 'new'        								PRODUCES APPLICATION_JSON
-	WSMETHOD PUT  UPDATE DESCRIPTION 'AtualizaÁ„o de registro'       		  		WSSYNTAX '/wsCliente/update'   							PATH 'update'     								PRODUCES APPLICATION_JSON
+	WSMETHOD POST NEW    DESCRIPTION 'Inclus√£o de registro'          		  		WSSYNTAX '/wsCliente/new'      							PATH 'new'        								PRODUCES APPLICATION_JSON
+	WSMETHOD PUT  UPDATE DESCRIPTION 'Atualiza√ß√£o de registro'       		  		WSSYNTAX '/wsCliente/update'   							PATH 'update'     								PRODUCES APPLICATION_JSON
 	WSMETHOD PUT  ERASE  DESCRIPTION 'Bloquear Registro'             		  		WSSYNTAX '/wsCliente/delete'    						PATH 'delete'     								PRODUCES APPLICATION_JSON
 
 END WSRESTFUL
@@ -54,7 +54,7 @@ WSMETHOD GET CLICNPJ WSRECEIVE cnpj WSSERVICE wsCliente
 
 	//Se o id estiver vazio
 	If Empty(::cnpj)
-		//SetRestFault(500, 'Falha ao consultar o registro') //caso queira usar esse comando, vocÍ n„o poder· usar outros retornos, como os abaixo
+		//SetRestFault(500, 'Falha ao consultar o registro') //caso queira usar esse comando, voc√™ n√£o poder√° usar outros retornos, como os abaixo
 		Self:setStatus(500)
 		jResponse['errorId']  := 'ID001'
 		jResponse['error']    := 'ID vazio'
@@ -64,53 +64,72 @@ WSMETHOD GET CLICNPJ WSRECEIVE cnpj WSSERVICE wsCliente
 		oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "NAO DIGITADO O CLIENTE")
 	Else
 		//DbSelectArea(cAliasWS)
-		(cAliasWS)->(DbSetOrder(3))   //PESQUISA CGC/CPF
+		//(cAliasWS)->(DbSetOrder(3))   //PESQUISA CGC/CPF
 
-		//Se n„o encontrar o registro
-		If !(cAliasWS)->(MsSeek(FWxFilial(cAliasWS) + ::cnpj))
-			//SetRestFault(500, 'Falha ao consultar ID') //caso queira usar esse comando, vocÍ n„o poder· usar outros retornos, como os abaixo
+		//Se n√£o encontrar o registro
+		If !oWS:temClient( FWxFilial(cAliasWS),  ::cnpj) //!(cAliasWS)->(MsSeek(FWxFilial(cAliasWS) + ::cnpj))
+			//SetRestFault(500, 'Falha ao consultar ID') //caso queira usar esse comando, voc√™ n√£o poder√° usar outros retornos, como os abaixo
 			Self:setStatus(500)
 			jResponse['errorId']  := 'ID002'
-			jResponse['error']    := 'CNPJ/CPF ('+::cnpj+') n„o encontrado'
-			jResponse['solution'] := 'CNPJ/CPF n„o encontrado na tabela ' + cAliasWS
+			jResponse['error']    := 'CNPJ/CPF ('+::cnpj+') n√£o encontrado'
+			jResponse['solution'] := 'CNPJ/CPF n√£o encontrado na tabela ' + cAliasWS
 
 			cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
+
 			oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "BLOQUEIO DE CLIENTE")
+			ConOut("erro 002 - nao exsite o cliente")
+
+			Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
+			Return .F.
+
 		Else
+
+			cQuery := " SELECT * "
+			cQuery += " FROM "+RetSQLName("SA1") + " AS SA1 WITH (NOLOCK) "
+			cQuery += " WHERE "
+			cQuery += " SA1.A1_CGC = '"+::cnpj+"' "
+			cQuery += " AND SA1.D_E_L_E_T_ = '' "
+			cAlSA1:= CriaTrab(Nil,.F.)
+			DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSA1, .F., .T.)    
+
 			//Define o retorno
-			jResponse['FILIAL'] 		:= (cAliasWS)->A1_FILIAL
-			jResponse['CODIGO']			:= (cAliasWS)->A1_COD
-			jResponse['LOJA'] 			:= (cAliasWS)->A1_LOJA
-			jResponse['NOME'] 			:= Rtrim( (cAliasWS)->A1_NOME)
-			jResponse['NREDUZ'] 		:= Rtrim( (cAliasWs)->A1_NREDUZ )
-			jResponse['BAIRRO'] 		:= Rtrim( (cAliasWs)->A1_BAIRRO )
-			jResponse['EMAIL'] 			:= Rtrim( (cAliasWs)->A1_EMAIL  )
-			jResponse['CEP']			:= Rtrim( (cAliasWs)->A1_CEP    )
-			jResponse['CNPJ'] 			:= Rtrim( (cAliasWs)->A1_CGC    )
-			jResponse['ESTADO']			:= Rtrim( (cAliasWs)->A1_ESTADO )
-			jResponse['COD_MUN']		:= Rtrim( (cAliasWs)->A1_COD_MUN)
-			jResponse['COND'] 			:= Rtrim( (cAliasWs)->A1_COND   )
-			jResponse['DDD'] 			:= Rtrim( (cAliasWs)->A1_DDD    )
-			jResponse['DTCAD'] 			:= (cAliasWs)->A1_DTCAD
-			jResponse['END']			:= Rtrim( (cAliasWs)->A1_END    )
-			jResponse['INSCR'] 			:= Rtrim( (cAliasWs)->A1_INSCR  )
-			jResponse['MUNCIPIO'] 		:= Rtrim( (cAliasWs)->A1_MUN    )
-			jResponse['NATUREZ']		:= Rtrim( (cAliasWs)->A1_NATUREZ)
-			jResponse['PESSOA'] 		:= Rtrim( (cAliasWs)->A1_TPESSOA)
-			jResponse['TIPO'] 			:= Rtrim( (cAliasWs)->A1_TIPCLI )
-			jResponse['FONE'] 			:= Rtrim( (cAliasWs)->A1_TEL    )
-			jResponse['TRANSP'] 		:= Rtrim( (cAliasWs)->A1_TRANSP )
-			jResponse['PAIS'] 			:= Rtrim( (cAliasWS)->A1_PAIS   )
-			jResponse['BLOQUEADO'] 		:= IF((cAliasWS)->A1_MSBLQL == "2", "NAO", "SIM")
-			jResponse['MOVEL']			:= (cAliasWS)->A1_ZMOBILE
-			jResponse['TIPOVEICULO']	:= (cAliasWS)->A1_ZTPVEIC
-			jResponse['DTCRIACAO']		:= (cAliasWS)->A1_ZDTCRIA
-			jResponse['ATIVO']			:= (cAliasWS)->A1_ZATIVO
-			jResponse['PAGAMENTOADT']	:= (cAliasWS)->A1_ZPGTADT
-			jResponse['REVENDEAFIAL']	:= (cAliasWS)->A1_ZREVAFI
-			jResponse['AFILIADOCONV']	:= (cAliasWS)->A1_ZAFICON
-			jResponse['TIPOAFILIADO']	:= (cAliasWS)->A1_ZTPAFIL
-			jResponse['INTEGRADO']		:= (cAliasWS)->A1_ZINTEGR
+			jResponse['GRUPO'] 			:= cEmpAnt
+			jResponse['FILIAL'] 		:= (cAlSA1)->A1_FILIAL
+			jResponse['CODIGO']			:= (cAlSA1)->A1_COD
+			jResponse['LOJA'] 			:= (cAlSA1)->A1_LOJA
+			jResponse['NOME'] 			:= Rtrim( (cAlSA1)->A1_NOME)
+			jResponse['NREDUZ'] 		:= Rtrim( (cAlSA1)->A1_NREDUZ )
+			jResponse['BAIRRO'] 		:= Rtrim( (cAlSA1)->A1_BAIRRO )
+			jResponse['EMAIL'] 			:= Rtrim( (cAlSA1)->A1_EMAIL  )
+			jResponse['CEP']			:= Rtrim( (cAlSA1)->A1_CEP    )
+			jResponse['CNPJ'] 			:= Rtrim( (cAlSA1)->A1_CGC    )
+			jResponse['ESTADO']			:= Rtrim( (cAlSA1)->A1_ESTADO )
+			jResponse['COD_MUN']		:= Rtrim( (cAlSA1)->A1_COD_MUN)
+			jResponse['COND'] 			:= Rtrim( (cAlSA1)->A1_COND   )
+			jResponse['DDD'] 			:= Rtrim( (cAlSA1)->A1_DDD    )
+			jResponse['DTCAD'] 			:= (cAlSA1)->A1_DTCAD
+			jResponse['END']			:= Rtrim( (cAlSA1)->A1_END    )
+			jResponse['INSCR'] 			:= Rtrim( (cAlSA1)->A1_INSCR  )
+			jResponse['MUNCIPIO'] 		:= Rtrim( (cAlSA1)->A1_MUN    )
+			jResponse['NATUREZ']		:= Rtrim( (cAlSA1)->A1_NATUREZ)
+			jResponse['PESSOA'] 		:= Rtrim( (cAlSA1)->A1_TPESSOA)
+			jResponse['TIPO'] 			:= Rtrim( (cAlSA1)->A1_TIPCLI )
+			jResponse['FONE'] 			:= Rtrim( (cAlSA1)->A1_TEL    )
+			jResponse['TRANSP'] 		:= Rtrim( (cAlSA1)->A1_TRANSP )
+			jResponse['PAIS'] 			:= Rtrim( (cAlSA1)->A1_PAIS   )
+			jResponse['BLOQUEADO'] 		:= IF((cAlSA1)->A1_MSBLQL == "2", "NAO", "SIM")
+			jResponse['MOVEL']			:= (cAlSA1)->A1_ZMOBILE
+			jResponse['TIPOVEICULO']	:= (cAlSA1)->A1_ZTPVEIC
+			jResponse['DTCRIACAO']		:= (cAlSA1)->A1_ZDTCRIA
+			jResponse['ATIVO']			:= (cAlSA1)->A1_ZATIVO
+			jResponse['PAGAMENTOADT']	:= (cAlSA1)->A1_ZPGTADT
+			jResponse['REVENDEAFIAL']	:= (cAlSA1)->A1_ZREVAFI
+			jResponse['AFILIADOCONV']	:= (cAlSA1)->A1_ZAFICON
+			jResponse['TIPOAFILIADO']	:= (cAlSA1)->A1_ZTPAFIL
+			jResponse['INTEGRADO']		:= (cAlSA1)->A1_ZINTEGR
+
+			(cAlSA1)->(dbclosearea())		
+
 		EndIf
 	EndIf
 
@@ -129,7 +148,7 @@ WSMETHOD GET TIPO WSRECEIVE tipo WSSERVICE wsCliente
 
 	//Se o id estiver vazio
 	If Empty(::tipo)
-		//SetRestFault(500, 'Falha ao consultar o registro') //caso queira usar esse comando, vocÍ n„o poder· usar outros retornos, como os abaixo
+		//SetRestFault(500, 'Falha ao consultar o registro') //caso queira usar esse comando, voc√™ n√£o poder√° usar outros retornos, como os abaixo
 		Self:setStatus(500)
 		jResponse['errorId']  := 'Tipo014'
 		jResponse['error']    := 'Tipo Vazio'
@@ -138,13 +157,13 @@ WSMETHOD GET TIPO WSRECEIVE tipo WSSERVICE wsCliente
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
 		oWS:GRAVALOGMURO(cResponc, cJason, "wsClieTipo", "NAO DIGITADO O TIPO")
 	Else
-		//Se n„o encontrar o registro
+		//Se n√£o encontrar o registro
 		If  !(::tipo $("0/1/2"))
-			//SetRestFault(500, 'Falha ao consultar ID') //caso queira usar esse comando, vocÍ n„o poder· usar outros retornos, como os abaixo
+			//SetRestFault(500, 'Falha ao consultar ID') //caso queira usar esse comando, voc√™ n√£o poder√° usar outros retornos, como os abaixo
 			Self:setStatus(500)
 			jResponse['errorId']  := 'ID015'
-			jResponse['error']    := 'TIPO ('+::tipo+') n„o encontrado'
-			jResponse['solution'] := 'TIPO n„o encontrado na tabela '
+			jResponse['error']    := 'TIPO ('+::tipo+') n√£o encontrado'
+			jResponse['solution'] := 'TIPO n√£o encontrado na tabela '
 
 			cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
 			oWS:GRAVALOGMURO(cResponc, cJason, "wsClieTipo", "BLOQUEIO DE CLIENTE")
@@ -175,7 +194,7 @@ WSMETHOD GET ESTADO WSRECEIVE estado WSSERVICE wsCliente
 
 	//Se o id estiver vazio
 	If Empty(::estado)
-		//SetRestFault(500, 'Falha ao consultar o registro') //caso queira usar esse comando, vocÍ n„o poder· usar outros retornos, como os abaixo
+		//SetRestFault(500, 'Falha ao consultar o registro') //caso queira usar esse comando, voc√™ n√£o poder√° usar outros retornos, como os abaixo
 		Self:setStatus(500)
 		jResponse['errorId']  := 'estado011'
 		jResponse['error']    := 'estado vazio'
@@ -184,13 +203,13 @@ WSMETHOD GET ESTADO WSRECEIVE estado WSSERVICE wsCliente
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
 		oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "NAO DIGITADO O ESTADO")
 	Else
-		//Se n„o encontrar o registro
+		//Se n√£o encontrar o registro
 		If (oWS:TemEstado(::estado))
-			//SetRestFault(500, 'Falha ao consultar ID') //caso queira usar esse comando, vocÍ n„o poder· usar outros retornos, como os abaixo
+			//SetRestFault(500, 'Falha ao consultar ID') //caso queira usar esse comando, voc√™ n√£o poder√° usar outros retornos, como os abaixo
 			Self:setStatus(500)
 			jResponse['errorId']  := 'ID012'
-			jResponse['error']    := 'Estado ('+::estado+') n„o encontrado'
-			jResponse['solution'] := 'Estado n„o encontrado na tabela '
+			jResponse['error']    := 'Estado ('+::estado+') n√£o encontrado'
+			jResponse['solution'] := 'Estado n√£o encontrado na tabela '
 
 			cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
 			oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "BLOQUEIO DE CLIENTE")
@@ -257,8 +276,8 @@ WSMETHOD GET INTEGRA WSRECEIVE tpFiliado  WSSERVICE wsCliente
 	If Empty(cJsonNfs) 
 		Self:setStatus(500)
 		jResponse['errorId']  := 'Tipo016'
-		jResponse['error']    := 'N„o ha dados a serem integrados'
-		jResponse['solution'] := 'N„o ha dados a Integrar'
+		jResponse['error']    := 'N√£o ha dados a serem integrados'
+		jResponse['solution'] := 'N√£o ha dados a Integrar'
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
 		oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "NAO HA DADOS A SEREM INTEGRADOS")
@@ -289,6 +308,8 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE wsCliente
 	Local cResponc          := ""
 	Local lExtCli           := .F.
 
+	Local aAI0Auto 			:= {}
+
 	Private lMsErroAuto     := .F.
 	Private lMsHelpAuto     := .T.
 	Private lAutoErrNoFile  := .T.
@@ -296,25 +317,26 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE wsCliente
 
 	oWS    := LIBGLASS():new()
 
-	//Se n„o existir a pasta de logs, cria
+	//Se n√£o existir a pasta de logs, cria
 	IF ! ExistDir(cDirLog)
 		MakeDir(cDirLog)
 	EndIF
 
- 	cEmpAt1 := cEmpAnt
+	//Definindo o conte√∫do como JSON, e pegando o content e dando um parse para ver se a estrutura est√° ok
+	Self:SetContentType('application/json')
+	jJson  := JsonObject():New()
+
+	cEmpAt1 := cEmpAnt
     cFilAt1 := cFilAnt
 
     cEmpAt   := Iif(EMPTY(jJson:GetJsonObject("GRUPO") ), "01", jJson:GetJsonObject("GRUPO" ))
-    cFilAt   := Iif(EMPTY(jJson:GetJsonObject("FILIAL")), "01", jJson:GetJsonObject("FILIAL"))
+    cFilAt   := "  "
 
     cEmpAnt  := cEmpAt
     cFilAnt  := cFilAt
     
     RPCSetEnv(cEmpAt, cFilAt)
 
-	//Definindo o conte˙do como JSON, e pegando o content e dando um parse para ver se a estrutura est· ok
-	Self:SetContentType('application/json')
-	jJson  := JsonObject():New()
 	cError := jJson:FromJson(cJson)
 	cJason := cJson
 	::cnpj := jJson:GetJsonObject('CNPJ')
@@ -332,21 +354,25 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE wsCliente
 	CONFIRMSX8()
 
 	IF oWS:temClient(FWxFilial(cAliasWS), ::cnpj) //.OR. oWS:temCliCod(FWxFilial(cAliasWS), _cod, _loja)
-		//SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, vocÍ n„o poder· usar outros retornos, como os abaixo
+		//SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, voc√™ n√£o poder√° usar outros retornos, como os abaixo
 		Self:setStatus(500)
 		jResponse['errorId']  := 'NEW0041'
 		jResponse['error']    := 'CLIENTE JA EXISTE'
 		jResponse['errorLog'] := cErrorLog
-		jResponse['solution'] := 'CADASTRE UM CLIENTE CUJO CNPJ N√O SEJA O MESMO'
+		jResponse['solution'] := 'CADASTRE UM CLIENTE CUJO CNPJ NAO SEJA O MESMO'
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
-		oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "INCLUS√O DE CLIENTE")
-		lExtCli := .T.
+		oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "INCLUS√ÉO DE CLIENTE")
+
+        ConOut("erro 003 - cliente JA existe")
+        
+        Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
+        Return .F.
 	EndIF
 
-	//Se tiver algum erro no Parse, encerra a execuÁ„o
-	IF ! Empty(cError)
-		//SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, vocÍ n„o poder· usar outros retornos, como os abaixo
+	//Se tiver algum erro no Parse, encerra a execu√ß√£o
+	IF !Empty(cError)
+		//SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, voc√™ n√£o poder√° usar outros retornos, como os abaixo
 		Self:setStatus(500)
 		jResponse['errorId']  := 'NEW004'
 		jResponse['error']    := 'Parse do JSON'
@@ -354,7 +380,7 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE wsCliente
 		jResponse['solution'] := 'Erro ao fazer o Parse do JSON'
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
-		oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "INCLUS√O DE CLIENTE")
+		oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "INCLUS√ÉO DE CLIENTE")
 	Else
 
 		DbSelectArea(cAliasWS)
@@ -377,9 +403,9 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE wsCliente
 		aAdd(aDados, {'A1_INSCR  ', jJson:GetJsonObject('INSCR')    , Nil} )
 		aAdd(aDados, {'A1_MUN    ', jJson:GetJsonObject('MUNICIPIO'), Nil} )
 		//aAdd(aDados, {'A1_NATUREZ', jJson:GetJsonObject('NATUREZ')  , Nil} )
-		aAdd(aDados, {'A1_OBS    ', 'WMSCLINTE'                     , Nil} )
+		//aAdd(aDados, {'A1_OBS    ', 'WMSCLINTE'                     , Nil} )
 		aAdd(aDados, {'A1_PESSOA ', jJson:GetJsonObject('PESSOA')   , Nil} )
-		aAdd(aDados, {'A1_TIPCLI ', jJson:GetJsonObject('TIPO')   	, Nil} )
+		//aAdd(aDados, {'A1_TIPCLI ', jJson:GetJsonObject('TIPO')   	, Nil} )
 		aAdd(aDados, {'A1_TIPO   ', jJson:GetJsonObject('TIPO') 	, Nil} )
 		aAdd(aDados, {'A1_TEL    ', jJson:GetJsonObject('FONE')     , Nil} )
 		//aAdd(aDados, {'A1_TRANSP ', jJson:GetJsonObject('TRANSP')   , Nil} )
@@ -396,22 +422,22 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE wsCliente
 
 		//Percorre os dados do execauto
 		For nCampo := 1 To Len(aDados)
-			//Se o campo for data, retira os hifens e faz a convers„o
+			//Se o campo for data, retira os hifens e faz a convers√£o
 			If GetSX3Cache(aDados[nCampo][1], 'X3_TIPO') == 'D'
-				//aDados[nCampo][2] := StrTran(aDados[nCampo][2], '-', '')
 				aDados[nCampo][2] := sToD(aDados[nCampo][2])
 			EndIf
 		Next
 
-		//Chama a inclus„o autom·tica
+		//Chama a inclus√£o autom√°tica
 		if !lExtCli
-			conout("antes do execaut")
-			MsExecAuto({|x, y| MATA030(x, y)}, aDados, 3)
+			conout("Cliente - antes do execaut")
+			//MsExecAuto({|x, y| MATA030(x, y)}, aDados, 3)  - ANTIGA
+            MSExecAuto({|a,b,c| CRMA980(a,b,c)},aDados,3,aAI0Auto)      			
 		Endif
 
-		//Se houve erro, gera um arquivo de log dentro do diretÛrio da protheus data
+		//Se houve erro, gera um arquivo de log dentro do diret√≥rio da protheus data
 		If lMsErroAuto
-			//Monta o texto do Error Log que ser· salvo
+			//Monta o texto do Error Log que ser√° salvo
 			cErrorLog   := ''
 			aLogAuto    := GetAutoGrLog()
 			For nLinha := 1 To Len(aLogAuto)
@@ -423,18 +449,19 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE wsCliente
 			MemoWrite(cDirLog + cArqLog, cErrorLog)
 
 			//Define o retorno para o WebService
-			//SetRestFault(500, cErrorLog) //caso queira usar esse comando, vocÍ n„o poder· usar outros retornos, como os abaixo
+			//SetRestFault(500, cErrorLog) //caso queira usar esse comando, voc√™ n√£o poder√° usar outros retornos, como os abaixo
 			Self:setStatus(500)
 			jResponse['errorId']  := 'NEW005'
-			jResponse['error']    := 'Erro na inclus„o do registro'
+			jResponse['error']    := 'Erro na inclus√£o do registro'
 			jResponse['errorLog'] := cErrorLog
 			jResponse['solution'] := 'Nao foi possivel incluir o registro, foi gerado um arquivo de log em ' + cDirLog + cArqLog + ' '
 			lRet := .F.
 
 			cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
-			oWS:GRAVALOGMURO(cResponc, cErrorLog, "WSCLIENTE", "INCLUS√O DE CLIENTE")
-			//Sen„o, define o retorno
+			oWS:GRAVALOGMURO(cResponc, cErrorLog, "WSCLIENTE", "INCLUS√ÉO DE CLIENTE")
+			//Sen√£o, define o retorno
 		Else
+			conout(" Cliente - Gravado com Sucesso... ")
 			jResponse['note']     := 'Registro incluido com sucesso'
 		EndIf
 
@@ -466,6 +493,7 @@ WSMETHOD PUT UPDATE WSRECEIVE cnpj WSSERVICE wsCliente
 	Local cCnpj  			:= ""
 	Local cCodi  			:= ""
 	Local cLoja  			:= ""
+	Local aAI0Auto			:= {}
 
 	Private lMsErroAuto     := .F.
 	Private lMsHelpAuto     := .T.
@@ -473,15 +501,28 @@ WSMETHOD PUT UPDATE WSRECEIVE cnpj WSSERVICE wsCliente
 
 	oWS    := LIBGLASS():new()
 
-	//Se n„o existir a pasta de logs, cria
+	//Se n√£o existir a pasta de logs, cria
 	IF ! ExistDir(cDirLog)
 		MakeDir(cDirLog)
 	EndIF
 
-	//Definindo o conte˙do como JSON, e pegando o content e dando um parse para ver se a estrutura est· ok
+	//Definindo o conte√∫do como JSON, e pegando o content e dando um parse para ver se a estrutura est√° ok
 	Self:SetContentType('application/json')
 	jJson  := JsonObject():New()
 	cJason := cJson
+
+	cEmpAt1 := cEmpAnt
+    cFilAt1 := cFilAnt
+
+    cEmpAt   := Iif(EMPTY(jJson:GetJsonObject("GRUPO") ), "01", jJson:GetJsonObject("GRUPO" ))
+    cFilAt   := "  "
+
+    cEmpAnt  := cEmpAt
+    cFilAnt  := cFilAt
+    
+    RPCSetEnv(cEmpAt, cFilAt)
+
+
 	cError := jJson:FromJson(cJson)
 	::cnpj := jJson:GetJsonObject('CNPJ')
 	cCnpj  := jJson:GetJsonObject('CNPJ')
@@ -500,7 +541,7 @@ WSMETHOD PUT UPDATE WSRECEIVE cnpj WSSERVICE wsCliente
 
 	//Se o id estiver vazio
 	If Empty(::cnpj) //.OR. !oWS:temCliCod(FWxFilial(cAliasWS), cCodi, cLoja)
-		//SetRestFault(500, 'Falha ao consultar o registro') //caso queira usar esse comando, vocÍ n„o poder· usar outros retornos, como os abaixo
+		//SetRestFault(500, 'Falha ao consultar o registro') //caso queira usar esse comando, voc√™ n√£o poder√° usar outros retornos, como os abaixo
 		Self:setStatus(500)
 		jResponse['errorId']  := 'UPD006'
 		jResponse['error']    := 'CNPJ VAZIO E/OU CODIGO E LOJA VAZIOS'
@@ -515,22 +556,22 @@ WSMETHOD PUT UPDATE WSRECEIVE cnpj WSSERVICE wsCliente
 		//SA1->(DbSetOrder(1))  //FILIAL + CODIGO + LOJA
 		//(SA1->( DbSeek( xFilial("SA1") + ::cnpj ) ) )
 
-		//Se n„o encontrar o registro
+		//Se n√£o encontrar o registro
 		If !oWS:temClient(FWxFilial(cAliasWS), ::cnpj) //!(cAliasWS)->(MsSeek(FWxFilial(cAliasWS) + ::cnpj))
-			//SetRestFault(500, 'Falha ao consultar ID') //caso queira usar esse comando, vocÍ n„o poder· usar outros retornos, como os abaixo
+			//SetRestFault(500, 'Falha ao consultar ID') //caso queira usar esse comando, voc√™ n√£o poder√° usar outros retornos, como os abaixo
 			Self:setStatus(500)
 			jResponse['errorId']  := 'UPD007'
-			jResponse['error']    := 'ID n„o encontrado'
+			jResponse['error']    := 'ID n√£o encontrado'
 			jResponse['errorLog'] := cErrorLog
-			jResponse['solution'] := 'CÛdigo ID n„o encontrado na tabela ' + cAliasWS
+			jResponse['solution'] := 'C√≥digo ID n√£o encontrado na tabela ' + cAliasWS
 
 			cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
-			oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "ATUALIZA«√O DE CLIENTE")
+			oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "ATUALIZA√á√ÉO DE CLIENTE")
 		Else
 
-			//Se tiver algum erro no Parse, encerra a execuÁ„o
+			//Se tiver algum erro no Parse, encerra a execu√ß√£o
 			If !Empty(cError)
-				//SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, vocÍ n„o poder· usar outros retornos, como os abaixo
+				//SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, voc√™ n√£o poder√° usar outros retornos, como os abaixo
 				Self:setStatus(500)
 				jResponse['errorId']  := 'UPD008'
 				jResponse['error']    := 'Parse do JSON'
@@ -538,7 +579,7 @@ WSMETHOD PUT UPDATE WSRECEIVE cnpj WSSERVICE wsCliente
 				jResponse['solution'] := 'Erro ao fazer o Parse do JSON'
 
 				cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
-				oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "ATUALIZA«√O DE CLIENTE")
+				oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "ATUALIZA√á√ÉO DE CLIENTE")
 			Else
 
 				//Adiciona os dados do ExecAuto
@@ -556,7 +597,7 @@ WSMETHOD PUT UPDATE WSRECEIVE cnpj WSSERVICE wsCliente
 				aAdd(aDadUpd, {'A1_MUN'		, jJson:GetJsonObject('MUNICIPIO'), Nil} )
 				aAdd(aDadUpd, {'A1_NATUREZ'	, jJson:GetJsonObject('NATUREZ')  , Nil} )
 				aAdd(aDadUpd, {'A1_PESSOA'	, jJson:GetJsonObject('PESSOA')   , Nil} )
-				aAdd(aDadUpd, {'A1_TRANSP'	, jJson:GetJsonObject('TRANSP')   , Nil} )
+				// aAdd(aDadUpd, {'A1_TRANSP'	, jJson:GetJsonObject('TRANSP')   , Nil} )
 				aAdd(aDadUpd, {'A1_ZINTEGR' , jJson:GetJsonObject('INTEGRADO'), Nil} )
 				aAdd(aDadUpd, {'A1_ZMOBILE' , cMOVEL						  , Nil} )
 				aAdd(aDadUpd, {'A1_ZTPVEIC' , cTIPOV					  	  , Nil} )
@@ -567,16 +608,18 @@ WSMETHOD PUT UPDATE WSRECEIVE cnpj WSSERVICE wsCliente
 				aAdd(aDadUpd, {'A1_MSBLQL'  , lBloq 						  , Nil} )
 				aAdd(aDadUpd, {'A1_ZATIVO'  , lAtivo	    				  , Nil} )
 
-				SA1->(DbGoTop())
-				SA1->(DbSetOrder(3))
-				if (SA1->( DbSeek( xFilial("SA1") + cCnpj ) ) )
-					lMsErroAuto :=  oWS:ATUSA1(aDadUpd, xFilial("SA1"),  cCnpj)
+				//SA1->(DbGoTop())
+				//SA1->(DbSetOrder(3))
+				//if (SA1->( DbSeek( xFilial("SA1") + cCnpj ) ) )
+				if oWS:temClient(FWxFilial(cAliasWS), ::cnpj)
+					lMsErroAuto :=  oWS:ATUSA1(aDadUpd, xFilial("SA1"),  cCnpj) //- ANTIGO - UPDATE DIRETO
 					//MsExecAuto({|x, y| MATA030(x, y)}, aDadUpd, 4)
+		            //MSExecAuto({|a,b,c| CRMA980(a,b,c)},aDadUpd, 4,aAI0Auto)      			
 				Endif
 
-				//Se houve erro, gera um arquivo de log dentro do diretÛrio da protheus data
+				//Se houve erro, gera um arquivo de log dentro do diret√≥rio da protheus data
 				If lMsErroAuto
-					//Monta o texto do Error Log que ser· salvo
+					//Monta o texto do Error Log que ser√° salvo
 					cErrorLog   := ''
 					aLogAuto    := GetAutoGrLog()
 					For nLinha  := 1 To Len(aLogAuto)
@@ -588,17 +631,17 @@ WSMETHOD PUT UPDATE WSRECEIVE cnpj WSSERVICE wsCliente
 					MemoWrite(cDirLog + cArqLog, cErrorLog)
 
 					//Define o retorno para o WebService
-					//SetRestFault(500, cErrorLog) //caso queira usar esse comando, vocÍ n„o poder· usar outros retornos, como os abaixo
+					//SetRestFault(500, cErrorLog) //caso queira usar esse comando, voc√™ n√£o poder√° usar outros retornos, como os abaixo
 					Self:setStatus(500)
 					jResponse['errorId']  := 'UPD009'
-					jResponse['error']    := 'Erro na atualizaÁ„o do registro'
+					jResponse['error']    := 'Erro na atualizacao do registro'
 					jResponse['errorLog'] := cErrorLog
 					jResponse['solution'] := 'Nao foi possivel incluir o registro, foi gerado um arquivo de log em ' + cDirLog + cArqLog + ' '
 					lRet := .F.
 
 					cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
-					oWS:GRAVALOGMURO(cResponc, cErrorLog, "WSCLIENTE", "ATUALIZA«√O DE CLIENTE")
-					//Sen„o, define o retorno
+					oWS:GRAVALOGMURO(cResponc, cErrorLog, "WSCLIENTE", "ATUALIZA√á√ÉO DE CLIENTE")
+					//Sen√£o, define o retorno
 				Else
 					jResponse['note']     := 'Registro Atualizado com sucesso'
 				EndIf
@@ -606,6 +649,9 @@ WSMETHOD PUT UPDATE WSRECEIVE cnpj WSSERVICE wsCliente
 			EndIf
 		EndIf
 	EndIf
+	rpcClearEnv()
+    cEmpAnt  := cEmpAt1
+    cFilAnt  := cFilAt1
 
 	//Define o retorno
 	Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
@@ -629,21 +675,36 @@ WSMETHOD PUT ERASE WSRECEIVE cnpj WSSERVICE wsCliente
 	Local cJason			:= ""
 	Local cResponc          := ""
 
+	Local aAI0Auto			:= {}
+
 	Private lMsErroAuto     := .F.
 	Private lMsHelpAuto     := .T.
 	Private lAutoErrNoFile  := .T.
 
+
 	oWS    := LIBGLASS():new()
 
-	//Se n„o existir a pasta de logs, cria
+	//Se n√£o existir a pasta de logs, cria
 	IF ! ExistDir(cDirLog)
 		MakeDir(cDirLog)
 	EndIF
 
-	//Definindo o conte˙do como JSON, e pegando o content e dando um parse para ver se a estrutura est· ok
+	//Definindo o conte√∫do como JSON, e pegando o content e dando um parse para ver se a estrutura est√° ok
 	Self:SetContentType('application/json')
 	jJson  := JsonObject():New()
 	cError := jJson:FromJson(cJson)
+
+	cEmpAt1 := cEmpAnt
+    cFilAt1 := cFilAnt
+
+    cEmpAt   := Iif(EMPTY(jJson:GetJsonObject("GRUPO") ), "01", jJson:GetJsonObject("GRUPO" ))
+    cFilAt   := "  "
+
+    cEmpAnt  := cEmpAt
+    cFilAnt  := cFilAt
+    
+    RPCSetEnv(cEmpAt, cFilAt)
+
 	cJason := cJson
 	::cnpj := jJson:GetJsonObject('CNPJ')
 	cCnpj  := jJson:GetJsonObject('CNPJ')
@@ -652,7 +713,7 @@ WSMETHOD PUT ERASE WSRECEIVE cnpj WSSERVICE wsCliente
 
 	//Se o id estiver vazio
 	If Empty(::cnpj) //.OR. !oWS:temCliCod(FWxFilial(cAliasWS), cCodi, cLoja)
-		//SetRestFault(500, 'Falha ao consultar o registro') //caso queira usar esse comando, vocÍ n„o poder· usar outros retornos, como os abaixo
+		//SetRestFault(500, 'Falha ao consultar o registro') //caso queira usar esse comando, voc√™ n√£o poder√° usar outros retornos, como os abaixo
 		Self:setStatus(500)
 		jResponse['errorId']  := 'DEL010'
 		jResponse['error']    := 'CNPJ VAZIO E/OU CODIGO E LOJA VAZIOS'
@@ -662,22 +723,22 @@ WSMETHOD PUT ERASE WSRECEIVE cnpj WSSERVICE wsCliente
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
 		oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "BLOQUEIO DE CLIENTE")
 	Else
-		//Se n„o encontrar o registro
+		//Se n√£o encontrar o registro
 		If !oWS:temClient(FWxFilial(cAliasWS), ::cnpj) //(cAliasWS)->(MsSeek(FWxFilial(cAliasWS) + ::cnpj))
-			//SetRestFault(500, 'Falha ao consultar ID') //caso queira usar esse comando, vocÍ n„o poder· usar outros retornos, como os abaixo
+			//SetRestFault(500, 'Falha ao consultar ID') //caso queira usar esse comando, voc√™ n√£o poder√° usar outros retornos, como os abaixo
 			Self:setStatus(500)
 			jResponse['errorId']  := 'DEL011'
-			jResponse['error']    := 'CNPJ n„o encontrado'
+			jResponse['error']    := 'CNPJ n√£o encontrado'
 			jResponse['errorLog'] := cErrorLog
-			jResponse['solution'] := 'CNPJ n„o encontrado na tabela ' + cAliasWS
+			jResponse['solution'] := 'CNPJ n√£o encontrado na tabela ' + cAliasWS
 
 			cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
 			oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "BLOQUEIO DE CLIENTE")
 		Else
 
-			//Se tiver algum erro no Parse, encerra a execuÁ„o
+			//Se tiver algum erro no Parse, encerra a execu√ß√£o
 			If ! Empty(cError)
-				//SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, vocÍ n„o poder· usar outros retornos, como os abaixo
+				//SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, voc√™ n√£o poder√° usar outros retornos, como os abaixo
 				Self:setStatus(500)
 				jResponse['errorId']  := 'DEL012'
 				jResponse['error']    := 'Parse do JSON'
@@ -691,26 +752,29 @@ WSMETHOD PUT ERASE WSRECEIVE cnpj WSSERVICE wsCliente
 
 				//Adiciona os dados do ExecAuto
 				aAdd(aDados, {'A1_MSBLQL', '1',   Nil})
+				aAdd(aDados, {'A1_ZATIVO', 'N',   Nil})
 
 				//Percorre os dados do execauto
 				For nCampo := 1 To Len(aDados)
-					//Se o campo for data, retira os hifens e faz a convers„o
+					//Se o campo for data, retira os hifens e faz a convers√£o
 					If GetSX3Cache(aDados[nCampo][1], 'X3_TIPO') == 'D'
 						//aDados[nCampo][2] := StrTran(aDados[nCampo][2], '-', '')
 						aDados[nCampo][2] := sToD(aDados[nCampo][2])
 					EndIf
 				Next
 
-				SA1->(DbGoTop())
-				SA1->(DbSetOrder(3))
-				if (SA1->( DbSeek( xFilial("SA1") + cCnpj ) ) )
-					lMsErroAuto :=  oWS:ATUSA1(aDados, xFilial("SA1"),  cCnpj)
+				//SA1->(DbGoTop())
+				//SA1->(DbSetOrder(3))
+				//if (SA1->( DbSeek( xFilial("SA1") + cCnpj ) ) )
+				IF oWS:temClient(xFilial("SA1"), cCnpj)
+					lMsErroAuto :=  oWS:ATUSA1(aDados, xFilial("SA1"),  cCnpj) //- antigo, update
 					//MsExecAuto({|x, y| MATA030(x, y)}, aDados, 4)
+		            //MSExecAuto({|a,b,c| CRMA980(a,b,c)},aDados, 4,aAI0Auto)      			
 				Endif
 
-				//Se houve erro, gera um arquivo de log dentro do diretÛrio da protheus data
+				//Se houve erro, gera um arquivo de log dentro do diret√≥rio da protheus data
 				If lMsErroAuto
-					//Monta o texto do Error Log que ser· salvo
+					//Monta o texto do Error Log que ser√° salvo
 					cErrorLog   := ''
 					aLogAuto    := GetAutoGrLog()
 					For nLinha := 1 To Len(aLogAuto)
@@ -722,10 +786,10 @@ WSMETHOD PUT ERASE WSRECEIVE cnpj WSSERVICE wsCliente
 					MemoWrite(cDirLog + cArqLog, cErrorLog)
 
 					//Define o retorno para o WebService
-					//SetRestFault(500, cErrorLog) //caso queira usar esse comando, vocÍ n„o poder· usar outros retornos, como os abaixo
+					//SetRestFault(500, cErrorLog) //caso queira usar esse comando, voc√™ n√£o poder√° usar outros retornos, como os abaixo
 					Self:setStatus(500)
 					jResponse['errorId']  := 'DEL013'
-					jResponse['error']    := 'Erro na exclus„o do registro'
+					jResponse['error']    := 'Erro na exclus√£o do registro'
 					jResponse['errorLog'] := cErrorLog
 					jResponse['solution'] := 'Nao foi possivel incluir o registro, foi gerado um arquivo de log em ' + cDirLog + cArqLog + ' '
 					lRet := .F.
@@ -739,6 +803,10 @@ WSMETHOD PUT ERASE WSRECEIVE cnpj WSSERVICE wsCliente
 			EndIf
 		EndIf
 	EndIf
+
+	rpcClearEnv()
+    cEmpAnt  := cEmpAt1
+    cFilAnt  := cFilAt1
 
 	//Define o retorno
 	Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
@@ -799,7 +867,7 @@ WSMETHOD GET customers WSRECEIVE searchKey, page, pageSize WSREST wsCliente
 	If ( cAliasSA1 )->( ! Eof() )
 
 		//-------------------------------------------------------------------
-		// Identifica a quantidade de registro no alias tempor·rio
+		// Identifica a quantidade de registro no alias tempor√°rio
 		//-------------------------------------------------------------------
 		COUNT TO nRecord
 

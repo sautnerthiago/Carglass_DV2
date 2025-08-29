@@ -54,6 +54,9 @@ WSMETHOD GET CNPJ WSRECEIVE cnpj WSSERVICE WSFORNEC
 
 	oWS    := LIBGLASS():new()
 
+	ConOut("Iniciando .. fornece")
+	ConOut("CNPJ - " + ::cnpj)
+
     //Se o id estiver vazio
     If Empty(::cnpj)
         //SetRestFault(500, 'Falha ao consultar o registro') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
@@ -62,57 +65,77 @@ WSMETHOD GET CNPJ WSRECEIVE cnpj WSSERVICE WSFORNEC
         jResponse['error']    := 'ID vazio'
         jResponse['solution'] := 'Informe o ID'
 
+		ConOut("erro 001")
+
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
 		oWS:GRAVALOGMURO(cResponc, cJason, "WSFORNC", "NAO DIGITADO O FORNECEDOR")
 
     Else
         //DbSelectArea(cAliasWS)
-        (cAliasWS)->(DbSetOrder(3))
+        //(cAliasWS)->(DbSetOrder(3))
 
         //Se não encontrar o registro
-        If ! (cAliasWS)->(MsSeek(FWxFilial(cAliasWS) + ::cnpj))
+        If !oWS:temFornec( FWxFilial(cAliasWS),  ::cnpj) //!(cAliasWS)->(MsSeek(FWxFilial(cAliasWS) + ::cnpj))
             //SetRestFault(500, 'Falha ao consultar ID') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
             Self:setStatus(500) 
             jResponse['errorId']  := 'ID002'
 			jResponse['error']    := 'CNPJ/CPF ('+::cnpj+') não encontrado'
 			jResponse['solution'] := 'CNPJ/CPF não encontrado na tabela ' + cAliasWS
+
+			ConOut("erro 002")
+
+			Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
+			Return .F.
+
         Else
+
+			cQuery := " SELECT * "
+			cQuery += " FROM "+RetSQLName("SA2") + " AS SA2 WITH (NOLOCK) "
+			cQuery += " WHERE "
+			cQuery += " SA2.A2_CGC = '"+::cnpj+"' "
+			cQuery += " AND SA2.D_E_L_E_T_ = '' "
+			cAlSA2:= CriaTrab(Nil,.F.)
+			DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSA2, .F., .T.)    
+
             //Define o retorno
-            jResponse['FILIAL'] 		:= Rtrim( (cAliasWS)->A2_FILIAL)
-            jResponse['CODIGO']			:= Rtrim( (cAliasWS)->A2_COD)
-            jResponse['LOJA'] 			:= Rtrim( (cAliasWS)->A2_LOJA )
-			jResponse['NOME'] 			:= Rtrim( (cAliasWS)->A2_NOME)
-			jResponse['NREDUZ'] 		:= Rtrim( (cAliasWs)->A2_NREDUZ )
-        	jResponse['BAIRRO'] 		:= Rtrim( (cAliasWs)->A2_BAIRRO )
-        	jResponse['EMAIL'] 			:= Rtrim( (cAliasWs)->A2_EMAIL  )
-        	jResponse['CEP'] 			:= Rtrim( (cAliasWs)->A2_CEP    )
-        	jResponse['CNPJ'] 			:= Rtrim( (cAliasWs)->A2_CGC    )
-        	jResponse['ESTADO']			:= Rtrim( (cAliasWs)->A2_ESTADO )
-        	jResponse['COD_MUN']		:= Rtrim( (cAliasWs)->A2_COD_MUN)
-        	jResponse['COND'] 			:= Rtrim( (cAliasWs)->A2_COND   )
-        	jResponse['DDD'] 			:= Rtrim( (cAliasWs)->A2_DDD    )
-        	jResponse['DTCAD'] 			:= (cAliasWs)->A2_DTNASC
-        	jResponse['END']			:= Rtrim( (cAliasWs)->A2_END    )
-        	jResponse['INSCR'] 			:= Rtrim( (cAliasWs)->A2_INSCR  )
-        	jResponse['MUNICIPIO']		:= Rtrim( (cAliasWs)->A2_MUN    )
-        	jResponse['NATUREZ']		:= Rtrim( (cAliasWs)->A2_NATUREZ)
-        	jResponse['PESSOA'] 		:= Rtrim( (cAliasWs)->A2_TPESSOA)
-        	jResponse['TIPO']	 		:= Rtrim( (cAliasWs)->A2_TIPO )
-        	jResponse['FONE'] 			:= Rtrim( (cAliasWs)->A2_TEL    )
-        	jResponse['TRANSP'] 		:= Rtrim( (cAliasWs)->A2_TRANSP )
-        	jResponse['PAIS']			:= Rtrim( (cAliasWS)->A2_PAIS   )
-        	jResponse['BLOQUEADO'] 		:= IF ((cAliasWS)->A2_MSBLQL == "2", "NAO", "SIM")
-			jResponse['MOVEL']			:= (cAliasWS)->A2_ZMOBILE
-			jResponse['TIPOVEICULO']	:= (cAliasWS)->A2_ZTPVEIC
-			jResponse['DTCRIACAO']		:= (cAliasWS)->A2_ZDTCRIA
-			jResponse['ATIVO']			:= (cAliasWS)->A2_ZATIVO
-			jResponse['PAGAMENTOADT']	:= (cAliasWS)->A2_ZPGTADT
-			jResponse['REVENDEAFIAL']	:= (cAliasWS)->A2_ZREVAFI
-			jResponse['AFILIADOCONV']	:= (cAliasWS)->A2_ZAFICON
-			jResponse['TIPOAFILIADO']	:= (cAliasWS)->A2_ZTPAFIL
-			jResponse['INTEGRADO']	    := (cAliasWS)->A2_ZINTEGR
+            jResponse['FILIAL'] 		:= Rtrim( (cAlSA2)->A2_FILIAL)
+            jResponse['CODIGO']			:= Rtrim( (cAlSA2)->A2_COD)
+            jResponse['LOJA'] 			:= Rtrim( (cAlSA2)->A2_LOJA )
+			jResponse['NOME'] 			:= Rtrim( (cAlSA2)->A2_NOME)
+			jResponse['NREDUZ'] 		:= Rtrim( (cAlSA2)->A2_NREDUZ )
+        	jResponse['BAIRRO'] 		:= Rtrim( (cAlSA2)->A2_BAIRRO )
+        	jResponse['EMAIL'] 			:= Rtrim( (cAlSA2)->A2_EMAIL  )
+        	jResponse['CEP'] 			:= Rtrim( (cAlSA2)->A2_CEP    )
+        	jResponse['CNPJ'] 			:= Rtrim( (cAlSA2)->A2_CGC    )
+        	jResponse['ESTADO']			:= Rtrim( (cAlSA2)->A2_ESTADO )
+        	jResponse['COD_MUN']		:= Rtrim( (cAlSA2)->A2_COD_MUN)
+        	jResponse['COND'] 			:= Rtrim( (cAlSA2)->A2_COND   )
+        	jResponse['DDD'] 			:= Rtrim( (cAlSA2)->A2_DDD    )
+        	jResponse['DTCAD'] 			:= (cAlSA2)->A2_DTNASC
+        	jResponse['END']			:= Rtrim( (cAlSA2)->A2_END    )
+        	jResponse['INSCR'] 			:= Rtrim( (cAlSA2)->A2_INSCR  )
+        	jResponse['MUNICIPIO']		:= Rtrim( (cAlSA2)->A2_MUN    )
+        	jResponse['NATUREZ']		:= Rtrim( (cAlSA2)->A2_NATUREZ)
+        	jResponse['PESSOA'] 		:= Rtrim( (cAlSA2)->A2_TPESSOA)
+        	jResponse['TIPO']	 		:= Rtrim( (cAlSA2)->A2_TIPO )
+        	jResponse['FONE'] 			:= Rtrim( (cAlSA2)->A2_TEL    )
+        	jResponse['TRANSP'] 		:= Rtrim( (cAlSA2)->A2_TRANSP )
+        	jResponse['PAIS']			:= Rtrim( (cAlSA2)->A2_PAIS   )
+        	jResponse['BLOQUEADO'] 		:= IF ((cAlSA2)->A2_MSBLQL == "2", "NAO", "SIM")
+			jResponse['MOVEL']			:= (cAlSA2)->A2_ZMOBILE
+			jResponse['TIPOVEICULO']	:= (cAlSA2)->A2_ZTPVEIC
+			jResponse['DTCRIACAO']		:= (cAlSA2)->A2_ZDTCRIA
+			jResponse['ATIVO']			:= (cAlSA2)->A2_ZATIVO
+			jResponse['PAGAMENTOADT']	:= (cAlSA2)->A2_ZPGTADT
+			jResponse['REVENDEAFIAL']	:= (cAlSA2)->A2_ZREVAFI
+			jResponse['AFILIADOCONV']	:= (cAlSA2)->A2_ZAFICON
+			jResponse['TIPOAFILIADO']	:= (cAlSA2)->A2_ZTPAFIL
+			jResponse['INTEGRADO']	    := (cAlSA2)->A2_ZINTEGR
         EndIf
     EndIf
+
+    ConOut("O sistema boooooommmmmm")
+	(cAlSA2)->(DBCLOSEAREA())
 
     //Define o retorno
     Self:SetContentType('application/json')
@@ -217,6 +240,8 @@ WSMETHOD GET FORDATA WSRECEIVE dataDe, dataAte WSSERVICE WSFORNEC
 	
 	Local cJason	 := ""
 	oWS    := LIBGLASS():new()
+	
+	ConOut("Iniciando .. Fornecedor..")
 
 	//Se o id estiver vazio
 	If Empty(dDataDe) .and. Empty(dDataAt)
@@ -224,6 +249,8 @@ WSMETHOD GET FORDATA WSRECEIVE dataDe, dataAte WSSERVICE WSFORNEC
 		jResponse['errorId']  := 'Tipo016'
 		jResponse['error']    := 'Datas Vazias'
 		jResponse['solution'] := 'Informe datas'
+
+		ConOut("erro 001")
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
 		oWS:GRAVALOGMURO(cResponc, cJason, "WSFORNC", "NAO DIGITADAS AS DATAS")
@@ -237,6 +264,8 @@ WSMETHOD GET FORDATA WSRECEIVE dataDe, dataAte WSSERVICE WSFORNEC
 		Return lRet
 
 	EndIf
+
+	ConOut("O sistema Boooommmmmmmmm")
 
 	//Define o retorno
 	Self:SetContentType('application/json')
@@ -296,12 +325,14 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE WSFORNEC
     IF ! ExistDir(cDirLog)
         MakeDir(cDirLog)
     EndIF    
+    Self:SetContentType('application/json')
+    jJson  := JsonObject():New()
 
- 	cEmpAt1 := cEmpAnt
+	cEmpAt1 := cEmpAnt
     cFilAt1 := cFilAnt
 
     cEmpAt   := Iif(EMPTY(jJson:GetJsonObject("GRUPO") ), "01", jJson:GetJsonObject("GRUPO" ))
-    cFilAt   := Iif(EMPTY(jJson:GetJsonObject("FILIAL")), "01", jJson:GetJsonObject("FILIAL"))
+    cFilAt   := "  "
 
     cEmpAnt  := cEmpAt
     cFilAnt  := cFilAt
@@ -309,8 +340,6 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE WSFORNEC
     RPCSetEnv(cEmpAt, cFilAt)
 
     //Definindo o conteúdo como JSON, e pegando o content e dando um parse para ver se a estrutura está ok
-    Self:SetContentType('application/json')
-    jJson  := JsonObject():New()
     cError := jJson:FromJson(cJson)
 	cJason := cJson
 	::cnpj := jJson:GetJsonObject('CNPJ')
@@ -333,7 +362,6 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE WSFORNEC
 
    	CONFIRMSX8()
 
-
 	IF oWS:temFornec(FWxFilial(cAliasWS), ::cnpj) //.OR. oWS:temForCod(FWxFilial(cAliasWS), cCodi, cLoja)    
 		//SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
 		Self:setStatus(500)
@@ -344,11 +372,13 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE WSFORNEC
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
 		oWS:GRAVALOGMURO(cResponc, cJason, "WSFORNC", "INCLUSÃO DE FORNECEDOR")
-		lExtFor := .T.
+        ConOut("erro 003")
+        Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
+        Return .F.
 	EndIF
  
     //Se tiver algum erro no Parse, encerra a execução
-    IF ! Empty(cError)
+    IF !Empty(cError)
         //SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
         Self:setStatus(500) 
         jResponse['errorId']  := 'NEW004'
@@ -359,55 +389,146 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE WSFORNEC
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
 		oWS:GRAVALOGMURO(cResponc, cJason, "WSFORNC", "INCLUSÃO DE FORNECEDOR")
     Else
-		DbSelectArea(cAliasWS)
-
-		//Adiciona os dados do ExecAuto
-		aAdd(aDados, {'A2_FILIAL' , FWCodFil()                      , Nil} )
-		aAdd(aDados, {'A2_COD'    , cCodi   						, Nil} )
-		aAdd(aDados, {'A2_LOJA'   , cLoja   						, Nil} )
-		aAdd(aDados, {'A2_NOME'   , jJson:GetJsonObject('NOME')     , Nil} )
-		aAdd(aDados, {'A2_NREDUZ ', jJson:GetJsonObject('NREDUZ')   , Nil} )
-        aAdd(aDados, {'A2_BAIRRO ', jJson:GetJsonObject('BAIRRO')   , Nil} )
-        aAdd(aDados, {'A2_EMAIL  ', jJson:GetJsonObject('EMAIL')    , Nil} )
-        aAdd(aDados, {'A2_CEP    ', jJson:GetJsonObject('CEP')      , Nil} )
-        aAdd(aDados, {'A2_CGC    ', jJson:GetJsonObject('CNPJ')     , Nil} )
-        aAdd(aDados, {'A2_EST    ', jJson:GetJsonObject('ESTADO')   , Nil} )
-        aAdd(aDados, {'A2_COD_MUN', jJson:GetJsonObject('COD_MUN')  , Nil} )
-        //aAdd(aDados, {'A2_COND   ', jJson:GetJsonObject('COND')     , Nil} )
-        aAdd(aDados, {'A2_DDD    ', jJson:GetJsonObject('DDD')      , Nil} )
-        aAdd(aDados, {'A2_END    ', jJson:GetJsonObject('END')      , Nil} )
-        aAdd(aDados, {'A2_INSCR  ', jJson:GetJsonObject('INSCR')    , Nil} )
-        aAdd(aDados, {'A2_MUN    ', jJson:GetJsonObject('MUNICIPIO'), Nil} )
-        //aAdd(aDados, {'A2_NATUREZ', jJson:GetJsonObject('NATUREZ')  , Nil} )
-        aAdd(aDados, {'A2_TIPO   ', jJson:GetJsonObject('TIPO')     , Nil} )
-        aAdd(aDados, {'A2_TEL    ', jJson:GetJsonObject('FONE')     , Nil} )
-        //aAdd(aDados, {'A2_TRANSP ', jJson:GetJsonObject('TRANSP')   , Nil} )
-        aAdd(aDados, {'A2_PAIS   ', '105'  							, Nil} )
-		aAdd(aDados, {'A2_ZINTEGR', jJson:GetJsonObject('INTEGRADO'), Nil} )
-		aAdd(aDados, {'A2_ZMOBILE', cMOVEL							, Nil} )
-		aAdd(aDados, {'A2_ZTPVEIC', cTIPOV							, Nil} )
-		aAdd(aDados, {'A2_ZPGTADT', cPAGAM							, Nil} )
-		aAdd(aDados, {'A2_ZREVAFI', cREVEN							, Nil} )
-		aAdd(aDados, {'A2_ZAFICON', cAFILI							, Nil} )
-		aAdd(aDados, {'A2_ZTPAFIL', cTIPOA							, Nil} )
-		aAdd(aDados, {'A2_MSBLQL' , lBloq 							, Nil} )
-		aAdd(aDados, {'A2_ZATIVO' , lAtivo	    					, Nil} )
-
-		//Percorre os dados do execauto
-		For nCampo := 1 To Len(aDados)
-			//Se o campo for data, retira os hifens e faz a conversão
-			If GetSX3Cache(aDados[nCampo][1], 'X3_TIPO') == 'D'
-				//aDados[nCampo][2] := StrTran(aDados[nCampo][2], '-', '')
-				aDados[nCampo][2] := sToD(aDados[nCampo][2])
+		IF !lExtFor
+			//Chama a inclusão automática
+			conout("Fornecedor - antes do execaut")
+			lDeuCerto := .F.
+			
+			//Pegando o modelo de dados, setando a operação de inclusão
+			oModel := FWLoadModel("MATA020M")
+			oModel:SetOperation(3)
+			oModel:Activate()
+			
+			//Pegando o model dos campos da SA2
+			oSA2Mod:= oModel:getModel("SA2MASTER")
+			oSA2Mod:setValue("A2_FILIAL"  , FWCodFil()                      )
+			oSA2Mod:setValue("A2_COD"     , cCodi   						)
+			oSA2Mod:setValue("A2_LOJA"    , cLoja   						)
+			oSA2Mod:setValue("A2_NOME"    , jJson:GetJsonObject('NOME')     )
+			oSA2Mod:setValue("A2_NREDUZ"  , jJson:GetJsonObject('NREDUZ')   )
+			oSA2Mod:setValue("A2_BAIRRO"  , jJson:GetJsonObject('BAIRRO')   )
+			oSA2Mod:setValue("A2_EMAIL"   , jJson:GetJsonObject('EMAIL')    )
+			oSA2Mod:setValue("A2_CEP"     , jJson:GetJsonObject('CEP')      )
+			oSA2Mod:setValue("A2_CGC"     , jJson:GetJsonObject('CNPJ')     )
+			oSA2Mod:setValue("A2_EST"     , jJson:GetJsonObject('ESTADO')   )
+			oSA2Mod:setValue("A2_COD_MUN" , jJson:GetJsonObject('COD_MUN')  )
+			oSA2Mod:setValue("A2_DDD"     , jJson:GetJsonObject('DDD')      )
+			oSA2Mod:setValue("A2_END"     , jJson:GetJsonObject('END')      )
+			oSA2Mod:setValue("A2_INSCR"   , jJson:GetJsonObject('INSCR')    )
+			oSA2Mod:setValue("A2_MUN"     , jJson:GetJsonObject('MUNICIPIO'))
+			oSA2Mod:setValue("A2_TIPO"    , jJson:GetJsonObject('TIPO')     )
+			oSA2Mod:setValue("A2_TEL"     , jJson:GetJsonObject('FONE')     )
+			oSA2Mod:setValue("A2_PAIS"    , '105'  							)
+			oSA2Mod:setValue("A2_ZINTEGR" , jJson:GetJsonObject('INTEGRADO'))
+			oSA2Mod:setValue("A2_ZMOBILE" , cMOVEL							)
+			oSA2Mod:setValue("A2_ZTPVEIC" , cTIPOV							)
+			oSA2Mod:setValue("A2_ZPGTADT" , cPAGAM							)
+			oSA2Mod:setValue("A2_ZREVAFI" , cREVEN							)
+			oSA2Mod:setValue("A2_ZAFICON" , cAFILI							)
+			oSA2Mod:setValue("A2_ZTPAFIL" , cTIPOA							)
+			oSA2Mod:setValue("A2_MSBLQL"  , lBloq 							)
+			oSA2Mod:setValue("A2_ZATIVO"  , lAtivo	    					)
+			
+			//Se conseguir validar as informações
+			If oModel:VldData()
+				//Tenta realizar o Commit
+				If oModel:CommitData()
+					lDeuCerto := .T.
+					//Se não deu certo, altera a variável para false
+				Else
+					lDeuCerto := .F.
+				EndIf
+				//Se não conseguir validar as informações, altera a variável para false
+			Else
+				lDeuCerto := .F.
 			EndIf
-		Next
+			
+			//Se não deu certo a inclusão, mostra a mensagem de erro
+			If !lDeuCerto
+				//Busca o Erro do Modelo de Dados
+				cErrorLog   := ''
+				aLogAuto    := oModel:GetErrorMessage()
+				For nLinha := 1 To Len(aLogAuto)
+					cErrorLog += aLogAuto[nLinha] + CRLF
+				Next nLinha
 
+				//Grava o arquivo de log
+				cArqLog := 'WSFORNEC_New_' + dToS(Date()) + '_' + StrTran(Time(), ':', '-') + '.log'
+				MemoWrite(cDirLog + cArqLog, cErrorLog)
+
+				//Define o retorno para o WebService
+				//SetRestFault(500, cErrorLog) //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
+				Self:setStatus(500) 
+				jResponse['errorId']  := 'NEW005'
+				jResponse['error']    := 'Erro na inclusão do registro'
+				jResponse['errorLog'] := cErrorLog
+				jResponse['solution'] := 'Nao foi possivel incluir o registro, foi gerado um arquivo de log em ' + cDirLog + cArqLog + ' '
+				lRet := .F.
+
+				cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
+				oWS:GRAVALOGMURO(cResponc, cErrorLog, "WSFORNC", "INCLUSÃO DE FORNECEDOR")
+			ELSE
+				jResponse['note']     := 'Registro incluido com sucesso'
+			EndIf
+			//Desativa o modelo de dados
+			oModel:DeActivate()
+
+			/* - 29/08/25 - DESCONTINUADO
+				DbSelectArea(cAliasWS)
+
+				//Adiciona os dados do ExecAuto
+				aAdd(aDados, {'A2_FILIAL' , FWCodFil()                      , Nil} )
+				aAdd(aDados, {'A2_COD'    , cCodi   						, Nil} )
+				aAdd(aDados, {'A2_LOJA'   , cLoja   						, Nil} )
+				aAdd(aDados, {'A2_NOME'   , jJson:GetJsonObject('NOME')     , Nil} )
+				aAdd(aDados, {'A2_NREDUZ ', jJson:GetJsonObject('NREDUZ')   , Nil} )
+				aAdd(aDados, {'A2_BAIRRO ', jJson:GetJsonObject('BAIRRO')   , Nil} )
+				aAdd(aDados, {'A2_EMAIL  ', jJson:GetJsonObject('EMAIL')    , Nil} )
+				aAdd(aDados, {'A2_CEP    ', jJson:GetJsonObject('CEP')      , Nil} )
+				aAdd(aDados, {'A2_CGC    ', jJson:GetJsonObject('CNPJ')     , Nil} )
+				aAdd(aDados, {'A2_EST    ', jJson:GetJsonObject('ESTADO')   , Nil} )
+				aAdd(aDados, {'A2_COD_MUN', jJson:GetJsonObject('COD_MUN')  , Nil} )
+				aAdd(aDados, {'A2_DDD    ', jJson:GetJsonObject('DDD')      , Nil} )
+				aAdd(aDados, {'A2_END    ', jJson:GetJsonObject('END')      , Nil} )
+				aAdd(aDados, {'A2_INSCR  ', jJson:GetJsonObject('INSCR')    , Nil} )
+				aAdd(aDados, {'A2_MUN    ', jJson:GetJsonObject('MUNICIPIO'), Nil} )
+				aAdd(aDados, {'A2_TIPO   ', jJson:GetJsonObject('TIPO')     , Nil} )
+				aAdd(aDados, {'A2_TEL    ', jJson:GetJsonObject('FONE')     , Nil} )
+				aAdd(aDados, {'A2_PAIS   ', '105'  							, Nil} )
+				aAdd(aDados, {'A2_ZINTEGR', jJson:GetJsonObject('INTEGRADO'), Nil} )
+				aAdd(aDados, {'A2_ZMOBILE', cMOVEL							, Nil} )
+				aAdd(aDados, {'A2_ZTPVEIC', cTIPOV							, Nil} )
+				aAdd(aDados, {'A2_ZPGTADT', cPAGAM							, Nil} )
+				aAdd(aDados, {'A2_ZREVAFI', cREVEN							, Nil} )
+				aAdd(aDados, {'A2_ZAFICON', cAFILI							, Nil} )
+				aAdd(aDados, {'A2_ZTPAFIL', cTIPOA							, Nil} )
+				aAdd(aDados, {'A2_MSBLQL' , lBloq 							, Nil} )
+				aAdd(aDados, {'A2_ZATIVO' , lAtivo	    					, Nil} )
+				//aAdd(aDados, {'A2_COND   ', jJson:GetJsonObject('COND')     , Nil} )
+				//aAdd(aDados, {'A2_NATUREZ', jJson:GetJsonObject('NATUREZ')  , Nil} )
+				//aAdd(aDados, {'A2_TRANSP ', jJson:GetJsonObject('TRANSP')   , Nil} )
+
+				//Percorre os dados do execauto
+				For nCampo := 1 To Len(aDados)
+					//Se o campo for data, retira os hifens e faz a conversão
+					If GetSX3Cache(aDados[nCampo][1], 'X3_TIPO') == 'D'
+						//aDados[nCampo][2] := StrTran(aDados[nCampo][2], '-', '')
+						aDados[nCampo][2] := sToD(aDados[nCampo][2])
+					EndIf
+				Next
+			*/
+
+		ENDIF
+		/* - 29/08/25 - DESCONTINUADO
 		if !lExtFor
 			//Chama a inclusão automática
-			conout("antes do execaut")
-			MsExecAuto({|x, y| MATA020(x, y)}, aDados, 3)
+			conout("Fornecedor - antes do execaut")
+			//MsExecAuto({|x, y| MATA020(x, y)}, aDados, 3) - ANTIGO
 		Endif
+		*/ 
+
 		//Se houve erro, gera um arquivo de log dentro do diretório da protheus data
+		/* - DESCONTINUADO - 29/08/25 - 
 		If lMsErroAuto
 			//Monta o texto do Error Log que será salvo
 			cErrorLog   := ''
@@ -432,17 +553,17 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE WSFORNEC
 			cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
 			oWS:GRAVALOGMURO(cResponc, cErrorLog, "WSFORNC", "INCLUSÃO DE FORNECEDOR")
 
-		//Senão, define o retorno
+			//Senão, define o retorno
 		Else
 			jResponse['note']     := 'Registro incluido com sucesso'
 		EndIf
-
+		*/
     EndIf
 
 	rpcClearEnv()
     cEmpAnt  := cEmpAt1
     cFilAnt  := cFilAt1
-	
+
     //Define o retorno
     Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
 Return lRet
@@ -519,7 +640,7 @@ WSMETHOD PUT UPDATE WSRECEIVE cnpj WSSERVICE WSFORNEC
         (cAliasWS)->(DbSetOrder(1))
 
         //Se não encontrar o registro
-        If !oWS:temFornec(FWxFilial(cAliasWS), ::cnpj) //(cAliasWS)->(MsSeek(FWxFilial(cAliasWS) + ::cnpj))
+        If oWS:temFornec(FWxFilial(cAliasWS), ::cnpj) //(cAliasWS)->(MsSeek(FWxFilial(cAliasWS) + ::cnpj))
             //SetRestFault(500, 'Falha ao consultar ID') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
             Self:setStatus(500) 
             jResponse['errorId']  := 'UPD007'
@@ -532,7 +653,7 @@ WSMETHOD PUT UPDATE WSRECEIVE cnpj WSSERVICE WSFORNEC
         Else
  
             //Se tiver algum erro no Parse, encerra a execução
-            If ! Empty(cError)
+            If !Empty(cError)
                 //SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
                 Self:setStatus(500) 
                 jResponse['errorId']  := 'UPD008'
@@ -567,9 +688,7 @@ WSMETHOD PUT UPDATE WSRECEIVE cnpj WSSERVICE WSFORNEC
 				aAdd(aDados, {'A2_MSBLQL' , lBloq    						, Nil} )
 				aAdd(aDados, {'A2_ZATIVO' , lAtivo	    					, Nil} )
 		         
-				 SA2->(DbGoTop())
-				 SA2->(DbSetOrder(3)) 
-				 if (SA2->( DbSeek( xFilial("SA2") + cCnpj ) ) )
+				if oWS:temFornec(FWxFilial(cAliasWS), cCnpj)
 			 		lMsErroAuto :=  oWS:ATUSA2(aDados, xFilial("SA2"),  cCnpj)
 					//MsExecAuto({|x, y| MATA020(x, y)}, aDados, 4)
 				 Endif
@@ -650,7 +769,7 @@ WSMETHOD PUT ERASE WSRECEIVE id WSSERVICE WSFORNEC
 	::cnpj := jJson:GetJsonObject('CNPJ')
 
     //Se o id estiver vazio
-    If Empty(::cnpj) .OR. !oWS:temForCod(FWxFilial(cAliasWS), cCodi, cLoja)    
+    If Empty(::cnpj) .OR. oWS:temForCod(FWxFilial(cAliasWS), cCodi, cLoja)    
         //SetRestFault(500, 'Falha ao consultar o registro') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
         Self:setStatus(500) 
         jResponse['errorId']  := 'DEL010'
@@ -675,7 +794,7 @@ WSMETHOD PUT ERASE WSRECEIVE id WSSERVICE WSFORNEC
         Else
  
             //Se tiver algum erro no Parse, encerra a execução
-            If ! Empty(cError)
+            If !Empty(cError)
                 //SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
                 Self:setStatus(500) 
                 jResponse['errorId']  := 'DEL012'
@@ -687,15 +806,16 @@ WSMETHOD PUT ERASE WSRECEIVE id WSSERVICE WSFORNEC
 				oWS:GRAVALOGMURO(cResponc, cJason, "WSFORNC", "BLOQUEIO DE FORNECEDOR")
             Else
 		         //Adiciona os dados do ExecAuto
-				 aAdd(aDados, {'A2_MSBLQL', '1',   Nil})
+				aAdd(aDados, {'A2_MSBLQL', '1',   Nil})
+				aAdd(aDados, {'A2_ZATIVO', 'N',   Nil})
 
-				 SA2->(DbGoTop())
-				 SA2->(DbSetOrder(3)) 
-				 if (SA2->( DbSeek( xFilial("SA2") + cCnpj ) ) )
+				//SA2->(DbGoTop())
+				//SA2->(DbSetOrder(3)) 
+				//if (SA2->( DbSeek( xFilial("SA2") + cCnpj ) ) )
+				if oWS:temFornec( FWxFilial(cAliasWS), cCnpj)
 			 		lMsErroAuto :=  oWS:ATUSA2(aDados, xFilial("SA2"),  cCnpj)
 			        //MsExecAuto({|x, y| MATA020(x, y)}, aDados, 5)
-				 Endif
-
+				Endif
 
 		         //Se houve erro, gera um arquivo de log dentro do diretório da protheus data
 		         If lMsErroAuto

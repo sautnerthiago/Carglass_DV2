@@ -89,6 +89,7 @@ Return cRet
 
 Method GRAVALOGMURO( cJson, cMensRet, cCodRotin, cNomRti ) class LIBGLASS
     Local lRet      := .T.
+    /*
     Local cCodUsr   := RetCodUsr()
     Local cNomUsr   := UsrRetName(cCodUsr)
     //Local nTmbObs   := TamSX3("Z1_JSON")[1]
@@ -115,7 +116,7 @@ Method GRAVALOGMURO( cJson, cMensRet, cCodRotin, cNomRti ) class LIBGLASS
         //MSMM(SZ1->Z1_MESERRO,,, cMensRet,1,,,"SZ1","Z1_MESERRO")  //Grava o campo MEMO
 
     END transaction
-
+    */
 Return lRet
 
 method temClient(_fili, _cnpj) class LIBGLASS
@@ -160,7 +161,7 @@ method temFornec(_fili, _cnpj) class LIBGLASS
     cQuery := " SELECT A2_FILIAL, A2_COD, A2_LOJA, A2_NOME, A2_NREDUZ, A2_CGC, A2_END "
 	cQuery += " FROM "+RetSQLName("SA2") + " AS SA2 WITH (NOLOCK) "
 	cQuery += " WHERE A2_FILIAL = '" + _fili + "' AND SA2.A2_CGC = '"+_cnpj+"' "
-	cQuery += " AND SA2.D_E_L_E_T_ = '' AND SA2.A2_MSBLQL <> '1' "
+	cQuery += " AND SA2.D_E_L_E_T_ = '' "
 	cAlSA2:= CriaTrab(Nil,.F.)
 	DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSA2, .F., .T.)    
 
@@ -634,8 +635,10 @@ method FornDatas( dtIni, DtFin) class LIBGLASS
 
     cQuery := " SELECT * "
 	cQuery += " FROM "+RetSQLName("SA2") + " AS SA2 WITH (NOLOCK) "
-	cQuery += " WHERE SA2.A2_ZDTCRIA BETWEEN '"+dtIni+"' AND '"+DtFin+"' "
-	cQuery += " AND SA2.D_E_L_E_T_ = '' "
+	cQuery += " WHERE "
+	cQuery += " D_E_L_E_T_ = '' "
+	//cQuery += " WHERE SA2.A2_ZDTCRIA BETWEEN '"+dtIni+"' AND '"+DtFin+"' "
+	//cQuery += " AND SA2.D_E_L_E_T_ = '' "
 	cAlSA2:= CriaTrab(Nil,.F.)
 	DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSA2, .F., .T.)    
 
