@@ -65,6 +65,9 @@ class LIBGLASS
     METHOD GrPedVd(cFilAt)
     METHOD PGExtrtV(_EXTERNID)
 
+    METHOD PGExtDad(_EXTERNID)
+    METHOD PGExtPDV(_EXTERNID)
+
 endclass
 
 method new() class LIBGLASS
@@ -121,13 +124,15 @@ Return lRet
 
 method temClient(_fili, _cnpj) class LIBGLASS
     Local lRet := .T.
+    Local cAlSA1 := GetNextAlias()
 
     cQuery := " SELECT A1_FILIAL, A1_COD, A1_LOJA, A1_NOME, A1_NREDUZ, A1_CGC, A1_END "
 	cQuery += " FROM "+RetSQLName("SA1") + " AS SA1 WITH (NOLOCK) "
 	cQuery += " WHERE A1_FILIAL = '" + _fili + "' "
     cQuery += " AND SA1.A1_CGC = '"+_cnpj+"' "
 	cQuery += " AND SA1.D_E_L_E_T_ = '' "
-	cAlSA1:= CriaTrab(Nil,.F.)
+	//cAlSA1:= CriaTrab(Nil,.F.)
+    //cQuery := ChangeQuery( cQuery )
 	DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSA1, .F., .T.)    
 
 	If (cAlSA1)->(Eof())
@@ -139,13 +144,15 @@ Return lRet
 
 method temCliCod(_fili, cod, loja) class LIBGLASS
     Local lRet := .T.
+    Local cAlSA1 := GetNextAlias()
 
     cQuery := " SELECT A1_FILIAL, A1_COD, A1_LOJA, A1_NOME, A1_NREDUZ, A1_CGC, A1_END "
 	cQuery += " FROM "+RetSQLName("SA1") + " AS SA1 WITH (NOLOCK) "
 	cQuery += " WHERE A1_FILIAL = '" + _fili + "' "
     cQuery += " AND SA1.A1_COD = '"+cod+"' AND A1_LOJA = '"+loja+"' "
 	cQuery += " AND SA1.D_E_L_E_T_ = '' "
-	cAlSA1:= CriaTrab(Nil,.F.)
+	//cAlSA1:= CriaTrab(Nil,.F.)
+    //cQuery := ChangeQuery( cQuery )
 	DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSA1, .F., .T.)    
 
 	If (cAlSA1)->(Eof())
@@ -156,13 +163,15 @@ method temCliCod(_fili, cod, loja) class LIBGLASS
 Return lRet
 
 method temFornec(_fili, _cnpj) class LIBGLASS
-    Local lRet := .T.
+    Local lRet   := .T.
+    Local cAlSA2 := GetNextAlias()
 
     cQuery := " SELECT A2_FILIAL, A2_COD, A2_LOJA, A2_NOME, A2_NREDUZ, A2_CGC, A2_END "
 	cQuery += " FROM "+RetSQLName("SA2") + " AS SA2 WITH (NOLOCK) "
 	cQuery += " WHERE A2_FILIAL = '" + _fili + "' AND SA2.A2_CGC = '"+_cnpj+"' "
 	cQuery += " AND SA2.D_E_L_E_T_ = '' "
-	cAlSA2:= CriaTrab(Nil,.F.)
+	//cAlSA2:= CriaTrab(Nil,.F.)
+    //cQuery := ChangeQuery( cQuery )
 	DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSA2, .F., .T.)    
 
     (cAlSA2)->(DbGoTop())
@@ -174,14 +183,16 @@ method temFornec(_fili, _cnpj) class LIBGLASS
 Return lRet
 
 method temForCod(_fili, cod, loja) class LIBGLASS
-    Local lRet := .T.
+    Local lRet   := .T.
+    Local cAlSA2 := GetNextAlias()
 
     cQuery := " SELECT A2_FILIAL, A2_COD, A2_LOJA, A2_NOME, A2_NREDUZ, A2_CGC, A2_END "
 	cQuery += " FROM "+RetSQLName("SA2") + " AS SA2 WITH (NOLOCK) "
 	cQuery += " WHERE A2_FILIAL = '" + _fili + "' "
     cQuery += " AND SA2.A2_COD = '"+cod+"' AND A2_LOJA = '"+loja+"' "
 	cQuery += " AND SA2.D_E_L_E_T_ = '' AND SA2.A2_MSBLQL <> '1' "
-	cAlSA2:= CriaTrab(Nil,.F.)
+	//cAlSA2:= CriaTrab(Nil,.F.)
+    //cQuery := ChangeQuery( cQuery )
 	DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSA2, .F., .T.)    
 
     (cAlSA2)->(DbGoTop())
@@ -239,13 +250,15 @@ method ATUSA2(aDads, _fili, _cnpj) class LIBGLASS
 Return lRet
 
 method temProd(_fili, _cod) class LIBGLASS
-    Local lRet := .T.
+    Local lRet   := .T.
+    Local cAlSB1 := GetNextAlias()
 
     cQuery := " SELECT * "
 	cQuery += " FROM "+RetSQLName("SB1") + " AS SB1 WITH (NOLOCK) "
 	cQuery += " WHERE B1_FILIAL = '" + _fili + "' AND SB1.B1_COD = '"+_cod+"' "
 	cQuery += " AND SB1.D_E_L_E_T_ = '' "
-	cAlSB1:= CriaTrab(Nil,.F.)
+	//cAlSB1:= CriaTrab(Nil,.F.)
+    //cQuery := ChangeQuery( cQuery )
 	DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSB1, .F., .T.)    
 
 	If (cAlSB1)->(Eof())
@@ -256,13 +269,15 @@ method temProd(_fili, _cod) class LIBGLASS
 Return lRet
 
 method temTES(_fili, _cod) class LIBGLASS
-    Local lRet := .T.
+    Local lRet   := .T.
+    Local cAlSF4 := GetNextAlias()
 
     cQuery := " SELECT * "
 	cQuery += " FROM "+RetSQLName("SF4") + " AS SF4 WITH (NOLOCK) "
 	cQuery += " WHERE B1_FILIAL = '" + _fili + "' AND SF4.F4_CODIGO = '"+_cod+"' "
 	cQuery += " AND SF4.D_E_L_E_T_ = '' "
-	cAlSF4:= CriaTrab(Nil,.F.)
+	//cAlSF4:= CriaTrab(Nil,.F.)
+    //cQuery := ChangeQuery( cQuery )
 	DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSF4, .F., .T.)    
 
 	If (cAlSF4)->(Eof())
@@ -273,13 +288,15 @@ method temTES(_fili, _cod) class LIBGLASS
 Return lRet
 
 method temCndpg(_fili, _cod) class LIBGLASS
-    Local lRet := .T.
+    Local lRet   := .T.
+    Local cAlSE4 := GetNextAlias()
 
     cQuery := " SELECT * "
 	cQuery += " FROM "+RetSQLName("SE4") + " AS SE4 WITH (NOLOCK) "
 	cQuery += " WHERE B1_FILIAL = '" + _fili + "' AND SE4.E4_CODIGO = '"+_cod+"' "
 	cQuery += " AND SE4.D_E_L_E_T_ = '' "
-	cAlSE4:= CriaTrab(Nil,.F.)
+	//cAlSE4:= CriaTrab(Nil,.F.)
+    //cQuery := ChangeQuery( cQuery )
 	DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSE4, .F., .T.)    
 
 	If (cAlSE4)->(Eof())
@@ -366,12 +383,14 @@ Return lRet
 
 method CLieEst(_estad) class LIBGLASS
     Local aCliTmp := {}
+    Local cAlSA1  := GetNextAlias()
 
     cQuery := " SELECT * "
 	cQuery += " FROM "+RetSQLName("SA1") + " AS SA1 WITH (NOLOCK) "
 	cQuery += " WHERE SA1.A1_EST = '"+_estad+"' "
 	cQuery += " AND SA1.D_E_L_E_T_ = '' "
-	cAlSA1 := CriaTrab(Nil,.F.)
+	//cAlSA1 := CriaTrab(Nil,.F.)
+    //cQuery := ChangeQuery( cQuery )
 	DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSA1, .F., .T.)    
 
     nItem := 0
@@ -420,12 +439,13 @@ Return aCliTmp
 
 method CLieTipo(_Tipo) class LIBGLASS
     Local aCliTmp   := {}
+    Local cAlSA1 := GetNextAlias()
 
     cQuery := " SELECT * "
     cQuery += " FROM "+RetSQLName("SA1") + " AS SA1 WITH (NOLOCK) "
     cQuery += " WHERE SA1.A1_ZTPAFIL = '"+_Tipo+"' "
 	cQuery += " AND SA1.D_E_L_E_T_ = '' "
-	cAlSA1:= CriaTrab(Nil,.F.)
+	//cAlSA1:= CriaTrab(Nil,.F.)
 	DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSA1, .F., .T.)    
 
     nItem := 0
@@ -474,12 +494,13 @@ Return aCliTmp
 
 method CLieDatas( dtIni, DtFin) class LIBGLASS
     Local aCliTmp := {}
+    Local cAlSA1 := GetNextAlias()
 
     cQuery := " SELECT * "
 	cQuery += " FROM "+RetSQLName("SA1") + " AS SA1 WITH (NOLOCK) "
 	cQuery += " WHERE SA1.A1_ZDTCRIA BETWEEN '"+dtIni+"' AND '"+DtFin+"' "
 	cQuery += " AND SA1.D_E_L_E_T_ = '' "
-	cAlSA1:= CriaTrab(Nil,.F.)
+	//cAlSA1:= CriaTrab(Nil,.F.)
 	DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSA1, .F., .T.)    
 
     nItem := 0
@@ -528,12 +549,13 @@ Return aCliTmp
 
 method FornEst(_estad) class LIBGLASS
     Local aFornTmp := {}
+    Local cAlSA2 := GetNextAlias()
 
     cQuery := " SELECT * "
 	cQuery += " FROM "+RetSQLName("SA2") + " AS SA2 WITH (NOLOCK) "
 	cQuery += " WHERE SA2.A2_EST = '"+_estad+"' "
 	cQuery += " AND SA2.D_E_L_E_T_ = '' "
-	cAlSA2 := CriaTrab(Nil,.F.)
+	//cAlSA2 := CriaTrab(Nil,.F.)
 	DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSA2, .F., .T.)    
 
     nItem := 0
@@ -580,12 +602,13 @@ Return aFornTmp
 
 method FornTipo(_Tipo) class LIBGLASS
     Local aFornTmp   := {}
+    Local cAlSA2 := GetNextAlias()
 
     cQuery := " SELECT * "
     cQuery += " FROM "+RetSQLName("SA2") + " AS SA2 WITH (NOLOCK) "
     cQuery += " WHERE SA2.A2_ZTPAFIL = '"+_Tipo+"' "
 	cQuery += " AND SA2.D_E_L_E_T_ = '' "
-	cAlSA2:= CriaTrab(Nil,.F.)
+	//cAlSA2:= CriaTrab(Nil,.F.)
 	DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSA2, .F., .T.)    
 
     nItem := 0
@@ -632,6 +655,7 @@ Return aFornTmp
 
 method FornDatas( dtIni, DtFin) class LIBGLASS
     Local aFornTmp := {}
+    Local cAlSA2   := GetNextAlias()
 
     cQuery := " SELECT * "
 	cQuery += " FROM "+RetSQLName("SA2") + " AS SA2 WITH (NOLOCK) "
@@ -639,7 +663,7 @@ method FornDatas( dtIni, DtFin) class LIBGLASS
 	cQuery += " D_E_L_E_T_ = '' "
 	//cQuery += " WHERE SA2.A2_ZDTCRIA BETWEEN '"+dtIni+"' AND '"+DtFin+"' "
 	//cQuery += " AND SA2.D_E_L_E_T_ = '' "
-	cAlSA2:= CriaTrab(Nil,.F.)
+	//cAlSA2:= CriaTrab(Nil,.F.)
 	DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSA2, .F., .T.)    
 
     nItem := 0
@@ -685,14 +709,15 @@ method FornDatas( dtIni, DtFin) class LIBGLASS
 Return aFornTmp
 
 method ITENSPV(_FILIAL, _NUM, _CLIENTE, _LOJACLI) class LIBGLASS
-    Local aRet := {}
+    Local aRet   := {}
+    Local cAlSC6 := GetNextAlias()
 
     cQuery := " SELECT * "
     cQuery += " FROM "+RetSQLName("SC6") + " AS SC6 WITH (NOLOCK) "
     cQuery += " WHERE C6_FILIAL = '" + _FILIAL + "' AND SC6.C6_NUM = '"+_NUM+"' "
     cQuery += " AND C6_CLI = '" + _CLIENTE + "' AND SC6.C6_LOJA = '"+_LOJACLI+"' "
     cQuery += " AND SC6.D_E_L_E_T_ = '' "
-    cAlSC6:= CriaTrab(Nil,.F.)
+    //cAlSC6:= CriaTrab(Nil,.F.)
     DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSC6, .F., .T.)    
                
     nItem := 0        
@@ -716,13 +741,14 @@ Return aRet
 
 method ITENSPC(_FILIAL, _NUM, _FORNECE, _LOJAFOR ) class LIBGLASS
     Local aRet := {}
+    Local cAliSC7 := GetNextAlias()
 
     cQuery := " SELECT * "
     cQuery += " FROM "+RetSQLName("SC7") + " AS SC7 "
     cQuery += " WHERE C7_FILIAL = '" + _FILIAL + "' AND SC7.C7_NUM = '"+_NUM+"' "
     cQuery += " AND C7_FORNECE = '" + _FORNECE + "' AND C7_LOJA = '"+_LOJAFOR+"' "
     cQuery += " AND SC7.D_E_L_E_T_ = '' "
-    cAliSC7:= CriaTrab(Nil,.F.)
+    //cAliSC7:= CriaTrab(Nil,.F.)
     DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAliSC7, .F., .T.)    
                
     nItem := 0        
@@ -748,6 +774,12 @@ Return aRet
 method Integrado( tabela, ctpFild ) class LIBGLASS
     Local aTmp := {}
     oWS := LIBGLASS():new()
+    Local cAlS   := GetNextAlias()
+    Local cAlSA1 := GetNextAlias()
+    Local cAlSC5 := GetNextAlias()
+    Local cAlSB1 := GetNextAlias()
+    Local cAlSC7 := GetNextAlias()
+    Local cAlSC1 := GetNextAlias()
 
     if tabela == "SA2"
         cQuery := " SELECT * "
@@ -761,7 +793,7 @@ method Integrado( tabela, ctpFild ) class LIBGLASS
             endif
         Endif       
         cQuery += " AND SA2.D_E_L_E_T_ <> '*' "
-        cAlS:= CriaTrab(Nil,.F.)
+        //cAlS:= CriaTrab(Nil,.F.)
         DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlS, .F., .T.)    
 
         nItem := 0
@@ -816,7 +848,7 @@ method Integrado( tabela, ctpFild ) class LIBGLASS
             endif
         Endif       
         cQuery += " AND SA1.D_E_L_E_T_ <> '*' "
-        cAlSA1 := CriaTrab(Nil,.F.)
+        //cAlSA1 := CriaTrab(Nil,.F.)
         DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSA1, .F., .T.)    
 
         nItem := 0
@@ -867,7 +899,7 @@ method Integrado( tabela, ctpFild ) class LIBGLASS
         cQuery += " FROM "+RetSQLName("SC5") + " AS SC5 "
         cQuery += " WHERE C5_ZINTEGR <> 'S' "
         cQuery += " AND SC5.D_E_L_E_T_ <> '*' "
-        cAlSC5:= CriaTrab(Nil,.F.)
+        //cAlSC5:= CriaTrab(Nil,.F.)
         DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSC5, .F., .T.)                
 
         nIt := 0                
@@ -895,7 +927,7 @@ method Integrado( tabela, ctpFild ) class LIBGLASS
         cQuery += " FROM "+RetSQLName("SC7") + " AS SC7 "
         cQuery += " WHERE C7_ZINTEGR <> 'S' "
         cQuery += " AND SC7.D_E_L_E_T_ <> '*' "
-        cAlSC7:= CriaTrab(Nil,.F.)
+        //cAlSC7:= CriaTrab(Nil,.F.)
         DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSC7, .F., .T.)                
 
         nIt := 0                
@@ -922,7 +954,7 @@ method Integrado( tabela, ctpFild ) class LIBGLASS
         cQuery += " FROM "+RetSQLName("SC1") + " AS SC1 "
         cQuery += " WHERE C1_ZINTEGR <> 'S' "
         cQuery += " AND SC1.D_E_L_E_T_ <> '*' "
-        cAlSC1:= CriaTrab(Nil,.F.)
+        //cAlSC1:= CriaTrab(Nil,.F.)
         DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSC1, .F., .T.)                
 
         nItem := 0                
@@ -942,7 +974,7 @@ method Integrado( tabela, ctpFild ) class LIBGLASS
         cQuery += " FROM "+RetSQLName("SA1") + " AS SA1 WITH (NOLOCK) "
         cQuery += " WHERE SA1.A1_ZINTEGR <> 'S' "
         cQuery += " AND SA1.D_E_L_E_T_ <> '*' "
-        cAlSA1 := CriaTrab(Nil,.F.)
+        //cAlSA1 := CriaTrab(Nil,.F.)
         DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSA1, .F., .T.)    
 
         nItem := 0
@@ -992,7 +1024,7 @@ method Integrado( tabela, ctpFild ) class LIBGLASS
         cQuery += " FROM "+RetSQLName("SB1") + " AS SB1 WITH (NOLOCK) "
         cQuery += " WHERE SB1.B1_ZINTEGR <> 'S' "
         cQuery += " AND SB1.D_E_L_E_T_ = '' "
-        cAlSB1 := CriaTrab(Nil,.F.)
+        //cAlSB1 := CriaTrab(Nil,.F.)
         DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSB1, .F., .T.)    
 
         nItem := 0
@@ -1259,13 +1291,14 @@ Return lOk
 
 Method pgClient(_cnpj) class LIBGLASS
     Local aRet := {}
+    Local cAlSA1 := GetNextAlias()
 
     cQuery := " SELECT A1_FILIAL, A1_COD, A1_LOJA, A1_NOME, A1_NREDUZ, A1_CGC, A1_END "
 	cQuery += " FROM "+RetSQLName("SA1") + " AS SA1 WITH (NOLOCK) "
 	cQuery += " WHERE A1_FILIAL = '" + FWxFilial("SA1") + "' "
     cQuery += " AND SA1.A1_CGC = '"+_cnpj+"' "
 	cQuery += " AND SA1.D_E_L_E_T_ = '' AND SA1.A1_MSBLQL <> '1' "
-	cAlSA1:= CriaTrab(Nil,.F.)
+	//cAlSA1:= CriaTrab(Nil,.F.)
 	DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSA1, .F., .T.)    
 
     aadd(aRet, {(cAlSA1)->A1_COD, (cAlSA1)->A1_LOJA})
@@ -1276,11 +1309,13 @@ Return aRet
 
 Method pgFornec(_cnpj) class LIBGLASS
     Local aRet := {}
+    Local cAlSA2 := GetNextAlias()
+
     cQuery := " SELECT A2_FILIAL, A2_COD, A2_LOJA, A2_NOME, A2_NREDUZ, A2_CGC, A2_END "
 	cQuery += " FROM "+RetSQLName("SA2") + " AS SA2 WITH (NOLOCK) "
 	cQuery += " WHERE A2_FILIAL = '" + FWxFilial("SA1") + "' AND SA2.A2_CGC = '"+_cnpj+"' "
 	cQuery += " AND SA2.D_E_L_E_T_ = '' AND SA2.A2_MSBLQL <> '1' "
-	cAlSA2:= CriaTrab(Nil,.F.)
+	//cAlSA2:= CriaTrab(Nil,.F.)
 	DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSA2, .F., .T.)    
 
     aadd(aRet, {(cAlSA2)->A2_COD, (cAlSA2)->A2_LOJA})
@@ -1291,12 +1326,13 @@ Return aRet
 
 Method TesPDV(_prod, _client, _loja, _operac) CLASS LIBGLASS
 	Local cTesIntel := ""
+    Local cAlSFM := GetNextAlias()
 
     cQuery := " SELECT * "
 	cQuery += " FROM "+RetSQLName("SFM") + " WITH (NOLOCK) "
 	cQuery += " WHERE FM_FILIAL = '" + FWxFilial("SFM") + "' AND  FM_TIPO = '"+_operac+"' "
 	cQuery += " AND D_E_L_E_T_ = '' "
-	cAlSFM:= CriaTrab(Nil,.F.)
+	//cAlSFM:= CriaTrab(Nil,.F.)
 	DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSFM, .F., .T.)    
 
     cEstCli := Posicione("SA1", 1, xFilial("SA1")+_client+_loja,"A1_EST")
@@ -1317,6 +1353,7 @@ Return (cTesIntel)
 METHOD GerCdFor() class LIBGLASS
     Local cCod  := ""
     Local lTest := .T.
+    Local cAlSA2 := GetNextAlias()
 
     DO WHILE lTest
         _COD := GetSXENum("SA2","A2_COD")
@@ -1324,7 +1361,7 @@ METHOD GerCdFor() class LIBGLASS
         cQuery := " SELECT COUNT(*) AS NUM "
         cQuery += " FROM "+RetSQLName("SA2") + " AS SA2 WITH (NOLOCK) "
         cQuery += " WHERE A2_FILIAL = '" + FWxFilial("SA2") + "' AND A2_COD = '"+_COD+"' "
-        cAlSA2:= CriaTrab(Nil,.F.)
+        //cAlSA2:= CriaTrab(Nil,.F.)
         DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSA2, .F., .T.)    
 
         IF (cAlSA2)->NUM > 0
@@ -1341,6 +1378,7 @@ Return cCod
 
 METHOD GerCdCli() class LIBGLASS
     Local lTest := .T.
+    Local cAlSA1 := GetNextAlias()
 
     DO WHILE lTest
         _COD := GetSXENum("SA1","A1_COD")
@@ -1348,7 +1386,7 @@ METHOD GerCdCli() class LIBGLASS
         cQuery := " SELECT COUNT(*) AS NUM "
         cQuery += " FROM "+RetSQLName("SA1") + " AS SA1 WITH (NOLOCK) "
         cQuery += " WHERE A1_FILIAL = '" + FWxFilial("SA1") + "' AND A1_COD = '"+_COD+"' "
-        cAlSA1:= CriaTrab(Nil,.F.)
+        //cAlSA1:= CriaTrab(Nil,.F.)
         DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSA1, .F., .T.)    
 
         IF (cAlSA1)->NUM > 0
@@ -1365,6 +1403,7 @@ Return cCod
 
 METHOD GrPedCom(cFilAt) class LIBGLASS
     Local lTest := .T.
+    Local cAlSC7 := GetNextAlias()
 
     DO WHILE lTest
         _CODPED := GetSXENum("SC7","C7_NUM")
@@ -1372,7 +1411,7 @@ METHOD GrPedCom(cFilAt) class LIBGLASS
         cQuery := " SELECT COUNT(*) AS NUM "
         cQuery += " FROM "+RetSQLName("SC7") + " AS C7 WITH (NOLOCK) "
         cQuery += " WHERE C7_NUM = '"+_CODPED+"' "
-        cAlSC7:= CriaTrab(Nil,.F.)
+        //cAlSC7:= CriaTrab(Nil,.F.)
         DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSC7, .F., .T.)    
 
         IF (cAlSC7)->NUM > 0
@@ -1389,10 +1428,12 @@ Return cCod
 
 METHOD PGExtrt(_EXTERNID) class LIBGLASS
     Local cPed := ""
+    Local cAlSC7 := GetNextAlias()
+
     cQuery := " SELECT C7_NUM AS NUM "
     cQuery += " FROM "+RetSQLName("SC7") + " AS C7 WITH (NOLOCK) "
     cQuery += " WHERE C7_ZEXTID = '"+_EXTERNID+"' "
-    cAlSC7:= CriaTrab(Nil,.F.)
+    //cAlSC7:= CriaTrab(Nil,.F.)
     DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSC7, .F., .T.)    
 
     cPed := (cAlSC7)->NUM 
@@ -1402,6 +1443,7 @@ Return cPed
 
 METHOD GrPedVd(cFilAt) class LIBGLASS
     Local lTest := .T.
+    Local cAlSC5 := GetNextAlias()
 
     DO WHILE lTest
         _CODPED := GetSXENum("SC5","C5_NUM")
@@ -1409,7 +1451,7 @@ METHOD GrPedVd(cFilAt) class LIBGLASS
         cQuery := " SELECT COUNT(*) AS NUM "
         cQuery += " FROM "+RetSQLName("SC5") + " AS C5 WITH (NOLOCK) "
         cQuery += " WHERE C5_NUM = '"+_CODPED+"' "
-        cAlSC5:= CriaTrab(Nil,.F.)
+        //cAlSC5:= CriaTrab(Nil,.F.)
         DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSC5, .F., .T.)    
 
         IF (cAlSC5)->NUM > 0
@@ -1426,13 +1468,106 @@ Return cCod
 
 METHOD PGExtrtV(_EXTERNID) class LIBGLASS
     Local cPed := ""
+    Local cAlSC5 := GetNextAlias()
+
     cQuery := " SELECT C5_NUM AS NUM "
     cQuery += " FROM "+RetSQLName("SC5") + " AS C5 WITH (NOLOCK) "
     cQuery += " WHERE C5_ZEXTID = '"+_EXTERNID+"' "
-    cAlSC5:= CriaTrab(Nil,.F.)
+    //cAlSC5:= CriaTrab(Nil,.F.)
     DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSC5, .F., .T.)    
 
     cPed := (cAlSC5)->NUM 
     (cAlSC5)->(dbclosearea())
 
 Return cPed
+
+METHOD PGExtDad(_EXTERNID) class LIBGLASS
+    Local cAlSC7    := GetNextAlias()
+    Local aRet      := {}
+
+    cQuery := " SELECT * "
+    cQuery += " FROM "+RetSQLName("SC7") + " AS C7 WITH (NOLOCK) "
+    cQuery += " WHERE C7_ZEXTID = '"+_EXTERNID+"' "
+    //cAlSC7:= CriaTrab(Nil,.F.)
+    DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSC7, .F., .T.)    
+
+    WHILE !(cAlSC7)->(EOF())
+        aadd(aRet, {(cAlSC7)->C7_NUM,;
+                    (cAlSC7)->C7_EMISSAO,;
+                    (cAlSC7)->C7_MOEDA,;
+                    (cAlSC7)->C7_TXMOEDA,;
+                    (cAlSC7)->C7_FORNECE,;
+                    (cAlSC7)->C7_LOJA,;
+                    (cAlSC7)->C7_COND,;
+                    (cAlSC7)->C7_CONTATO,;
+                    (cAlSC7)->C7_FILENT,;
+                    (cAlSC7)->C7_ZINTEGR,;
+                    (cAlSC7)->C7_PRODUTO,;
+                    (cAlSC7)->C7_QUANT,;
+                    (cAlSC7)->C7_PRECO,;
+                    (cAlSC7)->C7_DESC1,;
+                    (cAlSC7)->C7_TOTAL,;
+                    (cAlSC7)->C7_ITEM,;
+                    (cAlSC7)->C7_UM,;
+                    (cAlSC7)->C7_DESCRI,;
+                    (cAlSC7)->C7_LOCAL,;
+                    (cAlSC7)->C7_IPI,;
+                    (cAlSC7)->C7_CC,;
+                    (cAlSC7)->C7_OBS,;
+                    (cAlSC7)->C7_CONTATO,;
+                    (cAlSC7)->C7_DATPRF,;
+                    (cAlSC7)->C7_EMISSAO,;
+                    (cAlSC7)->C7_PICM,;
+                    (cAlSC7)->C7_SEGURO,;
+                    (cAlSC7)->C7_DESPESA,;
+                    (cAlSC7)->C7_TXMOEDA,;
+                    (cAlSC7)->C7_VALFRE,;
+                    (cAlSC7)->C7_BASESOL})
+        (cAlSC7)->(DBSKIP())
+        LOOP
+    ENDDO
+    (cAlSC7)->(dbclosearea())
+
+Return aRet
+
+METHOD PGExtPDV(_EXTERNID) class LIBGLASS
+    Local cAlPDV    := GetNextAlias()
+    Local aRet      := {}
+
+    cQuery := " SELECT * "
+    cQuery += " FROM "+RetSQLName("SC5") + " AS C5 "
+    cQuery += " INNER JOIN "+RetSQLName("SC6") + " AS C6 "
+    cQuery += " ON C5_NUM = C6_NUM AND C5_FILIAL = C6_FILIAL AND C5_CLIENTE = C6_CLI "
+    cQuery += " AND C5_LOJACLI = C6_LOJA "
+    cQuery += " WHERE C5_ZEXTID = '"+_EXTERNID+"' "
+    DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlPDV, .F., .T.)    
+
+    WHILE !(cAlPDV)->(EOF())
+        aadd(aRet, {(cAlPDV)->C5_NUM,;
+                    (cAlPDV)->C5_EMISSAO,;
+                    (cAlPDV)->C5_CLIENTE,;
+                    (cAlPDV)->C5_LOJACLI,;
+                    (cAlPDV)->C5_LOJAENT,;
+                    (cAlPDV)->C5_CONDPAG,;
+                    (cAlPDV)->C6_ITEM,;
+                    (cAlPDV)->C6_PRODUTO,;
+                    (cAlPDV)->C6_QTDVEN,;
+                    (cAlPDV)->C6_PRCVEN,;
+                    (cAlPDV)->C6_VALDESC,;
+                    (cAlPDV)->C6_VALOR,;
+                    (cAlPDV)->C6_OPER})
+
+        SC9->(DBGoTop())
+        SC9->(MsSeek(FWxFilial('SC9') + (cAlPDV)->C6_NUM + (cAlPDV)->C6_ITEM))
+        While  !SC9->(EoF()) .And. SC9->(C9_FILIAL + C9_PEDIDO + C9_ITEM) == FWxFilial('SC9') + (cAlPDV)->(C6_NUM + C6_ITEM)
+            SC9->(a460Estorna(.T.))
+            SC9->(DbSkip())
+        EndDo
+     
+        (cAlPDV)->(DBSKIP())
+        LOOP
+    ENDDO
+
+    (cAlPDV)->(dbclosearea())
+
+Return aRet

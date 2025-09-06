@@ -55,7 +55,10 @@ WSMETHOD GET ID WSRECEIVE NUMPV WSSERVICE WSPEDVEND
     Local lRet       := .T.
     Local jResponse  := JsonObject():New()
     Local cAliasWS   := 'SC5'
-    Local NUMPV			 := self:aUrlParms[1]
+    Local NUMPV		 := self:aUrlParms[1]
+
+    Local cAlSC5     := GetNextAlias()
+
 	oWS    := LIBGLASS():new()
 
     //Se o id estiver vazio
@@ -82,7 +85,7 @@ WSMETHOD GET ID WSRECEIVE NUMPV WSSERVICE WSPEDVEND
             cQuery += " FROM "+RetSQLName("SC5") + " AS SC5 WITH (NOLOCK) "
             cQuery += " WHERE C5_FILIAL = '" + FWxFilial(cAliasWS) + "' AND SC5.C5_NUM = '"+NUMPV+"' "
             cQuery += " AND SC5.D_E_L_E_T_ = '' "
-            cAlSC5:= CriaTrab(Nil,.F.)
+            //cAlSC5:= CriaTrab(Nil,.F.)
             DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSC5, .F., .T.)                
                    
             DO WHILE !((cAlSC5)->(EOF())) .AND. (cAlSC5)->C5_NUM == NUMPV
@@ -168,6 +171,18 @@ WSMETHOD POST NEW WSRECEIVE NUMPV WSSERVICE WSPEDVEND
     cError := jJson:FromJson(cJson)
 	cJason := cJson
     lTemPr := .T.
+
+
+    if !(empty(cError)) 
+		Self:setStatus(500)
+		jResponse['errorId']  := 'NEW0000'
+		jResponse['error']    := 'ERRO NO JSON'
+        jResponse['errorLog'] := cError
+		jResponse['solution'] := 'ANALISE A INFORMACAO DE ENVIO'
+        Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
+        Return .F.
+    ENDIF
+
     FOR NX := 1 TO LEN(jJson:GetJsonObject("ITENS"))
 	    _cod   := jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO")
         lTemPr := oWS:temProd(FWxFilial("SB1"), _cod) 
@@ -243,7 +258,7 @@ WSMETHOD POST NEW WSRECEIVE NUMPV WSSERVICE WSPEDVEND
       
 		//Adiciona os dados do ExecAuto
         _cNumPed := oWs:GrPedVd(cFilAt) //GetSXENum("SC5","C5_NUM") //jJson:GetJsonObject("NUMPV") 
-        cNatur   := iif( Empty(jJson:GetJsonObject("NATUREZA")), "000001", jJson:GetJsonObject("NATUREZA") )
+        cNatur   := iif( Empty(jJson:GetJsonObject("NATUREZA")), "02.01.01", jJson:GetJsonObject("NATUREZA") )
 
         aadd(aCab, {"C5_NUM"       , _cNumPed   ,Nil})
         aadd(aCab, {"C5_EMISSAO"   , ddatabase  ,Nil})
@@ -492,7 +507,6 @@ WSMETHOD PUT ERASE WSRECEIVE NUMPV WSSERVICE WSPEDVEND
     Local cArqLog           := ''
     Local cErrorLog         := ''
     Local aLogAuto          := {}
-    //Local nCampo            := 0
     Local jResponse         := JsonObject():New()
 
 	Local cJason			:= ""
@@ -500,6 +514,8 @@ WSMETHOD PUT ERASE WSRECEIVE NUMPV WSSERVICE WSPEDVEND
     Local nX
     Local aItens            := {}
     Local aCab              := {}
+    Local aDadPDV           := {}
+    Local _cNumPed          := ""
 
     Private lMsErroAuto     := .F.
     Private lMsHelpAuto     := .T.
@@ -518,20 +534,19 @@ WSMETHOD PUT ERASE WSRECEIVE NUMPV WSSERVICE WSPEDVEND
     cError := jJson:FromJson(cJson)
 	cJason := cJson
     lTemPr := .T.
-    FOR NX := 1 TO LEN(jJson:GetJsonObject("ITENS"))
-	    _cod   := jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO")
-        lTemPr := oWS:temProd(FWxFilial("SB1"), _cod)//temFornec(, ::cnpj)
-    Next
 
-    //VALIDAÇÃO DO CLIENTE PELO cnpj
-    //aClient := oWS:pgClient(jJson:GetJsonObject("CNPJ"))  //16/07/2025 - inclusão do CNPJ
-    //_Cli    := aClient[1,1] //jJson:GetJsonObject("CLIENTE")
-    //_lojCli := aClient[1,2] //jJson:GetJsonObject("LOJA")
-    //VALIDAÇÃO DO CLIENTE PELO cnpj
-    _Cli    := jJson:GetJsonObject("CLIENTE")
-    _lojCli := if (Empty(jJson:GetJsonObject("LOJA")),"01", jJson:GetJsonObject("LOJA"))
+    /* // 05/09/2025
+        FOR NX := 1 TO LEN(jJson:GetJsonObject("ITENS"))
+            _cod   := jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO")
+            lTemPr := oWS:temProd(FWxFilial("SB1"), _cod)//temFornec(, ::cnpj)
+        Next
 
-    lTemCLi := ows:temCliCod(FWxFilial("SA1"), _Cli, _lojCli)
+        //VALIDAÇÃO DO CLIENTE PELO cnpj
+        _Cli    := jJson:GetJsonObject("CLIENTE")
+        _lojCli := if (Empty(jJson:GetJsonObject("LOJA")),"01", jJson:GetJsonObject("LOJA"))
+
+        lTemCLi := ows:temCliCod(FWxFilial("SA1"), _Cli, _lojCli)
+    */ // 05/09/2025
 
     cEmpAt1 := cEmpAnt
     cFilAt1 := cFilAnt
@@ -543,20 +558,22 @@ WSMETHOD PUT ERASE WSRECEIVE NUMPV WSSERVICE WSPEDVEND
     cFilAnt  := cFilAt
     rpcSetEnv(cEmpAt, cFilAt)
 
-	IF !lTemPr //oWS:temProd(FWxFilial("SB1"), _cod)//temFornec(, ::cnpj)
-		//SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
-		Self:setStatus(500)
-		jResponse['errorId']  := 'DEL014'
-		jResponse['error']    := 'PRODUTO NÃO EXISTE'
-        jResponse['errorLog'] := cErrorLog
-		jResponse['solution'] := 'CADASTRE UM PRODUTO QUE DESEJA SOLICITAR'
+    /*  // 05/09/2025
+        IF !lTemPr //oWS:temProd(FWxFilial("SB1"), _cod)//temFornec(, ::cnpj)
+            //SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
+            Self:setStatus(500)
+            jResponse['errorId']  := 'DEL014'
+            jResponse['error']    := 'PRODUTO NÃO EXISTE'
+            jResponse['errorLog'] := cErrorLog
+            jResponse['solution'] := 'CADASTRE UM PRODUTO QUE DESEJA SOLICITAR'
 
-		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
-		oWS:GRAVALOGMURO(cResponc, cJason, "WSPEDVEND", "EXCLUSÃO DE PEDIDO DE VENDAS")
-        
-        Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
-        Return .F.
-	EndIF
+            cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
+            oWS:GRAVALOGMURO(cResponc, cJason, "WSPEDVEND", "EXCLUSÃO DE PEDIDO DE VENDAS")
+            
+            Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
+            Return .F.
+        EndIF
+    */  // 05/09/2025
  
     //Se tiver algum erro no Parse, encerra a execução
     IF !Empty(cError)
@@ -572,41 +589,32 @@ WSMETHOD PUT ERASE WSRECEIVE NUMPV WSSERVICE WSPEDVEND
     Else
 
 		//Adiciona os dados do ExecAuto
-        _cNumPed := oWs:PGExtrtV(jJson:GetJsonObject("EXTERNID")) //jJson:GetJsonObject("NUMPV") 
-		
-        aadd(aCab, {"C5_NUM"       , _cNumPed   ,Nil})
-        aadd(aCab, {"C5_EMISSAO"   , ddatabase  ,Nil})
-        aadd(aCab, {"C5_CLIENTE"   , _Cli       , nIL})    //jJson:GetJsonObject("CLIENTE"), Nil})
-        aadd(aCab, {"C5_LOJACLI"   , _lojCli    , nIL})    //jJson:GetJsonObject("LOJA"), Nil})
-        aadd(aCab, {"C5_LOJAENT"   , jJson:GetJsonObject("LOJAENTREGA"), Nil})
-        aadd(aCab, {"C5_CONDPAG"   , jJson:GetJsonObject("COND"), Nil})
-        //aadd(aCab, {"C5_NATUREZ"   , jJson:GetJsonObject("NATUREZA"), Nil})
-        //aadd(aCab, {"C5_ZINTEGR"   , jJson:GetJsonObject("INTEGRADO"), Nil})
-        //aadd(aCab, {"C5_INDPRES"   , jJson:GetJsonObject("INDICAPRES"), Nil})
-        //aadd(aCab, {"C5_TPFRETE"   , jJson:GetJsonObject("TIPOFRETE"), Nil})
-        //aadd(aCab, {"C5_DESC1"     , jJson:GetJsonObject("DESC"), NIL})
-
-        FOR Nx := 1 to len(jJson:GetJsonObject("ITENS"))
+        aDadPDV := oWs:PGExtPDV(jJson:GetJsonObject("EXTERNID")) //jJson:GetJsonObject("NUMPV") 
+        FOR Nx := 1 to len(aDadPDV)
             aLinhaC1 := {}
-            //cTes     := oWS:TesPDV(cProdut, _Cli, _lojCli, cOperac) //MaTesInt(2, cOperac, _Cli, _lojCli,"C",cProdut,"C6_TES")
-
-            if (jJson:GetJsonObject("DESCONTO") > 0) .AND. nX == 1
-                nTotal := (jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT") * jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO")) - jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("DESC")
-            else
-                nTotal := (jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT") * jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO"))
+            IF (Nx == 1)
+                _cNumPed := aDadPDV[Nx,1]
+                aadd(aCab, {"C5_NUM"       , aDadPDV[Nx,1]  , Nil})
+                aadd(aCab, {"C5_EMISSAO"   , ddatabase      , Nil})
+                aadd(aCab, {"C5_CLIENTE"   , aDadPDV[Nx,3]  , nIL})    //jJson:GetJsonObject("CLIENTE"), Nil})
+                aadd(aCab, {"C5_LOJACLI"   , aDadPDV[Nx,4]  , nIL})    //jJson:GetJsonObject("LOJA"), Nil})
+                aadd(aCab, {"C5_LOJAENT"   , aDadPDV[Nx,5]  , Nil})
+                aadd(aCab, {"C5_LIBEROK"   , " "            , Nil})
+                aadd(aCab, {"C5_CONDPAG"   , aDadPDV[Nx,6]  , Nil})
             Endif
-
-            aadd(aLinhaC1, {"C6_ITEM"     ,Strzero(Nx,4)               ,nil})
-            aadd(aLinhaC1, {"C6_PRODUTO"  , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"), NIL})
-            aadd(aLinhaC1, {"C6_QTDVEN"   , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT"), NIL})
-            aadd(aLinhaC1, {"C6_PRCVEN"   , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO"), NIL})
-            aadd(aLinhaC1, {"C6_VALDESC"  , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("DESC"), NIL})
-            aadd(aLinhaC1, {"C6_VALOR"    , nTotal, Nil }) //jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("TOTAL"), NIL})
-            aadd(aLinhaC1, {"C6_OPER"     , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("OPERACAO"), NIL})
-            //aadd(aLinhaC1, {"C6_TES"      , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("TES"), NIL})
-            //aadd(aLinhaC1, {"C6_VALOR"    , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("TOTAL"), NIL})
+            aadd(aLinhaC1, {"C6_ITEM"     , aDadPDV[Nx,7]   , nil})
+            aadd(aLinhaC1, {"C6_PRODUTO"  , aDadPDV[Nx,8]   , NIL})
+            aadd(aLinhaC1, {"C6_QTDVEN"   , aDadPDV[Nx,9]   , NIL})
+            aadd(aLinhaC1, {"C6_QTDLIB"   , 0               , NIL})
+            aadd(aLinhaC1, {"C6_QTDEMP"   , 0               , NIL})
+            aadd(aLinhaC1, {"C6_PRCVEN"   , aDadPDV[Nx,10]  , NIL})
+            aadd(aLinhaC1, {"C6_VALDESC"  , aDadPDV[Nx,11]  , NIL})
+            aadd(aLinhaC1, {"C6_VALOR"    , aDadPDV[Nx,12]  , Nil}) 
+            aadd(aLinhaC1, {"C6_OPER"     , aDadPDV[Nx,13]  , NIL})
             aadd(aItens,aLinhaC1)
         Next
+
+        //aRetGrv := oWS:pedVendas(aCab, aItens, 4, _cNumPed) //pedCompra(aCab, aItens, 3) 
         aRetGrv := oWS:pedVendas(aCab, aItens, 5, _cNumPed) //pedCompra(aCab, aItens, 3) 
 
 		If !aRetGrv[1,2] //lMsErroAuto
@@ -623,7 +631,7 @@ WSMETHOD PUT ERASE WSRECEIVE NUMPV WSSERVICE WSPEDVEND
 
 			//Define o retorno para o WebService
 			//SetRestFault(500, cErrorLog) //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
-           Self:setStatus(500) 
+            Self:setStatus(500) 
 			jResponse['errorId']  := 'DEL013'
 			jResponse['error']    := 'Erro na exclusao do registro'
 			jResponse['errorLog'] := cErrorLog
