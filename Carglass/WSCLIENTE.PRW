@@ -47,6 +47,7 @@ WSMETHOD GET CLICNPJ WSRECEIVE cnpj WSSERVICE wsCliente
 	Local lRet       := .T.
 	Local jResponse  := JsonObject():New()
 	Local cAliasWS   := 'SA1'
+    Local cAlSA1     := GetNextAlias()
 
 	::cnpj			 := Self:cnpj //SELF:AQUERYSTRING[1][1]  //self:querystring[1,1]
 	Local cJason	 := ""
@@ -89,7 +90,7 @@ WSMETHOD GET CLICNPJ WSRECEIVE cnpj WSSERVICE wsCliente
 			cQuery += " WHERE "
 			cQuery += " SA1.A1_CGC = '"+::cnpj+"' "
 			cQuery += " AND SA1.D_E_L_E_T_ = '' "
-			cAlSA1:= CriaTrab(Nil,.F.)
+			//cAlSA1:= CriaTrab(Nil,.F.)
 			DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSA1, .F., .T.)    
 
 			//Define o retorno
@@ -308,7 +309,7 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE wsCliente
 	Local cResponc          := ""
 	Local lExtCli           := .F.
 
-	Local aAI0Auto 			:= {}
+	//Local aAI0Auto 			:= {}
 
 	Private lMsErroAuto     := .F.
 	Private lMsHelpAuto     := .T.
@@ -365,6 +366,10 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE wsCliente
 		oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "INCLUSÃO DE CLIENTE")
 
         ConOut("erro 003 - cliente JA existe")
+
+		rpcClearEnv()
+		cEmpAnt  := cEmpAt1
+		cFilAnt  := cFilAt1
         
         Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
         Return .F.
@@ -430,9 +435,10 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE wsCliente
 
 		//Chama a inclusão automática
 		if !lExtCli
-			conout("Cliente - antes do execaut")
-			//MsExecAuto({|x, y| MATA030(x, y)}, aDados, 3)  - ANTIGA
-            MSExecAuto({|a,b,c| CRMA980(a,b,c)},aDados,3,aAI0Auto)      			
+			conout("json - " + cJason)
+			conout("Cliente - antes do execaut - " + ::cnpj)
+			MsExecAuto({|x, y| MATA030(x, y)}, aDados, 3)  //- ANTIGA
+            //MSExecAuto({|a,b,c| CRMA980(a,b,c)},aDados,3,aAI0Auto)      			
 		Endif
 
 		//Se houve erro, gera um arquivo de log dentro do diretório da protheus data
@@ -493,7 +499,7 @@ WSMETHOD PUT UPDATE WSRECEIVE cnpj WSSERVICE wsCliente
 	Local cCnpj  			:= ""
 	Local cCodi  			:= ""
 	Local cLoja  			:= ""
-	Local aAI0Auto			:= {}
+	//Local aAI0Auto			:= {}
 
 	Private lMsErroAuto     := .F.
 	Private lMsHelpAuto     := .T.
@@ -675,7 +681,7 @@ WSMETHOD PUT ERASE WSRECEIVE cnpj WSSERVICE wsCliente
 	Local cJason			:= ""
 	Local cResponc          := ""
 
-	Local aAI0Auto			:= {}
+	//Local aAI0Auto			:= {}
 
 	Private lMsErroAuto     := .F.
 	Private lMsHelpAuto     := .T.

@@ -89,7 +89,7 @@ WSMETHOD GET INTEGRA WSRECEIVE WSSERVICE WSSLCOMP
 	Local jResponse  := JsonObject():New()
 
 	oWS    := LIBGLASS():new()
-	cJsonNfs:= FwJsonSerialize( oWS:Integrado( "SC1" )  )			
+	cJsonNfs:= FwJsonSerialize( oWS:Integrado( "SC1", "" )  )			
 
 	//Define o retorno
 	Self:SetContentType('application/json')

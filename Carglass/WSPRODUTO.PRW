@@ -16,7 +16,7 @@ WSRESTFUL WSPRODUTO DESCRIPTION 'CADASTRO DE PRODUTOS'
  
     //MÃ©todos
 	//Métodos 
-	WSMETHOD GET  INTEGRA DESCRIPTION 'Retorna o registro pesquisado - INTEGRADO'   WSSYNTAX '/WSPRODUTO/integrado' 				PATH '/WSPRODUTO/integrado'  				PRODUCES APPLICATION_JSON
+	//WSMETHOD GET  INTEGRA DESCRIPTION 'Retorna o registro pesquisado - INTEGRADO'   WSSYNTAX '/WSPRODUTO/integrado' 				PATH '/WSPRODUTO/integrado'  				PRODUCES APPLICATION_JSON
     WSMETHOD GET  CODIGO  DESCRIPTION 'Retorna o registro pesquisado'               WSSYNTAX '/WSPRODUTO/codigo/?{produto}'         PATH '/WSPRODUTO/codigo/{produto}'          PRODUCES APPLICATION_JSON
     //WSMETHOD POST NEW     DESCRIPTION 'Inclusao de registro'                        WSSYNTAX '/WSPRODUTO/new'                       PATH 'new'                                  PRODUCES APPLICATION_JSON
     //WSMETHOD PUT  UPDATE  DESCRIPTION 'Atualizacao de registro'                     WSSYNTAX '/WSPRODUTO/update'                    PATH 'update'                               PRODUCES APPLICATION_JSON
@@ -27,6 +27,9 @@ WSMETHOD GET CODIGO WSRECEIVE produto WSSERVICE WSPRODUTO
     Local lRet       := .T.
     Local jResponse  := JsonObject():New()
     Local cAliasWS   := 'ZA2'
+
+    Local cAlSB1     := GetNextAlias()
+
     ::produto		 := self:produto
     oWS              := LIBGLASS():new()
 
@@ -37,7 +40,7 @@ WSMETHOD GET CODIGO WSRECEIVE produto WSSERVICE WSPRODUTO
         jResponse['error']    := 'Código de Produto Vazio'
         jResponse['solution'] := 'Informe o Codigo'
     Else
-        DbSelectArea(cAliasWS)
+        //DbSelectArea(cAliasWS)
         (cAliasWS)->(DbSetOrder(2))
 
         //Se nÃ£o encontrar o registro
@@ -55,7 +58,7 @@ WSMETHOD GET CODIGO WSRECEIVE produto WSSERVICE WSPRODUTO
             cQuery += " WHERE B1_FILIAL = '" + FWxFilial("SB1") + "' "
             cQuery += " AND SB1.B1_ZCODPRD = '"+::produto+"' "
             cQuery += " AND SB1.D_E_L_E_T_ = '' "
-            cAlSB1:= CriaTrab(Nil,.F.)
+            //cAlSB1:= CriaTrab(Nil,.F.)
             DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSB1, .F., .T.)    
 
             jResponse['CODIGO']         := Rtrim((cAlSB1)->B1_COD)
@@ -80,6 +83,7 @@ WSMETHOD GET CODIGO WSRECEIVE produto WSSERVICE WSPRODUTO
     Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
 Return lRet
 
+/*
 WSMETHOD GET INTEGRA WSRECEIVE WSSERVICE WSPRODUTO
 	Local lRet       := .T.
 	Local jResponse  := JsonObject():New()
@@ -93,7 +97,6 @@ WSMETHOD GET INTEGRA WSRECEIVE WSSERVICE WSPRODUTO
 
 Return lRet
 
-/*
 WSMETHOD POST NEW WSRECEIVE WSSERVICE WSPRODUTO
     Local lRet              := .T.
     Local aDados            := {}

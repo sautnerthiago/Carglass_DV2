@@ -152,7 +152,9 @@ WSMETHOD POST NEW WSRECEIVE NUMPV WSSERVICE WSPEDVEND
     Local nX
     Local aItens            := {}
     Local aCab              := {}
+    Local _cCusto           := ""
     //Local aClient           := {}
+
 
     Private lMsErroAuto     := .F.
     Private lMsHelpAuto     := .T.
@@ -203,6 +205,21 @@ WSMETHOD POST NEW WSRECEIVE NUMPV WSSERVICE WSPEDVEND
     cFilAnt  := cFilAt
     
     RPCSetEnv(cEmpAt, cFilAt)
+
+    IF !Empty(oWs:PGExtrtV( jJson:GetJsonObject("EXTERNID") ))
+		Self:setStatus(500)
+		jResponse['errorId']  := 'NEW0016'
+		jResponse['error']    := 'EXTERNOID'
+        jResponse['errorLog'] := cErrorLog
+		jResponse['solution'] := 'EXTERNOID - JA CADASTRADO ANTERIORMENTE'
+
+		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
+		oWS:GRAVALOGMURO(cResponc, cJason, "WSPEDVEND", "INCLUSAO DE PEDIDO DE VENDAS - EXTERNAID")
+        
+        Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
+        Return .F.
+    Endif
+
 
 	IF !lTemPr 
 		Self:setStatus(500)
@@ -269,13 +286,21 @@ WSMETHOD POST NEW WSRECEIVE NUMPV WSSERVICE WSPEDVEND
         aadd(aCab, {"C5_ZINTEGR"   , jJson:GetJsonObject("INTEGRADO")   , Nil})
         aadd(aCab, {"C5_ZEXTID"    , jJson:GetJsonObject("EXTERNID")    , Nil})
         aadd(aCab, {"C5_NATUREZ"   , cNatur     , NIL})       
+        //aadd(aCab, {"C5_ZNUMCTR"   , jJson:GetJsonObject("NUMCONTRATO") , Nil}) //DESCONTINUADO DEPOIS DE REUNIÃO COM GEORGE RODRIGO E VICTOR - 19/09/2025//ID146 - J.EDILSON - 16/09/2025
         //aadd(aCab, {"C5_DESC1"     , jJson:GetJsonObject("DESC"), NIL})
 
         FOR Nx := 1 to len(jJson:GetJsonObject("ITENS"))
+
+            If ValType(jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("CENTROCUSTOS")) == "U"
+                _cCusto := ""
+            else
+                _cCusto := jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("CENTROCUSTOS")
+            EndIf
+
             aLinhaC1 := {}
             if (jJson:GetJsonObject("DESCONTO") > 0) .AND. nX == 1
-                nTotal := (jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT") * jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO")) - jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("DESC")
-            else
+                //nTotal := (jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT") * jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO")) - jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("DESC")
+                //else
                 nTotal := (jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT") * jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO"))
             Endif
 
@@ -291,6 +316,7 @@ WSMETHOD POST NEW WSRECEIVE NUMPV WSSERVICE WSPEDVEND
             aadd(aLinhaC1, {"C6_VALDESC"  , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("DESC"), NIL})
             aadd(aLinhaC1, {"C6_VALOR"    , nTotal, Nil }) //jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("TOTAL"), NIL})
             aadd(aLinhaC1, {"C6_OPER"     , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("OPERACAO"), NIL})
+            aadd(aLinhaC1, {"C6_CCUSTO"   , _cCusto , NIL})     //22/09/2025 - SOLICITADO POR GEORGE    
             //aadd(aLinhaC1, {"C6_TES"      , cTes , NIL})
             //aadd(aLinhaC1, {"C6_TES"      , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("TES"), NIL})
             aadd(aItens,aLinhaC1)

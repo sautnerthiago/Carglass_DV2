@@ -153,6 +153,7 @@ WSMETHOD POST NEW WSRECEIVE NUMPC WSSERVICE WSPEDCOM
     Local nX
     Local aItens            := {}
     Local aCab              := {}
+    Local _cCusto           := ""
     //Local aFornec           := {}
 
     Private lMsErroAuto     := .F.
@@ -271,6 +272,12 @@ WSMETHOD POST NEW WSRECEIVE NUMPC WSSERVICE WSPEDCOM
         _cNumPed := oWs:GrPedCom(cFilAt) //GetSXENum("SC7","C7_NUM") //jJson:GetJsonObject("NUMPC")
         cTes     := jJson:GetJsonObject("TES")
 
+        If ValType(jJson:GetJsonObject("CENTROCUSTOS")) == "U"
+            _cCusto := ""
+        else
+            _cCusto := jJson:GetJsonObject("CENTROCUSTOS")
+        EndIf
+
         aadd(aCab, {"C7_FILIAL"    , cFilAt     ,Nil})
         aadd(aCab, {"C7_NUM"       , _cNumPed   ,Nil})
         aadd(aCab, {"C7_EMISSAO"   , ddatabase  ,Nil})
@@ -282,11 +289,26 @@ WSMETHOD POST NEW WSRECEIVE NUMPC WSSERVICE WSPEDCOM
         aadd(aCab, {"C7_CONTATO"   , jJson:GetJsonObject("CONTATO"), Nil})
         aadd(aCab, {"C7_FILENT"    , jJson:GetJsonObject("FILENT"), Nil})
         aadd(aCab, {"C7_ZINTEGR"   , jJson:GetJsonObject("INTEGRADO"), Nil})
+        aadd(aCab, {"C7_CC"        , _cCusto , Nil})        //22/09/2025 - SOLICITADO POR GEORGE
         IF !Empty(cTes)
             aadd(aCab, {"C7_TES"   , jJson:GetJsonObject("TES"), Nil})
         EndIF
 
         _ZEXTID := jJson:GetJsonObject("EXTERNID")
+        IF !Empty(oWs:PGExtDad( _ZEXTID ))
+            Self:setStatus(500)
+            jResponse['errorId']  := 'NEW0016'
+            jResponse['error']    := 'EXTERNOID'
+            jResponse['errorLog'] := cErrorLog
+            jResponse['solution'] := 'EXTERNOID - JA CADASTRADO ANTERIORMENTE'
+
+            cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
+            oWS:GRAVALOGMURO(cResponc, cJason, "WSPEDCOM", "INCLUSÃO DE PEDIDO DE COMPRAS - EXTERNID")
+            
+            Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
+            Return .F.
+        Endif
+
                             
         FOR Nx := 1 to len(jJson:GetJsonObject("ITENS"))
             aLinhaC1 := {}

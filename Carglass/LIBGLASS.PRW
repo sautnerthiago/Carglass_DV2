@@ -95,8 +95,6 @@ Method GRAVALOGMURO( cJson, cMensRet, cCodRotin, cNomRti ) class LIBGLASS
     /*
     Local cCodUsr   := RetCodUsr()
     Local cNomUsr   := UsrRetName(cCodUsr)
-    //Local nTmbObs   := TamSX3("Z1_JSON")[1]
-
     Begin transaction
         RecLock("SZ1",.T.)
         SZ1->Z1_FILIAL      := xFilial("SZ1")
