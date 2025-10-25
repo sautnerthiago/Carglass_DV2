@@ -1,7 +1,7 @@
 #include "rwmake.ch"
 #include "TOPCONN.CH"
 
-User Function MT120GRV()
+User Function MT120GRV - DESCONTNUADO - ELIMINADO DO RPO DA PRODUÇÃO()
     Local aArea   := GetArea()
     Local aAreaC7 := SC7->(GetArea())
 
