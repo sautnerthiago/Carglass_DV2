@@ -374,7 +374,12 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE WSFORNEC
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
 		oWS:GRAVALOGMURO(cResponc, cJason, "WSFORNC", "INCLUSÃO DE FORNECEDOR")
-        ConOut("erro 003")
+        ConOut("erro 003 - Fornecedor")
+
+		rpcClearEnv()
+		cEmpAnt  := cEmpAt1
+		cFilAnt  := cFilAt1
+
         Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
         Return .F.
 	EndIF
@@ -417,7 +422,7 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE WSFORNEC
 			oModel:setValue('SA2MASTER', "A2_EST"     , jJson:GetJsonObject('ESTADO')   )
 			oModel:setValue('SA2MASTER', "A2_COD_MUN" , jJson:GetJsonObject('COD_MUN')  )
 			oModel:setValue('SA2MASTER', "A2_DDD"     , jJson:GetJsonObject('DDD')      )
-			oModel:setValue('SA2MASTER', "A2_END"     , jJson:GetJsonObject('END')      )
+			oModel:setValue('SA2MASTER', "A2_END"     , Substr( (jJson:GetJsonObject('END') ),1,250) )
 			oModel:setValue('SA2MASTER', "A2_INSCR"   , jJson:GetJsonObject('INSCR')    )
 			oModel:setValue('SA2MASTER', "A2_MUN"     , jJson:GetJsonObject('MUNICIPIO'))
 			oModel:setValue('SA2MASTER', "A2_TIPO"    , jJson:GetJsonObject('TIPO')     )

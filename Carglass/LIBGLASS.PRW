@@ -68,6 +68,19 @@ class LIBGLASS
     METHOD PGExtDad(_EXTERNID)
     METHOD PGExtPDV(_EXTERNID)
 
+    METHOD PGDSCPRD(cProdut)
+    //METHOD PGTIPPRD(_EXTERNID, cFili) //descontinuado
+
+    METHOD pgNat(cProdut)
+
+    Method atuPEdC(_cNumPed, _cAprov, _ZEXTID )
+
+    METHOD temPDV( _EXTIDPDV )  //15/10/2025 - MONTAGEM DE VERIFICAÇÃO DE EXISTENCIA DO PDV
+
+    method GerNFE(_EXTERNID, _CHVNFE, cOpc)  //14/10/2025 - gera nota fiscal de entrada
+
+    METHOD PGtIPcLI(_cLI, _lOJ)
+
 endclass
 
 method new() class LIBGLASS
@@ -315,7 +328,7 @@ method pedVendas(aCab, aItens, nOpc, cDoc) class LIBGLASS
         ConOut("Incluido com sucesso! " + cDoc)
         aAdd(aRet, {"Incluido com sucesso! " + cDoc, .T.})
     Else
-        ConOut("Erro na inclusao!")
+        ConOut("Erro na inclusao! -Pedido de Vendas")
         aErroAuto := GetAutoGRLog()
         For nCount := 1 To Len(aErroAuto)
             cLogErro += StrTran(StrTran(aErroAuto[nCount], "<", ""), "-", "") + " "
@@ -334,10 +347,10 @@ method pedCompra(aCab, aItem, nOpc) class LIBGLASS
     MSExecAuto({|v,x,y,z| MATA120(v,x,y,z)},1, aCab, aItem, nOpc)
     
     If !lMsErroAuto
-        ConOut("Incluido com sucesso! " )
+        ConOut("Incluido com sucesso! - pedido de compras " )
         aAdd(aRet, {"Incluido com sucesso! " , .T.})
     Else
-        ConOut("Erro na inclusao!")
+        ConOut("Erro na inclusao! - pedido de Compras")
         aErroAuto := GetAutoGRLog()
         For nCount := 1 To Len(aErroAuto)
             cLogErro += StrTran(StrTran(aErroAuto[nCount], "<", ""), "-", "") + " "
@@ -1430,7 +1443,8 @@ METHOD PGExtrt(_EXTERNID) class LIBGLASS
 
     cQuery := " SELECT C7_NUM AS NUM "
     cQuery += " FROM "+RetSQLName("SC7") + " AS C7 WITH (NOLOCK) "
-    cQuery += " WHERE C7_ZEXTID = '"+_EXTERNID+"' "
+    cQuery += " WHERE C7.D_E_L_E_T_ <> '*' AND C7_ZIDPDCI = '"+_EXTERNID+"' "
+    //cQuery += " WHERE C7.D_E_L_E_T_ <> '*' AND C7_ZEXTID = '"+_EXTERNID+"' "
     //cAlSC7:= CriaTrab(Nil,.F.)
     DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSC7, .F., .T.)    
 
@@ -1470,7 +1484,8 @@ METHOD PGExtrtV(_EXTERNID) class LIBGLASS
 
     cQuery := " SELECT C5_NUM AS NUM "
     cQuery += " FROM "+RetSQLName("SC5") + " AS C5 WITH (NOLOCK) "
-    cQuery += " WHERE C5_ZEXTID = '"+_EXTERNID+"' "
+    cQuery += " WHERE C5.D_E_L_E_T_ <> '*' AND C5_ZIDPDVI = '"+_EXTERNID+"' "
+    //cQuery += " WHERE C5.D_E_L_E_T_ <> '*' AND C5_ZEXTID = '"+_EXTERNID+"' "
     //cAlSC5:= CriaTrab(Nil,.F.)
     DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSC5, .F., .T.)    
 
@@ -1485,7 +1500,8 @@ METHOD PGExtDad(_EXTERNID) class LIBGLASS
 
     cQuery := " SELECT * "
     cQuery += " FROM "+RetSQLName("SC7") + " AS C7 WITH (NOLOCK) "
-    cQuery += " WHERE C7_ZEXTID = '"+_EXTERNID+"' "
+    cQuery += " WHERE C7.D_E_L_E_T_ <> '*' AND C7_ZIDPDCI = '"+_EXTERNID+"' "
+    //cQuery += " WHERE C7.D_E_L_E_T_ <> '*' AND C7_ZEXTID = '"+_EXTERNID+"' "
     //cAlSC7:= CriaTrab(Nil,.F.)
     DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSC7, .F., .T.)    
 
@@ -1537,7 +1553,8 @@ METHOD PGExtPDV(_EXTERNID) class LIBGLASS
     cQuery += " INNER JOIN "+RetSQLName("SC6") + " AS C6 "
     cQuery += " ON C5_NUM = C6_NUM AND C5_FILIAL = C6_FILIAL AND C5_CLIENTE = C6_CLI "
     cQuery += " AND C5_LOJACLI = C6_LOJA "
-    cQuery += " WHERE C5_ZEXTID = '"+_EXTERNID+"' "
+    cQuery += " WHERE C5.D_E_L_E_T_ <> '*' AND C5_ZIDPDVI = '"+_EXTERNID+"' "
+    //cQuery += " WHERE C5.D_E_L_E_T_ <> '*' AND C5_ZEXTID = '"+_EXTERNID+"' "
     DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlPDV, .F., .T.)    
 
     WHILE !(cAlPDV)->(EOF())
@@ -1569,3 +1586,341 @@ METHOD PGExtPDV(_EXTERNID) class LIBGLASS
     (cAlPDV)->(dbclosearea())
 
 Return aRet
+
+
+METHOD PGDSCPRD(cProdut) class LIBGLASS
+    Local cRet := ""
+    Local cAlSB1  := GetNextAlias()
+
+    cQuery := " SELECT B1_DESC "
+    cQuery += " FROM "+RetSQLName("SB1") + " AS B1 "
+    cQuery += " WHERE B1.D_E_L_E_T_ <> '*' AND B1_COD = '"+cProdut+"' "
+    cQuery += " AND B1_FILIAL = '"+ xFilial("SB1") +"' "
+    DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSB1, .F., .T.)    
+
+    cRet := (cAlSB1)->B1_DESC
+
+    (cAlSB1)->(dbclosearea())
+
+Return cRet
+
+/*
+METHOD PGTIPPRD(_EXTERNID, cFili) class LIBGLASS
+    Local cRet   := ""
+    Local cQuery := ""
+    Local cAlPDV := GetNextAlias()
+
+    cQuery := " SELECT * "
+    cQuery += " FROM "+RetSQLName("SC5") + " AS C5 "
+    cQuery += " INNER JOIN "+RetSQLName("SC6") + " AS C6 "
+    cQuery += " ON C5_NUM = C6_NUM AND C5_FILIAL = C6_FILIAL AND C5_CLIENTE = C6_CLI "
+    cQuery += " AND C5_LOJACLI = C6_LOJA "
+    cQuery += " WHERE C5.D_E_L_E_T_ <> '*' AND C5_ZEXTID = '"+_EXTERNID+"' "
+    DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlPDV, .F., .T.)    
+
+    WHILE !(cAlPDV)->(EOF())
+        
+        cProdut := (cAlPDV)->C6_PRODUTO
+        cDscPrd := (cAlPDV)->C6_DESCRI
+
+        cQuery := " SELECT B1_TIPO "
+        cQuery += " FROM "+RetSQLName("SB1") + " AS B1 "
+        cQuery += " AND B1_FILIAL = '"+ cFili +"' "
+        cQuery += " WHERE B1.D_E_L_E_T_ <> '*' AND B1_COD = '"+cProdut+"' "
+        DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSB1, .F., .T.)    
+
+        IF (cAlSB1)->B1_TIPO == "SV"
+            // - DESCONTINUADO - NÃO DA CERTO
+            //    cQuery := "UPDATE "+ RetSQLName("SC5")+" SET "
+            //    cQuery += " C5_XMEMO = CONVERT(VARBINARY(MAX), "+_EXTERNID+" - "+ cDscPrd +" )  "
+            //    cQuery += " WHERE C5_FILIAL = '"+cFili+"' AND "
+            //    cQuery += " C5_NUM = '"+cC5Num+"'  "
+            //    if TCSqlExec(cQuery) < 0
+            //        ConOut("Erro na gravação do memo C5_XMEMO: " + TCSQLError())
+            //        (cAlSB1)->(dbclosearea())
+            //    else
+            //        (cAlSB1)->(dbclosearea())
+            //        TcSqlExec("COMMIT")
+            //        Exit
+            //    endif
+            
+            cRet := cDscPrd + " - " + _EXTERNID
+            (cAlSB1)->(dbclosearea())
+        ELSE
+            (cAlSB1)->(dbclosearea())
+        ENDIF
+   
+        (cAlPDV)->(DBSKIP())
+        LOOP
+    ENDDO
+
+    (cAlPDV)->(dbclosearea())
+
+Return cRet
+*/
+
+METHOD pgNat(cProdut) class LIBGLASS
+    Local cRet := ""
+    Local cAlSB1  := GetNextAlias()
+
+    cQuery := " SELECT B1_XNATURE "
+    cQuery += " FROM "+RetSQLName("SB1") + " AS B1 "
+    cQuery += " WHERE B1.D_E_L_E_T_ <> '*' AND B1_COD = '"+cProdut+"' "
+    cQuery += " AND B1_FILIAL = '"+ xFilial("SB1") +"' "
+    DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSB1, .F., .T.)    
+
+    if empty( (cAlSB1)->B1_XNATURE)
+       cRet := "02.01.01"
+    else
+       cRet := (cAlSB1)->B1_XNATURE
+    endif
+
+    (cAlSB1)->(dbclosearea())
+
+Return cRet
+
+Method atuPEdC(_cNumPed, _cAprov, _ZEXTID ) class LIBGLASS
+    Local cQuery := ""
+
+    cQuery := "UPDATE "+ RetSQLName("SC7")+" SET "
+    cQuery += " C7_APROV = '"+_cAprov+"' "
+    cQuery += " WHERE C7_ZIDPDCI = '"+_ZEXTID+"' AND "
+    //cQuery += " WHERE C7_ZEXTID = '"+_ZEXTID+"' AND "
+    cQuery += " C7_NUM = '"+_cNumPed+"'  "
+    if TCSqlExec(cQuery) < 0
+        ConOut("Erro na gravação do memo C7_APROV: " + TCSQLError())
+    else
+        TcSqlExec("COMMIT")
+    endif
+
+Return 
+
+
+method GerNFE(_EXTERNID, _CHVNFE, cOpc) class LIBGLASS
+    Local X
+    Local cAlSC7    := GetNextAlias()
+    Local aRet      := {}
+    Local aItemPC   := {}
+    Local aMod      := {}
+    Local aEnder    := {}
+
+    Local nCount    := 0
+    Local cBackFunName	:= FUNNAME()
+    Local cLogErro  := ""
+    Local cDirLog   := '\x_logs\'
+
+    cQuery := " SELECT * "
+    cQuery += " FROM "+RetSQLName("SC7") + " AS C7 WITH (NOLOCK) "
+    cQuery += " WHERE C7.D_E_L_E_T_ <> '*' AND C7_ZIDPDCI = '"+_EXTERNID+"' "
+    DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSC7, .F., .T.)    
+
+    nIt := 1
+    WHILE !(cAlSC7)->(EOF())
+
+        IF nIt == 1
+            _FILIAL  := cFilAnt //FWxFilial("SC7")
+            _FORNECE := (cAlSC7)->C7_FORNECE
+            _LOJA    := (cAlSC7)->C7_LOJA
+            _ID      := _EXTERNID
+            _SERIE	 := Substr(_CHVNFE,23,3)
+            _DOC     := Substr(_CHVNFE,26,9) 
+            _EMISSAO := (cAlSC7)->C7_EMISSAO     
+            _TIPO    := "N"  
+            _PEDIDO  := (cAlSC7)->C7_NUM
+
+            aCab := {   {"F1_FILIAL"    ,_FILIAL                ,NIL,Nil},;
+                        {"F1_TIPO" 	    ,_TIPO                  ,NIL,Nil},;
+                        {"F1_FORMUL"	,"N"                    ,Nil,Nil},;
+                        {"F1_DOC"       ,_DOC                   ,Nil,Nil},;
+                        {"F1_SERIE"     ,_SERIE                 ,Nil,Nil},;
+                        {"F1_EMISSAO"   ,ddatabase              ,Nil,Nil},;
+                        {"F1_DTDIGIT"   ,ddatabase              ,Nil,Nil},;
+                        {"F1_FORNECE"   ,_FORNECE               ,Nil,Nil},;
+                        {"F1_LOJA"      ,"01"                   ,Nil,Nil},;
+                        {"F1_CHVNFE"    ,_CHVNFE                ,Nil,Nil},;
+                        {"F1_MOEDA"     ,1                      ,Nil,Nil},;
+                        {"F1_TXMOEDA"   ,1                      ,Nil,NIL},;
+			            {"F1_STATUS"    ,"A"                    ,Nil,NIL},;
+                        {"F1_COND"      ,(cAlSC7)->C7_COND      ,Nil,Nil},;
+                        {"F1_ESPECIE"   ,"SPED"                 ,Nil,Nil}}
+            nIt++
+        Endif
+    	aItem      := {}
+	    aCOls      := {}
+
+        _COD       := (cAlSC7)->C7_PRODUTO
+        _UM        := POSICIONE('SB1',1,Xfilial('SB1')+_COD,'B1_UM') 
+        _ITEM      := (cAlSC7)->C7_ITEM
+        _QUANT     := (cAlSC7)->C7_QUANT
+        _VUNIT     := (cAlSC7)->C7_PRECO
+        _TOTAL     := (cAlSC7)->C7_TOTAL
+        _PICM      := (cAlSC7)->C7_PICM
+        _TES       := (cAlSC7)->C7_TES
+        _CC        := (cAlSC7)->C7_CC
+
+        AADD(aEnder, {_COD, _QUANT} )
+
+        AADD(aItemPC,{"D1_FILIAL"   ,_FILIAL            ,NIL} )
+        AADD(aItemPC,{"D1_COD"      ,_COD               ,NIL} )
+        AADD(aItemPC,{"D1_UM"       ,_UM                ,NIL} )
+        AADD(aItemPC,{"D1_ITEM"     ,PADL(_ITEM,TAMSX3('D1_ITEM')[1],'0'),NIL} )
+        AADD(aItemPC,{"D1_QUANT"    ,_QUANT      		,NIL} )
+        AADD(aItemPC,{"D1_VUNIT"    ,_VUNIT             ,NIL} ) 
+        AADD(aItemPC,{"D1_TOTAL"    ,_TOTAL 	        ,NIL} ) 
+        AADD(aItemPC,{"D1_DOC"      ,_DOC               ,NIL} )
+        AADD(aItemPC,{"D1_EMISSAO"  ,_EMISSAO		    ,NIL} )
+        AADD(aItemPC,{"D1_TIPO"     ,_TIPO            	,NIL} )
+        AADD(aItemPC,{"D1_SERIE"    ,_SERIE             ,NIL} )
+        AADD(aItemPC,{"D1_FORNEC"   ,_FORNECE         	,NIL} )
+        AADD(aItemPC,{"D1_LOJA"     ,_LOJA           	,NIL} )
+        aAdd(aItemPC,{'D1_PICM'		,_PICM				,NIL} )
+        aAdd(aItemPC,{'D1_LOCAL'	,'01'   			,NIL} )
+        aAdd(aItemPC,{'D1_PEDIDO'	,_PEDIDO   			,NIL} )
+        aAdd(aItemPC,{'D1_TES'	    ,_TES   			,NIL} )
+        aAdd(aItemPC,{'D1_ITEMPC'   ,PADL(_ITEM,TAMSX3('D1_ITEMPC')[1],'0'),NIL} )        
+        aAdd(aItemPC,{'D1_CC'	    ,_CC   			    ,NIL} )        
+        aAdd(aItemPC,{'D1_LOTECTL'  ,""   			    ,NIL} )        
+        aAdd(aItemPC,{"D1_IPI"		,0 				    ,Nil} )
+        aAdd(aItemPC,{"D1_VALICM"	,0 				    ,Nil} )
+        aAdd(aItemPC,{"D1_BASEICM"	,0 				    ,Nil} )
+        aAdd(aItemPC,{"D1_VALIPI"	,0 				    ,Nil} )
+        aAdd(aItemPC,{"D1_ICMSRET"	,0 				    ,Nil} ) 
+        aAdd(aItemPC,{"D1_BRICMS"	,0				    ,Nil} )			  
+        aAdd(aItemPC,{"D1_DESPESA"	,0                  ,Nil} )
+        AADD(aItem,aItemPC)
+
+        (cAlSC7)->(DBSKIP())
+        LOOP
+    ENDDO
+
+    lMsErroAuto := .F.
+    aMod := SetModulo("SIGAEST", "EST")
+    SETFUNNAME("MATA103")
+    MSExecAuto({|x,y,z| MATA103(x,y,z)},aCab,aItem, 3) //OPC 4 = CLASSIFICAÇÃO DOC. ENTRADA, 5-exclusao
+    SETFUNNAME(cBackFunName)
+
+    If lMsErroAuto
+        ConOut("erro geracao NOTA ENTRADA")
+        aAdd(aRet, {"erro geracao NOTA ENTRADA", .F.})
+        aErroAuto  := GetAutoGRLog()
+        For nCount := 1 To Len(aErroAuto)
+            if nCount > 1
+                cLogErro += StrTran(StrTran(aErroAuto[nCount], "<", ""), "-", "") + " "
+            endif
+        Next nCount
+        ConOut(cLogErro)
+        cArqLog := 'WSPEDVEND_New_' + dToS(Date()) + '_' + StrTran(Time(), ':', '-') + '.log'
+        MemoWrite(cDirLog + cArqLog, cLogErro)
+        aAdd(aRet, aErroAuto)
+    ELSE
+        ConOut("Geracao NOTA ENTRADA - com SUCESSO")
+        //ENDEREÇO
+        For X := 1 TO LEN(aEnder)
+            _COD       := aEnder[X,1]
+            _QUANT     := aEnder[X,2]
+            _RASTRO    := POSICIONE('SB1',1,Xfilial('SB1')+_COD,'B1_RASTRO') 
+            IF _RASTRO == "L"
+                TMATA265(_COD, _QUANT)
+            ENDIF
+        Next
+    endif
+    (cAlSC7)->(DBCLOSEAREA())
+
+Return aRet
+
+METHOD temPDV( _EXTIDPDV ) CLASS LIBGLASS
+Return 
+
+METHOD PGtIPcLI(_cLI, _lOJ) CLASS LIBGLASS
+    cRet := ""
+    Local cAlSA1  := GetNextAlias()
+
+    cQuery := " SELECT * "
+	cQuery += " FROM "+RetSQLName("SA1") + " AS SA1 WITH (NOLOCK) "
+	cQuery += " WHERE SA1.A1_COD = '"+_cLI+"' AND SA1.A1_LOJA = '"+_lOJ+"' "
+	cQuery += " AND SA1.D_E_L_E_T_ = '' "
+	DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSA1, .F., .T.)    
+    cRet := (cAlSA1)->A1_TIPO
+    (cAlSA1)->(dbclosearea())
+
+RETURN cRet
+
+Static Function TMATA265(cProd, _QUANT)
+    Local aCabSDA       := {}
+    Local aItSDB        := {}
+    Local _aItensSDB    := {}
+
+    Local _NUMSEQ     := GetSx8Num("SDA","DA_NUMSEQ")
+ 
+    Private lMsErroAuto := .F.
+
+    //Cabecalho com a informação do item e NumSeq que sera endereçado.
+    aCabSDA := {{"DA_PRODUTO" ,cProd        ,Nil},;
+                {"DA_NUMSEQ"  ,_NUMSEQ      ,Nil}}
+ 
+    //Dados do item que será endereçado
+    aItSDB := { {"DB_ITEM"    ,"0001"       ,Nil},;
+                {"DB_ESTORNO" ," "          ,Nil},;
+                {"DB_LOCALIZ" ,"AFILIADO"   ,Nil},;
+                {"DB_DATA"    ,dDataBase    ,Nil},;
+                {"DB_QUANT"   ,_QUANT       ,Nil}}
+    aadd(_aItensSDB,aitSDB)
+ 
+    //Executa o endere?amento do item
+    MATA265( aCabSDA, _aItensSDB, 3)
+    If lMsErroAuto
+        ConOut("erro Enderecamento DA NOTA ENTRADA")
+    Else
+        ConOut("Enderecamento realizado com sucesso - Nota de entrada")
+    Endif
+
+    ConfirmSX8() 
+
+Return
+
+//chave pix fornecedor - em desenvolvimento
+/*
+User Function F885AMVC()
+ 
+    Local oModel   := Nil
+    Local cFornec  := '000050'
+    Local cForLoja := '01'
+ 
+    PREPARE ENVIRONMENT EMPRESA "01" FILIAL "0101" MODULO "FIN" TABLES "SA2", "F72"
+ 
+    DbSelectArea("SA2")
+    SA2->(DbSetOrder(1))
+ 
+    If SA2->(DBSeek(xFilial("SA2") + cFornec + cForLoja))
+        oModel := FwLoadModel ("FINA885")
+        oModel:SetOperation(MODEL_OPERATION_INSERT)
+        oModel:Activate()
+ 
+        oModel:SetValue("FORMCAB","F72_FILIAL", xFilial("SA2"))
+        oModel:SetValue("FORMCAB","F72_COD"   , cFornec)
+        oModel:SetValue("FORMCAB","F72_LOJA"  , cForLoja)
+        oModel:SetValue("FORMCAB","F72_NOME"  , SA2->A2_NOME)
+ 
+        oModel:SetValue("FORDETAIL", "F72_TPCHV" , "02")
+        oModel:SetValue("FORDETAIL", "F72_CHVPIX", "email_fornec@emailpix.com.br")
+        oModel:SetValue("FORDETAIL", "F72_ACTIVE", "1")
+ 
+        If oModel:VldData()
+            oModel:CommitData()
+            MsgInfo("Registro INCLUÍDO!", "Atenção")
+        Else
+            VarInfo("",oModel:GetErrorMessage())
+        EndIf
+ 
+        oModel:DeActivate()
+        oModel:Destroy()
+        oModel := NIL
+    EndiF
+ 
+    RESET ENVIRONMENT
+ 
+Return Nil
+*/
+//chave pix fornecedor - em desenvolvimento
+
+

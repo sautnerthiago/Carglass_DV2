@@ -355,15 +355,13 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE wsCliente
 	CONFIRMSX8()
 
 	IF oWS:temClient(FWxFilial(cAliasWS), ::cnpj) //.OR. oWS:temCliCod(FWxFilial(cAliasWS), _cod, _loja)
-		//SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
-		Self:setStatus(500)
-		jResponse['errorId']  := 'NEW0041'
-		jResponse['error']    := 'CLIENTE JA EXISTE'
-		jResponse['errorLog'] := cErrorLog
-		jResponse['solution'] := 'CADASTRE UM CLIENTE CUJO CNPJ NAO SEJA O MESMO'
-
-		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
-		oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "INCLUSÃO DE CLIENTE")
+		Self:setStatus(200)
+		// jResponse['errorId']  := 'NEW0041'
+		// jResponse['error']    := 'CLIENTE JA EXISTE'
+		// jResponse['errorLog'] := cErrorLog
+		// jResponse['solution'] := 'CADASTRE UM CLIENTE CUJO CNPJ NAO SEJA O MESMO'
+		// cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
+		// oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "INCLUSÃO DE CLIENTE")
 
         ConOut("erro 003 - cliente JA existe")
 
@@ -394,27 +392,26 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE wsCliente
 		aAdd(aDados, {'A1_COD'    , _cod   							, Nil} )
 		aAdd(aDados, {'A1_LOJA'   , _loja   						, Nil} )
 		aAdd(aDados, {'A1_NOME'   , jJson:GetJsonObject('NOME')     , Nil} )
-		aAdd(aDados, {'A1_NREDUZ ', jJson:GetJsonObject('NREDUZ')   , Nil} )
-		aAdd(aDados, {'A1_BAIRRO ', jJson:GetJsonObject('BAIRRO')   , Nil} )
-		aAdd(aDados, {'A1_EMAIL  ', jJson:GetJsonObject('EMAIL')    , Nil} )
-		aAdd(aDados, {'A1_CEP    ', jJson:GetJsonObject('CEP')      , Nil} )
-		aAdd(aDados, {'A1_CGC    ', jJson:GetJsonObject('CNPJ')     , Nil} )
-		aAdd(aDados, {'A1_EST    ', jJson:GetJsonObject('ESTADO')   , Nil} )
+		aAdd(aDados, {'A1_NREDUZ' , jJson:GetJsonObject('NREDUZ')   , Nil} )
+		aAdd(aDados, {'A1_BAIRRO' , jJson:GetJsonObject('BAIRRO')   , Nil} )
+		aAdd(aDados, {'A1_EMAIL'  , jJson:GetJsonObject('EMAIL')    , Nil} )
+		aAdd(aDados, {'A1_CEP'    , jJson:GetJsonObject('CEP')      , Nil} )
+		aAdd(aDados, {'A1_CGC'	  , jJson:GetJsonObject('CNPJ')     , Nil} )
+		aAdd(aDados, {'A1_EST'	  , jJson:GetJsonObject('ESTADO')   , Nil} )
 		aAdd(aDados, {'A1_COD_MUN', jJson:GetJsonObject('COD_MUN')  , Nil} )
-		aAdd(aDados, {'A1_COND   ', jJson:GetJsonObject('COND')     , Nil} )
-		aAdd(aDados, {'A1_DDD    ', jJson:GetJsonObject('DDD')      , Nil} )
-		aAdd(aDados, {'A1_DTCAD  ', jJson:GetJsonObject('DTCAD')    , Nil} )
-		aAdd(aDados, {'A1_END    ', jJson:GetJsonObject('END')      , Nil} )
-		aAdd(aDados, {'A1_INSCR  ', jJson:GetJsonObject('INSCR')    , Nil} )
-		aAdd(aDados, {'A1_MUN    ', jJson:GetJsonObject('MUNICIPIO'), Nil} )
-		//aAdd(aDados, {'A1_NATUREZ', jJson:GetJsonObject('NATUREZ')  , Nil} )
-		//aAdd(aDados, {'A1_OBS    ', 'WMSCLINTE'                     , Nil} )
-		aAdd(aDados, {'A1_PESSOA ', jJson:GetJsonObject('PESSOA')   , Nil} )
-		//aAdd(aDados, {'A1_TIPCLI ', jJson:GetJsonObject('TIPO')   	, Nil} )
-		aAdd(aDados, {'A1_TIPO   ', jJson:GetJsonObject('TIPO') 	, Nil} )
-		aAdd(aDados, {'A1_TEL    ', jJson:GetJsonObject('FONE')     , Nil} )
-		//aAdd(aDados, {'A1_TRANSP ', jJson:GetJsonObject('TRANSP')   , Nil} )
-		aAdd(aDados, {'A1_PAIS   ', '105'  							, Nil} )
+		aAdd(aDados, {'A1_COND'   , jJson:GetJsonObject('COND')     , Nil} )
+		aAdd(aDados, {'A1_DDD'    , jJson:GetJsonObject('DDD')      , Nil} )
+		aAdd(aDados, {'A1_DTCAD'  , jJson:GetJsonObject('DTCAD')    , Nil} )
+		aAdd(aDados, {'A1_END'    , jJson:GetJsonObject('END')      , Nil} )
+
+		if (jJson:GetJsonObject('PESSOA') == "J")
+			aAdd(aDados, {'A1_INSCR'  , jJson:GetJsonObject('INSCR')    , Nil} )
+		ENDIF
+		aAdd(aDados, {'A1_MUN'    , jJson:GetJsonObject('MUNICIPIO'), Nil} )
+		aAdd(aDados, {'A1_PESSOA' , jJson:GetJsonObject('PESSOA')   , Nil} )
+		aAdd(aDados, {'A1_TIPO'	  , jJson:GetJsonObject('TIPO') 	, Nil} )
+		aAdd(aDados, {'A1_TEL'    , jJson:GetJsonObject('FONE')     , Nil} )
+		aAdd(aDados, {'A1_PAIS'   , '105'  							, Nil} )
 		aAdd(aDados, {'A1_ZINTEGR', jJson:GetJsonObject('INTEGRADO'), Nil} )
 		aAdd(aDados, {'A1_ZMOBILE', cMOVEL							, Nil} )
 		aAdd(aDados, {'A1_ZTPVEIC', cTIPOV							, Nil} )
@@ -424,6 +421,7 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE wsCliente
 		aAdd(aDados, {'A1_ZTPAFIL', cTIPOA							, Nil} )
 		aAdd(aDados, {'A1_MSBLQL' , lBloq 							, Nil} )
 		aAdd(aDados, {'A1_ZATIVO' , lAtivo	    					, Nil} )
+		aAdd(aDados, {'A1_RISCO'  , 'A'	    					    , Nil} ) //06/10/2025 - INCLUS�O SOLICITADO PELO Sr. Victor / George		
 
 		//Percorre os dados do execauto
 		For nCampo := 1 To Len(aDados)
@@ -438,7 +436,6 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE wsCliente
 			conout("json - " + cJason)
 			conout("Cliente - antes do execaut - " + ::cnpj)
 			MsExecAuto({|x, y| MATA030(x, y)}, aDados, 3)  //- ANTIGA
-            //MSExecAuto({|a,b,c| CRMA980(a,b,c)},aDados,3,aAI0Auto)      			
 		Endif
 
 		//Se houve erro, gera um arquivo de log dentro do diretório da protheus data
@@ -467,7 +464,7 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE wsCliente
 			oWS:GRAVALOGMURO(cResponc, cErrorLog, "WSCLIENTE", "INCLUSÃO DE CLIENTE")
 			//Senão, define o retorno
 		Else
-			conout(" Cliente - Gravado com Sucesso... ")
+			conout(" Cliente - Gravado com Sucesso... " + ::cnpj)
 			jResponse['note']     := 'Registro incluido com sucesso'
 		EndIf
 

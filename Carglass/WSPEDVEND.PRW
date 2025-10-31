@@ -4,6 +4,8 @@
 #Include "TopConn.ch"
 #Include 'Protheus.ch'
 #INCLUDE 'APWEBSRV.CH'
+#INCLUDE "TBICONN.CH"
+
 
 /*/{Protheus.doc} WSRESTFUL WSPEDVEND
 MONTAGEM PEDIDO DE VENDAS
@@ -86,7 +88,7 @@ WSMETHOD GET ID WSRECEIVE NUMPV WSSERVICE WSPEDVEND
             cQuery += " WHERE C5_FILIAL = '" + FWxFilial(cAliasWS) + "' AND SC5.C5_NUM = '"+NUMPV+"' "
             cQuery += " AND SC5.D_E_L_E_T_ = '' "
             //cAlSC5:= CriaTrab(Nil,.F.)
-            DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSC5, .F., .T.)                
+            DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSC5, .F., .T.)    
                    
             DO WHILE !((cAlSC5)->(EOF())) .AND. (cAlSC5)->C5_NUM == NUMPV
                     jResponse['NUMPV']          := (cAlSC5)->C5_NUM
@@ -152,16 +154,26 @@ WSMETHOD POST NEW WSRECEIVE NUMPV WSSERVICE WSPEDVEND
     Local nX
     Local aItens            := {}
     Local aCab              := {}
+    
     Local _cCusto           := ""
     //Local aClient           := {}
 
+    Local nTotal            := 0
+    Local cSinistr          := ""
 
+    Local cIdUiv            := ""
+
+    Local nCount            
+    Local cCCont            := "" //23/10/2025 - inclusãodacontacontábil
+
+    Local cLogErro          := ""
+    
     Private lMsErroAuto     := .F.
     Private lMsHelpAuto     := .T.
     Private lAutoErrNoFile  := .T.
 
 	oWS    := LIBGLASS():new()
- 
+    
     //Se não existir a pasta de logs, cria
     IF ! ExistDir(cDirLog)
         MakeDir(cDirLog)
@@ -174,6 +186,18 @@ WSMETHOD POST NEW WSRECEIVE NUMPV WSSERVICE WSPEDVEND
 	cJason := cJson
     lTemPr := .T.
 
+    cEmpAt1 := cEmpAnt
+    cFilAt1 := cFilAnt
+
+    cEmpAt   := Iif(EMPTY(jJson:GetJsonObject("GRUPO") ), "01", jJson:GetJsonObject("GRUPO" ))
+    cFilAt   := Iif(EMPTY(jJson:GetJsonObject("FILIAL")), "01", jJson:GetJsonObject("FILIAL"))
+
+    Do While .T.
+        rpcClearEnv()
+        if RPCSetEnv(cEmpAt, cFilAt) //RPCSetEnv('02','01')       
+            EXIT            
+        ENDIF
+    EndDo
 
     if !(empty(cError)) 
 		Self:setStatus(500)
@@ -181,8 +205,10 @@ WSMETHOD POST NEW WSRECEIVE NUMPV WSSERVICE WSPEDVEND
 		jResponse['error']    := 'ERRO NO JSON'
         jResponse['errorLog'] := cError
 		jResponse['solution'] := 'ANALISE A INFORMACAO DE ENVIO'
+        
+        Self:SetContentType('application/json')
         Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
-        Return .F.
+        Return 
     ENDIF
 
     FOR NX := 1 TO LEN(jJson:GetJsonObject("ITENS"))
@@ -192,34 +218,27 @@ WSMETHOD POST NEW WSRECEIVE NUMPV WSSERVICE WSPEDVEND
  
     _Cli    := jJson:GetJsonObject("CLIENTE")
     _lojCli := if (Empty(jJson:GetJsonObject("LOJA")),"01", jJson:GetJsonObject("LOJA"))
+    _TpCli  := ows:PGtIPcLI(_Cli, _lojCli) 
 
     lTemCLi := ows:temCliCod(FWxFilial("SA1"), _Cli, _lojCli)
 
-    cEmpAt1 := cEmpAnt
-    cFilAt1 := cFilAnt
+    _idEnu  := jJson:GetJsonObject("IDPEDCOMPREXT") 
+    cExtId  := jJson:GetJsonObject("EXTERNID")
 
-    cEmpAt   := Iif(EMPTY(jJson:GetJsonObject("GRUPO") ), "01", jJson:GetJsonObject("GRUPO" ))
-    cFilAt   := Iif(EMPTY(jJson:GetJsonObject("FILIAL")), "01", jJson:GetJsonObject("FILIAL"))
-
-    cEmpAnt  := cEmpAt
-    cFilAnt  := cFilAt
-    
-    RPCSetEnv(cEmpAt, cFilAt)
-
-    IF !Empty(oWs:PGExtrtV( jJson:GetJsonObject("EXTERNID") ))
-		Self:setStatus(500)
+    IF !Empty(oWs:PGExtrtV( alltrim(_idEnu) + alltrim(cExtId) )) //jJson:GetJsonObject("EXTERNID") ))
+		Self:setStatus(506)
 		jResponse['errorId']  := 'NEW0016'
 		jResponse['error']    := 'EXTERNOID'
-        jResponse['errorLog'] := cErrorLog
-		jResponse['solution'] := 'EXTERNOID - JA CADASTRADO ANTERIORMENTE'
+        jResponse['errorLog'] := "PEDIDO JA ENVIADO ANTERIORMENTE"
+		jResponse['solution'] := 'MANDE UM PEDIDO NOVO'
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
 		oWS:GRAVALOGMURO(cResponc, cJason, "WSPEDVEND", "INCLUSAO DE PEDIDO DE VENDAS - EXTERNAID")
         
         Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
         Return .F.
-    Endif
 
+    Endif
 
 	IF !lTemPr 
 		Self:setStatus(500)
@@ -230,21 +249,22 @@ WSMETHOD POST NEW WSRECEIVE NUMPV WSSERVICE WSPEDVEND
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
 		oWS:GRAVALOGMURO(cResponc, cJason, "WSPEDVEND", "INCLUSAO DE PEDIDO DE VENDAS")
-        
+
         Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
         Return .F.
+        
 	EndIF
     
     //VALIDAÇÃO DO CLIENTE PELO cnpj
-    //aClient := oWS:pgClient(jJson:GetJsonObject("CNPJ"))  //16/07/2025 - inclusão do CNPJ
-    //if len(aClient) > 0
-    //    _Cli    := aClient[1,1] //jJson:GetJsonObject("CLIENTE")
-    //    _lojCli := aClient[1,2] //jJson:GetJsonObject("LOJA")
+        //aClient := oWS:pgClient(jJson:GetJsonObject("CNPJ"))  //16/07/2025 - inclusão do CNPJ
+        //if len(aClient) > 0
+        //    _Cli    := aClient[1,1] //jJson:GetJsonObject("CLIENTE")
+        //    _lojCli := aClient[1,2] //jJson:GetJsonObject("LOJA")
 
-    //    lTemCLi := ows:temCliCod(FWxFilial("SA1"), _Cli, _lojCli)
-    //else
-    //    lTemCLi := .F.
-    //endif
+        //    lTemCLi := ows:temCliCod(FWxFilial("SA1"), _Cli, _lojCli)
+        //else
+        //    lTemCLi := .F.
+        //endif
     //VALIDAÇÃO DO CLIENTE PELO cnpj
 
 	IF !lTemCLi 
@@ -256,9 +276,10 @@ WSMETHOD POST NEW WSRECEIVE NUMPV WSSERVICE WSPEDVEND
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
 		oWS:GRAVALOGMURO(cResponc, cJason, "WSPEDVEND", "INCLUSAO DE PEDIDO DE VENDAS")
-        
+
         Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
         Return .F.
+        
 	EndIF
  
     //Se tiver algum erro no Parse, encerra a execução
@@ -271,11 +292,36 @@ WSMETHOD POST NEW WSRECEIVE NUMPV WSSERVICE WSPEDVEND
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
 		oWS:GRAVALOGMURO(cResponc, cJason, "WSPEDVEND", "INCLUSÃO DE PEDIDO DE VENDAS")
+
+        Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
+        Return .F.
+
     Else		
       
+        if EMPTY( jJson:GetJsonObject("IDPEDCOMPREXT") ) .OR. EMPTY(jJson:GetJsonObject("EXTERNID"))
+            Self:setStatus(513) 
+            jResponse['errorId']  := 'NEW009'
+            jResponse['error']    := 'Parse do JSON'
+            jResponse['errorLog'] := "IDPEDCOMPREXT ou EXTERNID, estão vazios"
+            jResponse['solution'] := 'Preencha os campos - IDPEDCOMPREXT ou EXTERNID'
+
+            cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
+            oWS:GRAVALOGMURO(cResponc, cJason, "WSPEDVEND", "INCLUSÃO DE PEDIDO DE VENDAS")
+
+            Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
+            Return .F.
+
+        Endif
+
 		//Adiciona os dados do ExecAuto
         _cNumPed := oWs:GrPedVd(cFilAt) //GetSXENum("SC5","C5_NUM") //jJson:GetJsonObject("NUMPV") 
-        cNatur   := iif( Empty(jJson:GetJsonObject("NATUREZA")), "02.01.01", jJson:GetJsonObject("NATUREZA") )
+        //cNatur   := "02.01.01"
+        //cNatur   := iif( Empty(jJson:GetJsonObject("NATUREZA")), "02.01.01", jJson:GetJsonObject("NATUREZA") )
+        if (ValType(jJson:GetJsonObject("SINISTR")) == "U" )
+            cSinistr := ""
+        Endif
+
+        cIdUiv := jJson:GetJsonObject("IDPEDCOMPREXT") + jJson:GetJsonObject("EXTERNID")  //14/10/2025 - inclusão depois de reunião com MP, George e Rodrigo - composição o Externi mais o Enum
 
         aadd(aCab, {"C5_NUM"       , _cNumPed   ,Nil})
         aadd(aCab, {"C5_EMISSAO"   , ddatabase  ,Nil})
@@ -285,28 +331,48 @@ WSMETHOD POST NEW WSRECEIVE NUMPV WSSERVICE WSPEDVEND
         aadd(aCab, {"C5_CONDPAG"   , jJson:GetJsonObject("COND")        , Nil})
         aadd(aCab, {"C5_ZINTEGR"   , jJson:GetJsonObject("INTEGRADO")   , Nil})
         aadd(aCab, {"C5_ZEXTID"    , jJson:GetJsonObject("EXTERNID")    , Nil})
-        aadd(aCab, {"C5_NATUREZ"   , cNatur     , NIL})       
+        aadd(aCab, {"C5_SINISTR"   , cSinistr   , Nil})                           //24/09/2025 - 
+        aadd(aCab, {"C5_PLACA"     , jJson:GetJsonObject("PLACA")       , Nil})   //24/09/2025 - 
+        aadd(aCab, {"C5_INDPRES"   , "1"        , Nil})   //10/10/25 -  SOLICITAÇÃO GEORGE - VIA ZAP
+        aadd(aCab, {"C5_TIPOCLI"   , _TpCli     , Nil})   //15/10/25 -  SOLICITAÇÃO VICTOR RAMON - EM MEETING
+        aadd(aCab, {"C5_TPFRETE"   , "S"        , Nil})   //20/10/25 -  SOLICITAÇÃO GEORGE - VIA ZAP - PEDIDO PARA "XUMBAR"
+        
+        aadd(aCab, {"C5_ZGRPNUM"   , jJson:GetJsonObject("IDPEDCOMPREXT")    , Nil})
+        aadd(aCab, {"C5_ZIDPDVI"   , cIdUiv   , Nil})                           //14/10/2025 - inclusão depois de reunião com MP, George e Rodrigo - composição o Externi mais o Enum
+
         //aadd(aCab, {"C5_ZNUMCTR"   , jJson:GetJsonObject("NUMCONTRATO") , Nil}) //DESCONTINUADO DEPOIS DE REUNIÃO COM GEORGE RODRIGO E VICTOR - 19/09/2025//ID146 - J.EDILSON - 16/09/2025
-        //aadd(aCab, {"C5_DESC1"     , jJson:GetJsonObject("DESC"), NIL})
+        //aadd(aCab, {"C5_DESC1"     , jJson:GetJsonObject("DESC"), NIL})         //DESCONTINUADO DEPOIS DE REUNIÃO COM GEORGE RODRIGO E VICTOR - 19/09/2025//ID146 - J.EDILSON - 16/09/2025  
+
+        //cExtId  := jJson:GetJsonObject("EXTERNID")
 
         FOR Nx := 1 to len(jJson:GetJsonObject("ITENS"))
 
+            //23/10/2025 - reabilitado - RODRIGO / GEORGE
             If ValType(jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("CENTROCUSTOS")) == "U"
-                _cCusto := ""
+               _cCusto := ""
             else
-                _cCusto := jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("CENTROCUSTOS")
+               _cCusto := jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("CENTROCUSTOS")
             EndIf
 
+            cCCont   := jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("CONTACONTABIL")
+
             aLinhaC1 := {}
-            if (jJson:GetJsonObject("DESCONTO") > 0) .AND. nX == 1
-                //nTotal := (jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT") * jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO")) - jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("DESC")
-                //else
-                nTotal := (jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT") * jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO"))
-            Endif
 
             cProdut := jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO")
             cOperac := jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("OPERACAO")
-            //cTes    := oWS:TesPDV(cProdut, _Cli, _lojCli, cOperac) //MaTesInt(2, cOperac, _Cli, _lojCli,"C",cProdut,"C6_TES")
+            cNatur  := oWS:pgNat(cProdut)
+
+            if nX == 1
+                _cProdu := Posicione("SB1",1, XFILIAL("SB1") + jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"), "B1_DESC") 
+                _Tipo   := Posicione("SB1",1, XFILIAL("SB1") + jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"), "B1_TIPO") 
+
+                IF _Tipo == 'SV' 
+                    cObsMem := cExtId + " - " + _cProdu
+                    aadd(aCab, {"C5_XMEMO"     , cObsMem     , NIL}) // J.EDILSON - 10/10/2025 - EM REUNIÃO COM GEORGE E EQUIPE DO FINANCEIR / ONTABILIDADE - DFINIDO QUE NÃO SERÁ USADO 
+                ENDIF                
+                aadd(aCab, {"C5_NATUREZ"   , cNatur     , NIL}) // J.EDILSON - 10/10/2025 - EM REUNIÃO COM GEORGE E EQUIPE DO FINANCEIR / ONTABILIDADE - DFINIDO QUE NÃO SERÁ USADO 
+                nTotal := (jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT") * jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO"))
+            Endif
             
             aadd(aLinhaC1, {"C6_ITEM"     , Strzero(Nx,4)               ,nil})
             aadd(aLinhaC1, {"C6_PRODUTO"  , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"), NIL})
@@ -314,50 +380,113 @@ WSMETHOD POST NEW WSRECEIVE NUMPV WSSERVICE WSPEDVEND
             aadd(aLinhaC1, {"C6_QTDLIB"   , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT"), NIL})
             aadd(aLinhaC1, {"C6_PRCVEN"   , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO"), NIL})
             aadd(aLinhaC1, {"C6_VALDESC"  , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("DESC"), NIL})
-            aadd(aLinhaC1, {"C6_VALOR"    , nTotal, Nil }) //jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("TOTAL"), NIL})
+            aadd(aLinhaC1, {"C6_VALOR"    , nTotal, Nil }) 
             aadd(aLinhaC1, {"C6_OPER"     , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("OPERACAO"), NIL})
-            aadd(aLinhaC1, {"C6_CCUSTO"   , _cCusto , NIL})     //22/09/2025 - SOLICITADO POR GEORGE    
-            //aadd(aLinhaC1, {"C6_TES"      , cTes , NIL})
-            //aadd(aLinhaC1, {"C6_TES"      , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("TES"), NIL})
+            aadd(aLinhaC1, {"C6_DESCRI"   , oWS:PGDSCPRD(cProdut), NIL}) //30/09/2025 - incluido para descrição            
+            aadd(aLinhaC1, {"C6_CCUSTO"   , _cCusto , NIL})            //23/10/2025 - REINCLUIDO GEORGE / RODRIGO - //26/09/2025 - solicitada a retirada pelo GEORGE - //22/09/2025 - SOLICITADO POR GEORGE    
+            aadd(aLinhaC1, {"C6_CONTA"    , cCCont  , NIL})            //23/10/2025 - INCLUIDO GEORGE / RODRIGO            
             aadd(aItens,aLinhaC1)
         Next
-        aRetGrv := oWS:pedVendas(aCab, aItens, 3, _cNumPed) //pedCompra(aCab, aItens, 3) 
 
-		If !aRetGrv[1,2] //lMsErroAuto
-			//Monta o texto do Error Log que será salvo
-			cErrorLog   := ''
-			aLogAuto    := aRetGrv // GetAutoGrLog()
-			For nLinha := 1 To Len(aLogAuto)
-				cErrorLog += aLogAuto[nLinha,1] + CRLF
-			Next nLinha
+        // cEmpAnt  := cEmpAt
+        // cFilAnt  := cFilAt
+        
+        //RPCSetEnv(cEmpAt, cFilAt)
 
-			//Grava o arquivo de log
-			cArqLog := 'WSPEDVEND_New_' + dToS(Date()) + '_' + StrTran(Time(), ':', '-') + '.log'
+        //Time(MSExecAuto({|X,Y,Z| MATA410(X,Y,Z)}, aCab, aItens, 3), 5)  //Sugestão do Rafael - testar
+        MSExecAuto({|X,Y,Z| MATA410(X,Y,Z)}, aCab, aItens, 3)
+        
+        If !lMsErroAuto
+            Self:setStatus(200) 
+            ConOut("Incluido com sucesso! " + _cNumPed)
+            jResponse['note']     := 'Registro incluido com sucesso - ' + _cNumPed
+            
+            Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
+            rpcClearEnv()
+            cEmpAnt  := cEmpAt1
+            cFilAnt  := cFilAt1
+
+            Return 
+        Else
+            ConOut("Erro na inclusao! -Pedido de Vendas")
+            aErroAuto  := GetAutoGRLog()
+            For nCount := 1 To Len(aErroAuto)
+                if nCount > 1
+                    cLogErro += StrTran(StrTran(aErroAuto[nCount], "<", ""), "-", "") + " "
+                    ConOut(cLogErro)
+                endif
+            Next nCount
+            cArqLog := 'WSPEDVEND_New_' + dToS(Date()) + '_' + StrTran(Time(), ':', '-') + '.log'
 			MemoWrite(cDirLog + cArqLog, cErrorLog)
 
 			//Define o retorno para o WebService
 			//SetRestFault(500, cErrorLog) //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
-           Self:setStatus(500) 
+            Self:setStatus(510) 
 			jResponse['errorId']  := 'NEW005'
 			jResponse['error']    := 'Erro na inclusão do registro'
 			jResponse['errorLog'] := cErrorLog
 			jResponse['solution'] := 'Nao foi possivel incluir o registro, foi gerado um arquivo de log em ' + cDirLog + cArqLog + ' '
 			lRet := .F.
+			cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']            
+            SetRestFault(510, cResponc )
 
-			cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
-			oWS:GRAVALOGMURO(cResponc, cJason, "WSPEDVEND", "INCLUSAO DE PEDIDO DE VENDAS")
+            rpcClearEnv()
+            cEmpAnt  := cEmpAt1
+            cFilAnt  := cFilAt1
 
-		//Senão, define o retorno
-		Else
-            //aNf := oWS:GerarNota(_cNumPed, FwXFilial("SC5") ) //ROTINA DE GERAÇÃO DE NOTA - 14/07/2025 - retirado por solicitação do Sr. George
-			jResponse['note']     := 'Registro incluido com sucesso - ' + _cNumPed
-		EndIf
+            Return 
+        EndIf
+
+        /*
+            aRetGrv := oWS:pedVendas(aCab, aItens, 3, _cNumPed) //pedCompra(aCab, aItens, 3) 
+
+            If !aRetGrv[1,2] //lMsErroAuto
+                //Monta o texto do Error Log que será salvo
+                cErrorLog   := ''
+                aLogAuto    := aRetGrv // GetAutoGrLog()
+                For nLinha := 1 To Len(aLogAuto)
+                    cErrorLog += aLogAuto[nLinha,1] + CRLF
+                Next nLinha
+
+                //Grava o arquivo de log
+                cArqLog := 'WSPEDVEND_New_' + dToS(Date()) + '_' + StrTran(Time(), ':', '-') + '.log'
+                MemoWrite(cDirLog + cArqLog, cErrorLog)
+
+                //Define o retorno para o WebService
+                //SetRestFault(500, cErrorLog) //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
+            Self:setStatus(500) 
+                jResponse['errorId']  := 'NEW005'
+                jResponse['error']    := 'Erro na inclusão do registro'
+                jResponse['errorLog'] := cErrorLog
+                jResponse['solution'] := 'Nao foi possivel incluir o registro, foi gerado um arquivo de log em ' + cDirLog + cArqLog + ' '
+                lRet := .F.
+
+                cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
+                oWS:GRAVALOGMURO(cResponc, cJason, "WSPEDVEND", "INCLUSAO DE PEDIDO DE VENDAS")
+
+            //Senão, define o retorno
+            Else
+                //aNf := oWS:GerarNota(_cNumPed, FwXFilial("SC5") ) //ROTINA DE GERAÇÃO DE NOTA - 14/07/2025 - retirado por solicitação do Sr. George
+                jResponse['note']     := 'Registro incluido com sucesso - ' + _cNumPed
+                //oWS:PGTIPPRD(jJson:GetJsonObject("EXTERNID"), cEmpAnt, _cNumPed ) // 10/10/2025
+            EndIf
+        */  
 
     EndIf
+    RESET ENVIRONMENT
+
     rpcClearEnv()
+    cEmpAnt  := cEmpAt1
+    cFilAnt  := cFilAt1
+    
+    ConOut("O sistema boooooommmmmm " + _cNumPed)
+    ConOut("RESPONSE - " + jResponse:toJSON())
+       
     //Define o retorno
-    Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
-Return lRet
+    //-Self:SetContentType('application/json')
+    //-Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
+
+Return 
 
 WSMETHOD PUT UPDATE WSRECEIVE NUMPV WSSERVICE WSPEDVEND
     Local lRet              := .T.
@@ -377,6 +506,8 @@ WSMETHOD PUT UPDATE WSRECEIVE NUMPV WSSERVICE WSPEDVEND
     Local nX
     Local aItens            := {}
     Local aCab              := {}
+    
+    Local cIdUiv            := ""  //14/10/2025 - inclusão depois de reunião com MP, George e Rodrigo - composição o Externi mais o Enum
 
     Private lMsErroAuto     := .F.
     Private lMsHelpAuto     := .T.
@@ -450,7 +581,9 @@ WSMETHOD PUT UPDATE WSRECEIVE NUMPV WSSERVICE WSPEDVEND
     Else
 
 		//Adiciona os dados do ExecAuto
-        _cNumPed := oWs:PGExtrtV(jJson:GetJsonObject("EXTERNID")) //jJson:GetJsonObject("NUMPV") 
+        
+        cIdUiv   := jJson:GetJsonObject("IDPEDCOMPREXT") + jJson:GetJsonObject("EXTERNID")  //14/10/2025 - inclusão depois de reunião com MP, George e Rodrigo - composição o Externi mais o Enum
+        _cNumPed := oWs:PGExtrtV( cIdUiv ) //14/10/2025 - inclusão depois de reunião com MP, George e Rodrigo - composição o Externi mais o Enum
 
         aadd(aCab, {"C5_NUM"       , _cNumPed   ,Nil})
         aadd(aCab, {"C5_EMISSAO"   , ddatabase  ,Nil})
@@ -474,7 +607,7 @@ WSMETHOD PUT UPDATE WSRECEIVE NUMPV WSSERVICE WSPEDVEND
                 nTotal := (jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT") * jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO"))
             Endif
 
-            aadd(aLinhaC1, {"C6_ITEM"     ,Strzero(Nx,4)               ,nil})
+            aadd(aLinhaC1, {"C6_ITEM"     , Strzero(Nx,4)               ,nil})
             aadd(aLinhaC1, {"C6_PRODUTO"  , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"), NIL})
             aadd(aLinhaC1, {"C6_QTDVEN"   , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT"), NIL})
             aadd(aLinhaC1, {"C6_PRCVEN"   , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO"), NIL})
@@ -543,6 +676,8 @@ WSMETHOD PUT ERASE WSRECEIVE NUMPV WSSERVICE WSPEDVEND
     Local aDadPDV           := {}
     Local _cNumPed          := ""
 
+    Local cIdUiv            := ""  //14/10/2025 - inclusão depois de reunião com MP, George e Rodrigo - composição o Externi mais o Enum
+
     Private lMsErroAuto     := .F.
     Private lMsHelpAuto     := .T.
     Private lAutoErrNoFile  := .T.
@@ -600,7 +735,7 @@ WSMETHOD PUT ERASE WSRECEIVE NUMPV WSSERVICE WSPEDVEND
             Return .F.
         EndIF
     */  // 05/09/2025
- 
+
     //Se tiver algum erro no Parse, encerra a execução
     IF !Empty(cError)
         //SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, você não poderá usar outros retornos, como os abaixo
@@ -615,7 +750,20 @@ WSMETHOD PUT ERASE WSRECEIVE NUMPV WSSERVICE WSPEDVEND
     Else
 
 		//Adiciona os dados do ExecAuto
-        aDadPDV := oWs:PGExtPDV(jJson:GetJsonObject("EXTERNID")) //jJson:GetJsonObject("NUMPV") 
+        cIdUiv  := jJson:GetJsonObject("IDPEDCOMPREXT") + jJson:GetJsonObject("EXTERNID")  //14/10/2025 - inclusão depois de reunião com MP, George e Rodrigo - composição o Externi mais o Enum
+        aDadPDV := oWs:PGExtPDV( cIdUiv ) //jJson:GetJsonObject("NUMPV") 
+
+        //26/09/2025 - incluido para identificar o eero 500
+        If len(aDadPDV) == 0
+            ConOut("Exclusão pedido de Vendas - pedido não encontrado " + jJson:GetJsonObject("EXTERNID") )
+            Self:setStatus(200) 
+            lRet := .F.
+            Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
+            Return lRet
+        Endif
+        //26/09/2025 - incluido para identificar o eero 500
+
+
         FOR Nx := 1 to len(aDadPDV)
             aLinhaC1 := {}
             IF (Nx == 1)
@@ -641,9 +789,11 @@ WSMETHOD PUT ERASE WSRECEIVE NUMPV WSSERVICE WSPEDVEND
         Next
 
         //aRetGrv := oWS:pedVendas(aCab, aItens, 4, _cNumPed) //pedCompra(aCab, aItens, 3) 
+        ConOut("Incluido Exclusão pedido de Vendas " )
         aRetGrv := oWS:pedVendas(aCab, aItens, 5, _cNumPed) //pedCompra(aCab, aItens, 3) 
 
 		If !aRetGrv[1,2] //lMsErroAuto
+            ConOut("Erro na Exclusão pedido de Vendas " )
 			//Monta o texto do Error Log que será salvo
 			cErrorLog   := ''
 			aLogAuto    := aRetGrv // GetAutoGrLog()

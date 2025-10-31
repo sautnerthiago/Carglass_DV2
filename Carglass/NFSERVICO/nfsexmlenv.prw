@@ -1271,16 +1271,29 @@ user function nfseXMLEnv( cTipo, dDtEmiss, cSerie, cNota, cClieFor, cLoja, cMotC
 				//JPinto - 12/07/25
 				cPedido := SC5->C5_NUM
 				cPlaca1 := SC5->C5_PLACA1
-				cAutori := SC5->C5_ZAUTORI
+				cAutori := SC5->C5_SINISTR
+				cDescri := SC6->C6_DESCRI
+				cAux := "CONTRATO: " + SC5->C5_ZEXTID + "  "
+				cAux += "PLACA / PEDIDO: " + SC5->C5_PLACA + " - " + SC5->C5_NUM + " "
+				cAux += "DESC SERV: " + cDescri + " "
+				cAux += "SINISTRO / AUTORIZACAO: " + SC5->C5_SINISTR + "  "
 				
 				If !Empty(cRetUsr)
 					cMensCli := cRetUsr
 					cMensCli += "Pedido: " + cPedido + " - Placa: " + cPlaca1 + " - Autorizção: " + cAutori + " - "  //JPINTO - INCLUSÃO REF. SOLICITAÇÃO
+					cMensCli += "Resumo Serviço: " + cDescri + " - "  //JPINTO - INCLUSÃO REF. SOLICITAÇÃO
+					cMensCli += cAux
 				ElseIf !AllTrim(SC5->C5_MENNOTA) $ cMensCli
 					cMensCli +=If(FindFunction('CleanSpecChar'),CleanSpecChar(AllTrim(SC5->C5_MENNOTA)),AllTrim(SC5->C5_MENNOTA))
+					cMensCli += "Pedido: " + cPedido + " - Placa: " + cPlaca1 + " - Autorizção: " + cAutori + " - "  //JPINTO - INCLUSÃO REF. SOLICITAÇÃO
+					cMensCli += "Resumo Serviço: " + cDescri + " - "  //JPINTO - INCLUSÃO REF. SOLICITAÇÃO
+					cMensCli += cAux
 				EndIf
 				If !Empty(SC5->C5_MENPAD) .And. !AllTrim(FORMULA(SC5->C5_MENPAD)) $ cMensFis
 					cMensFis += If(FindFunction('CleanSpecChar'),CleanSpecChar(AllTrim(FORMULA(SC5->C5_MENPAD))),AllTrim(FORMULA(SC5->C5_MENPAD)))
+					cMensCli += "Pedido: " + cPedido + " - Placa: " + cPlaca1 + " - Autorizção: " + cAutori + " - "  //JPINTO - INCLUSÃO REF. SOLICITAÇÃO
+					cMensCli += "Resumo Serviço: " + cDescri + " - "  //JPINTO - INCLUSÃO REF. SOLICITAÇÃO
+					cMensCli += cAux
 				EndIf
 							
 				cModFrete := IIF(SC5->C5_TPFRETE=="C","0","1")

@@ -2539,8 +2539,13 @@ EndIf
 //ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 
 //j.edilson - 16/09/2025 - inclusão do CONTRATO NO CORPO.
-IF !EMPTY(SC5->C5_ZNUMCTR)
-	cAux := "CONTRATO: " + SC5->C5_ZNUMCTR
+aMensagem := {}
+_cDescr := Posicione("SC6",1,SC5->C5_FILIAL+SC5->C5_NUM,"C6_DESCRI")
+IF !EMPTY(SC5->C5_ZEXTID) .AND. !temLetra(SC5->C5_ZEXTID)
+	cAux := "CONTRATO: " + SC5->C5_ZEXTID + "  "
+	cAux += "PLACA / PEDIDO: " + SC5->C5_PLACA + " - " + SC5->C5_NUM + " "
+	cAux += "DESC SERV: " + _cDescr + " "
+	cAux += "SINISTRO / AUTORIZACAO: " + SC5->C5_SINISTR + "  "
 	While !Empty(cAux)
 		aadd(aMensagem, { SubStr(cAux,1,IIf(EspacoAt(cAux, MAXMENLIN) > 1, EspacoAt(cAux, MAXMENLIN) - 1, MAXMENLIN)) , .F. } )
 		cAux := SubStr(cAux,IIf(EspacoAt(cAux, MAXMENLIN) > 1, EspacoAt(cAux, MAXMENLIN), MAXMENLIN) + 1)
@@ -2555,7 +2560,7 @@ If Type("oIdent:_XJUST:TEXT")<>"U"
 	cXJust:=oIdent:_XJUST:TEXT
 EndIf
 
-aMensagem := {}
+//aMensagem := {}
 If Type("oIdent:_tpAmb:TEXT")<>"U" .And. oIdent:_tpAmb:TEXT=="2"
 	cAux := "DANFE emitida no ambiente de homologação - SEM VALOR FISCAL"
 	While !Empty(cAux)
@@ -6112,3 +6117,17 @@ Static Function ValidDanfe(oDanfe)
 	EndIf
 
 Return oEstilo
+
+Static Function temLetra(_ZEXTID)
+	Local lRet := .F.
+	Local Nx := 0
+	Local cAlfa := "A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z"
+	cID := Upper(Alltrim(_ZEXTID))
+
+	FOR Nx := 1 to Len(cID)
+		cLetra := SUBSTR(cID,Nx,1)
+		IF cLetra $cAlfa
+			Return .T.
+		Endif
+	Next
+Return lRet

@@ -36,8 +36,7 @@ Static Function AJSA2(oMens)
 		Ajust020()
 	ENDIF
 
-	Alert("Processamento Terminado. Processadas "+Transform(nContador,"@E 999,999")+" tabelas.")
-	oMens:SetText("Proc. "+Transform(nContador,"@E 999,999"))
+	Alert("Processamento Terminado")
 	oMens:Refresh()
 	ProcessMessages()
 
@@ -48,8 +47,8 @@ Static Function Ajust020()
 	Local aDados := {}
 	Local cQuery := ""
 
-    cQuery := "SELECT A2_FILIAL, A2_COD, A2_LOJA, A2_CGC, A2_NUMCOM FROM SA2020 "
-    cQuery += "WHERE D_E_L_E_T_ = '' AND A2_NUMCOM <> '' "
+    cQuery := "SELECT A2_FILIAL, A2_COD, A2_LOJA, A2_CGC, A2_NUMCON FROM SA2020 "
+    cQuery += "WHERE D_E_L_E_T_ = '' AND A2_NUMCON <> '' "
 	ZZB	   := CriaTrab(Nil,.F.)
 	DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),ZZB, .F., .T.)   
 
@@ -59,12 +58,12 @@ Static Function Ajust020()
         _COD    := (ZZB)->A2_COD
         _LOJA   := (ZZB)->A2_LOJA
         _CGC    := (ZZB)->A2_CGC
-        cConta  := (ZZB)->A2_NUMCOM
+        cConta  := (ZZB)->A2_NUMCON
         cDig    := ""
         cNCont  := ""
         aDados  := StrTokArr(cConta, '-')
 
-        if Len(aDados) > 0
+        if Len(aDados) == 2
             cNCont := aDados[1]
             cDig   := aDados[2]
             if IsNumeric(cNCont)
@@ -80,8 +79,8 @@ Return aDados
 Static Function Ajust010()
 	Local aDados  := {}
 
-    Local cQuery := "SELECT A2_FILIAL, A2_COD, A2_LOJA, A2_CGC, A2_NUMCOM FROM SA2010 "
-    cQuery += "WHERE D_E_L_E_T_ = '' AND A2_NUMCOM <> '' "
+    Local cQuery := "SELECT A2_FILIAL, A2_COD, A2_LOJA, A2_CGC, A2_NUMCON FROM SA2010 "
+    cQuery += "WHERE D_E_L_E_T_ = '' AND A2_NUMCON <> '' "
 	QRYO := CriaTrab(Nil,.F.)
 	DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),QRYO, .F., .T.)   
 
@@ -90,11 +89,11 @@ Static Function Ajust010()
         _COD    := (QRYO)->A2_COD
         _LOJA   := (QRYO)->A2_LOJA
         _CGC    := (QRYO)->A2_CGC
-        cConta  := (QRYO)->A2_NUMCOM
+        cConta  := (QRYO)->A2_NUMCON
         cDig    := ""
         cNCont  := ""
         aDados  := StrTokArr(cConta, '-')
-        if Len(aDados) > 0
+        if Len(aDados) == 2 
             cNCont := aDados[1]
             cDig   := aDados[2]
             if IsNumeric(cNCont)
@@ -110,9 +109,9 @@ Return aDados
 Static Function ATUA(_FILIAL, _COD, _LOJA, _CGC, cDig, _FIL, cNCont)
     Local cSQL := ""
 
-    cSQL += "UPDATE '"+_FIL+"' "
-    cSQL += "SET A2_DVCTA = '"+cDig+"', A2_NUMCOM = '"+cNCont+"' "
-    cSQL += "WHERE D_E_L_E_T_ = ' ' AND  A2_FILIAL = '"+_FILIAL+"' AND A2_COD = '"+_COD+"' AND A2_LOJA = '"+_LOJA+"' AND A2_CGC = '"+_CGC+"'  "
+    cSQL += "UPDATE "+_FIL+" "
+    cSQL += "SET A2_DVCTA = '"+cDig+"', A2_NUMCON = '"+cNCont+"' "
+    cSQL += "WHERE D_E_L_E_T_ <> '*' AND  A2_FILIAL = '"+_FILIAL+"' AND A2_COD = '"+_COD+"' AND A2_LOJA = '"+_LOJA+"' AND A2_CGC = '"+_CGC+"'  "
     IF TcSqlExec(cSQL) < 0
         TcSqlExec("COMMIT")
     EndIf		

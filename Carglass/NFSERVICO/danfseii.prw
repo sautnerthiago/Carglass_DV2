@@ -491,6 +491,8 @@ Local cRegesp 	:= ""
 Local cSimpNac	:= ""
 Local cMunicipio := ""
 
+Local cMensCli	:= ""    //06/10/2025 - mensagem complementar - J.EDILSON
+
 
 
 Default cDtHrRecCab := ""
@@ -973,6 +975,20 @@ if lNac // Layout Impressão DANFSE Nacional
 	nLinea := nLinea+nLiCabec 
 	oDanfse:Say(nLinea, 002, "INFORMAÇÕES COMPLEMENTARES", oFont07N:oFont)
 	//Linha 2
+
+	//JPinto - 06/10/2025
+		cPedido := SC5->C5_NUM
+		cPlaca1 := SC5->C5_PLACA1
+		cAutori := SC5->C5_SINISTR
+		cDescri := Posicione("SC6",1,SC5->C5_FILIAL+SC5->C5_NUM,"C6_DESCRI") //SC6->C6_DESCRI
+		
+		cMensCli := ""
+		cMensCli += "Pedido: " + cPedido + " - Placa: " + cPlaca1 + " - Autorizção: " + cAutori + " - "  //JPINTO - INCLUSÃO REF. SOLICITAÇÃO
+		cMensCli += "Resumo Serviço: " + cDescri + " - "  //JPINTO - INCLUSÃO REF. SOLICITAÇÃO
+		
+		aadd(aInfNota,substr(cMensCli,1,nMax))
+	//JPinto - 06/10/2025
+	
 	For nX := 1 To len(aInfNota)
 		nLinea := nLinea+nLiDados
 		oDanfse:Say(nLinea, 002, aInfNota[nX], oFont07:oFont) //INFORMAÇÕES COMPLEMENTARES

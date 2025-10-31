@@ -5,7 +5,8 @@
 #Include 'Protheus.ch'
 #INCLUDE 'APWEBSRV.CH'
 #Include "tbiconn.ch"
-/*/{Protheus.doc} WSRESTFUL WSPEDCOM
+
+/*/{Protheus.doc} WSRESTFUL WSPDCDEE
 CADASTRO DE FORNECEDOR
 @author JOSE EDILSON DE LIMA PINTO
 @since 19/05/2025
@@ -22,7 +23,7 @@ WSSTRUCT ITEMPD
 
 ENDWSSTRUCT
 
-WSRESTFUL WSPEDCOM DESCRIPTION 'PEDIDO DE COMPRAS'
+WSRESTFUL WSPDCDEE DESCRIPTION 'PEDIDO DE COMPRAS - DEELER'
     //Atributos
     WSDATA NUMPC       AS STRING
     WSDATA solicitante AS STRING
@@ -33,16 +34,13 @@ WSRESTFUL WSPEDCOM DESCRIPTION 'PEDIDO DE COMPRAS'
 	WSDATA pageSize AS INTEGER OPTIONAL
 	WSDATA searchKey AS STRING OPTIONAL
 
-	//MÈtodos
-	WSMETHOD GET PDC DESCRIPTION "Retorna lista de Pedidos de Compras" WSSYNTAX "/WSPEDCOM/pdcs " PATH '/WSPEDCOM/pdcs' PRODUCES APPLICATION_JSON
-  
-    //MÈtodos
-    WSMETHOD GET ID      DESCRIPTION 'Retorna o registro pesquisado'                WSSYNTAX '/WSPEDCOM/{NUMPC}'        PATH '{NUMPC}'      PRODUCES APPLICATION_JSON
-	WSMETHOD GET INTEGRA DESCRIPTION 'Retorna o registro pesquisado - INTEGRADO'   	WSSYNTAX '/WSPEDCOM/integrado' 		PATH '/integrado'  	PRODUCES APPLICATION_JSON
+    //M√©todos
+    WSMETHOD GET ID      DESCRIPTION 'Retorna o registro pesquisado'                WSSYNTAX '/WSPDCDEE/{NUMPC}'        PATH '{NUMPC}'      PRODUCES APPLICATION_JSON
+	WSMETHOD GET INTEGRA DESCRIPTION 'Retorna o registro pesquisado - INTEGRADO'   	WSSYNTAX '/WSPDCDEE/integrado' 		PATH '/integrado'  	PRODUCES APPLICATION_JSON
 
-    WSMETHOD POST   NEW    DESCRIPTION 'Inclus„o de registro'          WSSYNTAX '/WSPEDCOM/new'                      PATH 'new'           PRODUCES APPLICATION_JSON
-    WSMETHOD PUT    UPDATE DESCRIPTION 'AtualizaÁ„o de registro'       WSSYNTAX '/WSPEDCOM/update'                   PATH 'update'        PRODUCES APPLICATION_JSON
-    WSMETHOD PUT    ERASE  DESCRIPTION 'Blaqueio de registro'          WSSYNTAX '/WSPEDCOM/delete'                   PATH 'delete'        PRODUCES APPLICATION_JSON
+    WSMETHOD POST   NEW    DESCRIPTION 'Inclus√£o de registro'          WSSYNTAX '/WSPDCDEE/new'                      PATH 'new'           PRODUCES APPLICATION_JSON
+    WSMETHOD PUT    UPDATE DESCRIPTION 'Atualiza√ß√£o de registro'       WSSYNTAX '/WSPDCDEE/update'                   PATH 'update'        PRODUCES APPLICATION_JSON
+    WSMETHOD PUT    ERASE  DESCRIPTION 'Blaqueio de registro'          WSSYNTAX '/WSPDCDEE/delete'                   PATH 'delete'        PRODUCES APPLICATION_JSON
 END WSRESTFUL
 
 /*/{Protheus.doc} WSMETHOD GET ID
@@ -51,7 +49,7 @@ Busca registro via ID
 @since 19/05/2025
 /*/
 
-WSMETHOD GET ID WSRECEIVE NUMPC WSSERVICE WSPEDCOM
+WSMETHOD GET ID WSRECEIVE NUMPC WSSERVICE WSPDCDEE
     Local lRet       := .T.
     Local jResponse  := JsonObject():New()
     Local cAliasWS   := 'SC7'
@@ -64,7 +62,7 @@ WSMETHOD GET ID WSRECEIVE NUMPC WSSERVICE WSPEDCOM
 
     //Se o id estiver vazio
     If Empty(NUMPC)
-        //SetRestFault(500, 'Falha ao consultar o registro') //caso queira usar esse comando, vocÍ n„o poder· usar outros retornos, como os abaixo
+        //SetRestFault(500, 'Falha ao consultar o registro') //caso queira usar esse comando, voc√™ n√£o poder√° usar outros retornos, como os abaixo
         Self:setStatus(500) 
         jResponse['errorId']  := 'ID001'
         jResponse['error']    := 'ID vazio'
@@ -73,13 +71,13 @@ WSMETHOD GET ID WSRECEIVE NUMPC WSSERVICE WSPEDCOM
         DbSelectArea(cAliasWS)
         (cAliasWS)->(DbSetOrder(1))
 
-        //Se n„o encontrar o registro
+        //Se n√£o encontrar o registro
         If !(cAliasWS)->(MsSeek(FWxFilial(cAliasWS) + NUMPC))
-            //SetRestFault(500, 'Falha ao consultar ID') //caso queira usar esse comando, vocÍ n„o poder· usar outros retornos, como os abaixo
+            //SetRestFault(500, 'Falha ao consultar ID') //caso queira usar esse comando, voc√™ n√£o poder√° usar outros retornos, como os abaixo
             Self:setStatus(500) 
             jResponse['errorId']  := 'ID002'
-            jResponse['error']    := 'PD ('+NUMPC+') n„o encontrado'
-            jResponse['solution'] := 'CÛdigo PD n„o encontrado na tabela ' + cAliasWS
+            jResponse['error']    := 'PD ('+NUMPC+') n√£o encontrado'
+            jResponse['solution'] := 'C√≥digo PD n√£o encontrado na tabela ' + cAliasWS
         Else
 
             cQuery := " SELECT * "
@@ -112,7 +110,7 @@ WSMETHOD GET ID WSRECEIVE NUMPC WSSERVICE WSPEDCOM
     Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
 Return lRet
 
-WSMETHOD GET INTEGRA WSRECEIVE WSSERVICE WSPEDCOM
+WSMETHOD GET INTEGRA WSRECEIVE WSSERVICE WSPDCDEE
 	Local lRet       := .T.
 	Local jResponse  := JsonObject():New()
 
@@ -122,11 +120,11 @@ WSMETHOD GET INTEGRA WSRECEIVE WSSERVICE WSPEDCOM
     If Empty(cJsonNfs) 
 		Self:setStatus(500)
 		jResponse['errorId']  := 'Tipo016'
-		jResponse['error']    := 'N„o ha dados a serem integrados'
-		jResponse['solution'] := 'N„o ha dados a Integrar'
+		jResponse['error']    := 'N√£o ha dados a serem integrados'
+		jResponse['solution'] := 'N√£o ha dados a Integrar'
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
-		oWS:GRAVALOGMURO(cResponc, cJason, "WSPEDCOM", "NAO HA DADOS A SEREM INTEGRADOS")
+		oWS:GRAVALOGMURO(cResponc, cJason, "WSPDCDEE", "NAO HA DADOS A SEREM INTEGRADOS")
 	Else
     	//Define o retorno
 		Self:SetContentType('application/json')
@@ -135,7 +133,7 @@ WSMETHOD GET INTEGRA WSRECEIVE WSSERVICE WSPEDCOM
 
 Return lRet
 
-WSMETHOD POST NEW WSRECEIVE NUMPC WSSERVICE WSPEDCOM
+WSMETHOD POST NEW WSRECEIVE NUMPC WSSERVICE WSPDCDEE
     Local lRet              := .T.
     Local jJson             := Nil
     Local cJson             := Self:GetContent()
@@ -145,7 +143,6 @@ WSMETHOD POST NEW WSRECEIVE NUMPC WSSERVICE WSPEDCOM
     Local cArqLog           := ''
     Local cErrorLog         := ''
     Local aLogAuto          := {}
-    //Local nCampo            := 0
     Local jResponse         := JsonObject():New()
 
 	Local cJason			:= ""
@@ -154,9 +151,8 @@ WSMETHOD POST NEW WSRECEIVE NUMPC WSSERVICE WSPEDCOM
     Local aItens            := {}
     Local aCab              := {}
     Local _cCusto           := ""
-    Local cCCont            := ""   //23/10/2025 - INCLUS√O - GEORGE / RODRIGO
+
     Local cIdUiv            := ""   //14/10/2025 - id unico do pedido de compras
-    //Local aFornec           := {}
 
     Private lMsErroAuto     := .F.
     Private lMsHelpAuto     := .T.
@@ -164,12 +160,12 @@ WSMETHOD POST NEW WSRECEIVE NUMPC WSSERVICE WSPEDCOM
 
 	oWS    := LIBGLASS():new()
  
-    //Se n„o existir a pasta de logs, cria
+    //Se n√£o existir a pasta de logs, cria
     IF ! ExistDir(cDirLog)
         MakeDir(cDirLog)
     EndIF    
 
-    //Definindo o conte˙do como JSON, e pegando o content e dando um parse para ver se a estrutura est· ok
+    //Definindo o conte√∫do como JSON, e pegando o content e dando um parse para ver se a estrutura est√° ok
     Self:SetContentType('application/json')
     jJson  := JsonObject():New()
     
@@ -194,21 +190,14 @@ WSMETHOD POST NEW WSRECEIVE NUMPC WSSERVICE WSPEDCOM
     lTemPr := .F.
     FOR NX := 1 TO LEN(jJson:GetJsonObject("ITENS"))
 	    _cod   := jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO")
-        lTemPr := oWS:temProd(FWxFilial("SB1"), _cod)//temFornec(, ::cnpj)
+        lTemPr := oWS:temProd(FWxFilial("SB1"), _cod)
     Next
 
-    //VALIDA«√O DO FORNECEDOR PELO cnpj
-    //aFornec := oWS:pgFornec(jJson:GetJsonObject("CNPJ"))  //16/07/2025 - inclus„o do CNPJ
-    //if len(aFornec) > 0
     cTamSp := jJson:GetJsonObject("FORNECE")
 
     _For    := cTamSp + Space(10-len(cTamSp))
-    _lojFor := "01"//jJson:GetJsonObject("LOJA")
+    _lojFor := "01"
     lTemFor := ows:temForCod(FWxFilial("SA2"), _For, _lojFor)
-    //else
-    //    lTemFor := .F.
-    //endif
-    //VALIDA«√O DO FORNECEDOR PELO cnpj
 
     cEmpAt1 := cEmpAnt
     cFilAt1 := cFilAnt
@@ -219,16 +208,10 @@ WSMETHOD POST NEW WSRECEIVE NUMPC WSSERVICE WSPEDCOM
     cEmpAnt  := cEmpAt
     cFilAnt  := cFilAt
     
-    //RPCSetEnv(cEmpAt, cFilAt)
-    Do While .T.
-        rpcClearEnv()
-        if RPCSetEnv(cEmpAt, cFilAt) //RPCSetEnv('02','01')       
-            EXIT            
-        ENDIF
-    EndDo
+    RPCSetEnv(cEmpAt, cFilAt)
 
     IF !lTemFor
-		//SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, vocÍ n„o poder· usar outros retornos, como os abaixo
+		//SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, voc√™ n√£o poder√° usar outros retornos, como os abaixo
 		Self:setStatus(500)
 		jResponse['errorId']  := 'NEW0041'
 		jResponse['error']    := 'FORNECEDOR NAO EXISTE'
@@ -236,7 +219,7 @@ WSMETHOD POST NEW WSRECEIVE NUMPC WSSERVICE WSPEDCOM
 		jResponse['solution'] := 'CADASTRE UM FORNECEDOR'
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
-		oWS:GRAVALOGMURO(cResponc, cJason, "WSPEDCOM", "INCLUS√O DE PEDIDO DE COMPRAS")
+		oWS:GRAVALOGMURO(cResponc, cJason, "WSPDCDEE", "INCLUS√ÉO DE PEDIDO DE COMPRAS")
 
         ConOut("erro 002")
 
@@ -245,25 +228,25 @@ WSMETHOD POST NEW WSRECEIVE NUMPC WSSERVICE WSPEDCOM
 	EndIF
 
 	IF !lTemPr //oWS:temProd(FWxFilial("SB1"), _cod)//temFornec(, ::cnpj)
-		//SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, vocÍ n„o poder· usar outros retornos, como os abaixo
+		//SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, voc√™ n√£o poder√° usar outros retornos, como os abaixo
 		Self:setStatus(500)
 		jResponse['errorId']  := 'NEW0041'
-		jResponse['error']    := 'PRODUTO N√O EXISTE'
+		jResponse['error']    := 'PRODUTO N√ÉO EXISTE'
         jResponse['errorLog'] := cErrorLog
 		jResponse['solution'] := 'CADASTRE UM PRODUTO QUE DESEJA PEDIR'
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
-		oWS:GRAVALOGMURO(cResponc, cJason, "WSPEDCOM", "INCLUS√O DE PEDIDO DE COMPRAS")
+		oWS:GRAVALOGMURO(cResponc, cJason, "WSPDCDEE", "INCLUS√ÉO DE PEDIDO DE COMPRAS")
 
-        ConOut("erro 003 - Pedido de Compras")
+        ConOut(" - descontinuado")
         
         Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
         Return .F.
 	EndIF
  
-    //Se tiver algum erro no Parse, encerra a execuÁ„o
+    //Se tiver algum erro no Parse, encerra a execu√ß√£o
     IF !Empty(cError)
-        //SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, vocÍ n„o poder· usar outros retornos, como os abaixo
+        //SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, voc√™ n√£o poder√° usar outros retornos, como os abaixo
         Self:setStatus(500) 
         jResponse['errorId']  := 'NEW004'
         jResponse['error']    := 'Parse do JSON'
@@ -273,7 +256,7 @@ WSMETHOD POST NEW WSRECEIVE NUMPC WSSERVICE WSPEDCOM
         ConOut("erro 004")
         
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
-		oWS:GRAVALOGMURO(cResponc, cJason, "WSPEDCOM", "INCLUS√O DE PEDIDO DE COMPRAS")
+		oWS:GRAVALOGMURO(cResponc, cJason, "WSPDCDEE", "INCLUS√ÉO DE PEDIDO DE COMPRAS")
     Else		
 
 		//Adiciona os dados do ExecAuto
@@ -297,9 +280,9 @@ WSMETHOD POST NEW WSRECEIVE NUMPC WSSERVICE WSPEDCOM
         aadd(aCab, {"C7_CONTATO"   , jJson:GetJsonObject("CONTATO"), Nil})
         aadd(aCab, {"C7_FILENT"    , jJson:GetJsonObject("FILENT"), Nil})
         aadd(aCab, {"C7_ZINTEGR"   , jJson:GetJsonObject("INTEGRADO"), Nil})
-        // IF !Empty(cTes)
-        //     aadd(aCab, {"C7_TES"   , jJson:GetJsonObject("TES"), Nil})  //RETIRADO - 
-        // EndIF
+        IF !Empty(cTes)
+            aadd(aCab, {"C7_TES"   , jJson:GetJsonObject("TES"), Nil})
+        EndIF
 
         _ZEXTID := jJson:GetJsonObject("EXTERNID")
         IF !Empty(oWs:PGExtDad( _ZEXTID ))
@@ -310,7 +293,7 @@ WSMETHOD POST NEW WSRECEIVE NUMPC WSSERVICE WSPEDCOM
             jResponse['solution'] := 'EXTERNOID - JA CADASTRADO ANTERIORMENTE'
 
             cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
-            oWS:GRAVALOGMURO(cResponc, cJason, "WSPEDCOM", "INCLUS√O DE PEDIDO DE COMPRAS - EXTERNID")
+            oWS:GRAVALOGMURO(cResponc, cJason, "WSPDCDEE", "INCLUS√ÉO DE PEDIDO DE COMPRAS - EXTERNID")
             
             Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
             Return .F.
@@ -331,49 +314,36 @@ WSMETHOD POST NEW WSRECEIVE NUMPC WSSERVICE WSPEDCOM
             aadd(aLinhaC1, {"C7_VLDESC"  , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("DESC"), NIL})
             aadd(aLinhaC1, {"C7_TOTAL"   , nTotal, NIL})
             aadd(aLinhaC1, {"C7_OPER"    , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("OPERACAO"), NIL})   //05/08/2025 - INCLUIDO
-            //aadd(aLinhaC1, {"C7_APROV"   , _cAprov, NIL})  // 14/10/2025 - DESCONTINUADO //09/10/2025 - INCLUIDO - EM VALIDA«√O GRUPO DE APROVA«√O
 
             cUM     := POSICIONE("SB1",1,xFilial("SB1")+jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"),"B1_UM")
             cDesc   := POSICIONE("SB1",1,xFilial("SB1")+jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"),"B1_DESC")
 
-            //23/10/2025 - reabilitado - RODRIGO / GEORGE
-            If ValType(jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("CENTROCUSTOS")) == "U"
-               _cCusto := ""
-            else
-               _cCusto := jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("CENTROCUSTOS")
-            EndIf
-            cCCont   := jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("CONTACONTABIL")
-
-            cIdUiv   := jJson:GetJsonObject("IDPEDCOMPREXT") + _ZEXTID  //14/10/2025 - inclus„o depois de reuni„o com MP, George e Rodrigo - composiÁ„o o Externi mais o Enum
+            cIdUiv := jJson:GetJsonObject("IDPEDCOMPREXT") + _ZEXTID  //14/10/2025 - inclus√£o depois de reuni√£o com MP, George e Rodrigo - composi√ß√£o o Externi mais o Enum
 
             aadd(aLinhaC1,{"C7_ITEM"    ,Strzero(Nx,4)               ,nil})
             aadd(aLinhaC1,{"C7_UM"      ,cUM                         ,nil})
             aadd(aLinhaC1,{"C7_DESCRI"  ,cDesc                       ,nil})
             aadd(aLinhaC1,{"C7_LOCAL"   ,"01"                        ,Nil})   
-            aadd(aLinhaC1,{"C7_CC"      ,_cCusto                     ,Nil}) //23/10/2025 - REINCERIDO- RODRIGO / GEORGE - //26/09/2025 - solicitada a retirada pelo GEORGE - //22/09/2025 - SOLICITADO POR GEORGE                    
+            aadd(aLinhaC1,{"C7_IPI"     ,0.00                        ,Nil})  
             aadd(aLinhaC1,{"C7_OBS"     ,""                          ,Nil})
             aadd(aLinhaC1,{"C7_CONTATO" ,""                          ,Nil})
             aadd(aLinhaC1,{"C7_DATPRF"  ,dDataBase                   ,NIL})
             aadd(aLinhaC1,{"C7_EMISSAO" ,dDataBase                   ,NIL})
+            aadd(aLinhaC1,{"C7_PICM"    ,0.00                        ,NIL})              
             aadd(aLinhaC1,{"C7_SEGURO"  ,0.00                        ,NIL})
             aadd(aLinhaC1,{"C7_DESPESA" ,0.00                        ,NIL})  
+            aadd(aLinhaC1,{"C7_TXMOEDA" ,0.00                        ,NIL})              
             aadd(aLinhaC1,{"C7_VALFRE"  ,0.00                        ,NIL})         
-            // aadd(aLinhaC1,{"C7_IPI"     ,0.00                        ,Nil})  
-            // aadd(aLinhaC1,{"C7_PICM"    ,0.00                        ,NIL})              
-            // aadd(aLinhaC1,{"C7_TXMOEDA" ,0.00                        ,NIL})              
-            // aadd(aLinhaC1,{"C7_BASESOL" ,0.00                        ,NIL})
+            aadd(aLinhaC1,{"C7_BASESOL" ,0.00                        ,NIL})
             aadd(aLinhaC1,{"C7_ZEXTID"  ,_ZEXTID                     ,Nil})            
-            aadd(aLinhaC1,{"C7_ZGRPNUM" , jJson:GetJsonObject("IDPEDCOMPREXT"), Nil})  //14/10/2025 - inclus„o depois de reuni„o com MP, George e Rodrigo
+            aadd(aLinhaC1,{"C7_ZGRPNUM" , jJson:GetJsonObject("IDPEDCOMPREXT"), Nil})  //14/10/2025 - inclus√£o depois de reuni√£o com MP, George e Rodrigo
             aadd(aLinhaC1,{"C7_ZIDPDCI" , cIdUiv     , Nil})
-            aadd(aLinhaC1,{"C7_CONTA"   , cCCont     , Nil})            //23/10/2025 - INCLUIDO GEORGE / RODRIGO            
-
-            //aadd(aLinhaC1,{"C7_APROV"   ,"000001"                    ,NIL}) //INCLUIDO E N√O COMPILADO AINDA- 01/09/2025 - aguardando confiraÁ„o para compilaÁ„o
             aadd(aItens,aLinhaC1)
         Next
         aRetGrv := oWS:pedCompra(aCab, aItens, 3) 
 
 		If !aRetGrv[1,2] //lMsErroAuto
-			//Monta o texto do Error Log que ser· salvo
+			//Monta o texto do Error Log que ser√° salvo
 			cErrorLog   := ''
 			aLogAuto    := aRetGrv // GetAutoGrLog()
 			For nLinha := 1 To Len(aLogAuto)
@@ -385,23 +355,22 @@ WSMETHOD POST NEW WSRECEIVE NUMPC WSSERVICE WSPEDCOM
 			MemoWrite(cDirLog + cArqLog, cErrorLog)
 
 			//Define o retorno para o WebService
-			//SetRestFault(500, cErrorLog) //caso queira usar esse comando, vocÍ n„o poder· usar outros retornos, como os abaixo
+			//SetRestFault(500, cErrorLog) //caso queira usar esse comando, voc√™ n√£o poder√° usar outros retornos, como os abaixo
             Self:setStatus(500) 
 			jResponse['errorId']  := 'NEW005'
-			jResponse['error']    := 'Erro na inclus„o do registro'
+			jResponse['error']    := 'Erro na inclus√£o do registro'
 			jResponse['errorLog'] := cErrorLog
 			jResponse['solution'] := 'Nao foi possivel incluir o registro, foi gerado um arquivo de log em ' + cDirLog + cArqLog + ' '
 			lRet := .F.
 
 			cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
-			oWS:GRAVALOGMURO(cResponc, cJason, "WSPEDCOM", "INCLUS√O DE PEDIDO DE COMPRAS")
+			oWS:GRAVALOGMURO(cResponc, cJason, "WSPDCDEE", "INCLUS√ÉO DE PEDIDO DE COMPRAS")
 
             ConOut("erro 005")
         
-		    //Sen„o, define o retorno
+		    //Sen√£o, define o retorno
 		Else
 			jResponse['note']     := 'Registro incluido com sucesso - ' + _cNumPed 
-            //oWS:atuPEdC(_cNumPed, _cAprov, _ZEXTID )
 		EndIf
 
     EndIf
@@ -409,13 +378,13 @@ WSMETHOD POST NEW WSRECEIVE NUMPC WSSERVICE WSPEDCOM
     cEmpAnt  := cEmpAt1
     cFilAnt  := cFilAt1
     
-    ConOut("Ù sistema boooooommmmmm " + _cNumPed)
+    ConOut("PEDIDO DEELER - √¥ sistema boooooommmmmm " + _cNumPed)
         
     //Define o retorno
     Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
 Return lRet
 
-WSMETHOD PUT UPDATE WSRECEIVE NUMPC WSSERVICE WSPEDCOM
+WSMETHOD PUT UPDATE WSRECEIVE NUMPC WSSERVICE WSPDCDEE
     Local lRet              := .T.
     Local jJson             := Nil
     Local cJson             := Self:GetContent()
@@ -440,12 +409,12 @@ WSMETHOD PUT UPDATE WSRECEIVE NUMPC WSSERVICE WSPEDCOM
 
 	oWS    := LIBGLASS():new()
  
-    //Se n„o existir a pasta de logs, cria
+    //Se n√£o existir a pasta de logs, cria
     IF ! ExistDir(cDirLog)
         MakeDir(cDirLog)
     EndIF    
 
-    //Definindo o conte˙do como JSON, e pegando o content e dando um parse para ver se a estrutura est· ok
+    //Definindo o conte√∫do como JSON, e pegando o content e dando um parse para ver se a estrutura est√° ok
     Self:SetContentType('application/json')
     jJson  := JsonObject():New()
     cError := jJson:FromJson(cJson)
@@ -472,23 +441,23 @@ WSMETHOD PUT UPDATE WSRECEIVE NUMPC WSSERVICE WSPEDCOM
     RPCSetEnv(cEmpAt, cFilAt)
 
 	IF !lTemPr //oWS:temProd(FWxFilial("SB1"), _cod)//temFornec(, ::cnpj)
-		//SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, vocÍ n„o poder· usar outros retornos, como os abaixo
+		//SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, voc√™ n√£o poder√° usar outros retornos, como os abaixo
 		Self:setStatus(500)
 		jResponse['errorId']  := 'UPD010'
-		jResponse['error']    := 'PRODUTO N√O EXISTE'
+		jResponse['error']    := 'PRODUTO N√ÉO EXISTE'
         jResponse['errorLog'] := cErrorLog
 		jResponse['solution'] := 'CADASTRE UM PRODUTO QUE DESEJA SOLICITAR'
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
-		oWS:GRAVALOGMURO(cResponc, cJason, "WSPEDCOM", "ALTERA«√O DE PEDIDO DE COMPRAS")
+		oWS:GRAVALOGMURO(cResponc, cJason, "WSPDCDEE", "ALTERA√á√ÉO DE PEDIDO DE COMPRAS")
         
         Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
         Return .F.
 	EndIF
  
-    //Se tiver algum erro no Parse, encerra a execuÁ„o
+    //Se tiver algum erro no Parse, encerra a execu√ß√£o
     IF !Empty(cError)
-        //SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, vocÍ n„o poder· usar outros retornos, como os abaixo
+        //SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, voc√™ n√£o poder√° usar outros retornos, como os abaixo
         Self:setStatus(500) 
         jResponse['errorId']  := 'UPD008'
         jResponse['error']    := 'Parse do JSON'
@@ -496,12 +465,12 @@ WSMETHOD PUT UPDATE WSRECEIVE NUMPC WSSERVICE WSPEDCOM
         jResponse['solution'] := 'Erro ao fazer o Parse do JSON'
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
-		oWS:GRAVALOGMURO(cResponc, cJason, "WSPEDCOM", "ALTERA«√O DE PEDIDO DE COMPRAS")
+		oWS:GRAVALOGMURO(cResponc, cJason, "WSPDCDEE", "ALTERA√á√ÉO DE PEDIDO DE COMPRAS")
     Else
 
 		//Adiciona os dados do ExecAuto
         _ZEXTID  := jJson:GetJsonObject("EXTERNID")
-        cIdUiv   := jJson:GetJsonObject("IDPEDCOMPREXT") + _ZEXTID  //14/10/2025 - inclus„o depois de reuni„o com MP, George e Rodrigo
+        cIdUiv   := jJson:GetJsonObject("IDPEDCOMPREXT") + _ZEXTID  //14/10/2025 - inclus√£o depois de reuni√£o com MP, George e Rodrigo
 
         _cNumPed := oWs:PGExtrt( cIdUiv ) 
 
@@ -552,7 +521,7 @@ WSMETHOD PUT UPDATE WSRECEIVE NUMPC WSSERVICE WSPEDCOM
         aRetGrv := oWS:pedCompra(aCab, aItens, 4) 
 
 		If !aRetGrv[1,2] //lMsErroAuto
-			//Monta o texto do Error Log que ser· salvo
+			//Monta o texto do Error Log que ser√° salvo
 			cErrorLog   := ''
 			aLogAuto    := aRetGrv // GetAutoGrLog()
 			For nLinha := 1 To Len(aLogAuto)
@@ -564,7 +533,7 @@ WSMETHOD PUT UPDATE WSRECEIVE NUMPC WSSERVICE WSPEDCOM
 			MemoWrite(cDirLog + cArqLog, cErrorLog)
 
 			//Define o retorno para o WebService
-			//SetRestFault(500, cErrorLog) //caso queira usar esse comando, vocÍ n„o poder· usar outros retornos, como os abaixo
+			//SetRestFault(500, cErrorLog) //caso queira usar esse comando, voc√™ n√£o poder√° usar outros retornos, como os abaixo
            Self:setStatus(500) 
 			jResponse['errorId']  := 'UPD009'
 			jResponse['error']    := 'Erro na Alteracao do registro'
@@ -573,9 +542,9 @@ WSMETHOD PUT UPDATE WSRECEIVE NUMPC WSSERVICE WSPEDCOM
 			lRet := .F.
 
 			cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
-			oWS:GRAVALOGMURO(cResponc, cJason, "WSPEDCOM", "ALTERA«√O DE PEDIDO DE COMPRAS")
+			oWS:GRAVALOGMURO(cResponc, cJason, "WSPDCDEE", "ALTERA√á√ÉO DE PEDIDO DE COMPRAS")
 
-		//Sen„o, define o retorno
+		//Sen√£o, define o retorno
 		Else
 			jResponse['note']     := 'Registro alterado com sucesso - ' + _cNumPed 
 		EndIf
@@ -587,7 +556,7 @@ WSMETHOD PUT UPDATE WSRECEIVE NUMPC WSSERVICE WSPEDCOM
     Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
 Return lRet
 
-WSMETHOD PUT ERASE WSRECEIVE NUMPC WSSERVICE WSPEDCOM
+WSMETHOD PUT ERASE WSRECEIVE NUMPC WSSERVICE WSPDCDEE
     Local lRet              := .T.
     Local jJson             := Nil
     Local cJson             := Self:GetContent()
@@ -615,12 +584,12 @@ WSMETHOD PUT ERASE WSRECEIVE NUMPC WSSERVICE WSPEDCOM
 
 	oWS    := LIBGLASS():new()
  
-    //Se n„o existir a pasta de logs, cria
+    //Se n√£o existir a pasta de logs, cria
     IF ! ExistDir(cDirLog)
         MakeDir(cDirLog)
     EndIF    
 
-    //Definindo o conte˙do como JSON, e pegando o content e dando um parse para ver se a estrutura est· ok
+    //Definindo o conte√∫do como JSON, e pegando o content e dando um parse para ver se a estrutura est√° ok
     Self:SetContentType('application/json')
     jJson  := JsonObject():New()
     cError := jJson:FromJson(cJson)
@@ -651,24 +620,24 @@ WSMETHOD PUT ERASE WSRECEIVE NUMPC WSSERVICE WSPEDCOM
 
 	/* // 04/09/2025
         IF !lTemPr 
-            //SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, vocÍ n„o poder· usar outros retornos, como os abaixo
+            //SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, voc√™ n√£o poder√° usar outros retornos, como os abaixo
             Self:setStatus(500)
             jResponse['errorId']  := 'DEL014'
-            jResponse['error']    := 'PRODUTO N√O EXISTE'
+            jResponse['error']    := 'PRODUTO N√ÉO EXISTE'
             jResponse['errorLog'] := cErrorLog
             jResponse['solution'] := 'CADASTRE UM PRODUTO QUE DESEJA SOLICITAR'
 
             cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
-            oWS:GRAVALOGMURO(cResponc, cJason, "WSPEDCOM", "EXCLUS√O DE PEDIDO DE COMPRAS")
+            oWS:GRAVALOGMURO(cResponc, cJason, "WSPDCDEE", "EXCLUS√ÉO DE PEDIDO DE COMPRAS")
             
             Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
             Return .F.
         EndIF
     */ // 04/09/2025
     
-    //Se tiver algum erro no Parse, encerra a execuÁ„o
+    //Se tiver algum erro no Parse, encerra a execu√ß√£o
     IF !Empty(cError)
-        //SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, vocÍ n„o poder· usar outros retornos, como os abaixo
+        //SetRestFault(500, 'Falha ao obter JSON') //caso queira usar esse comando, voc√™ n√£o poder√° usar outros retornos, como os abaixo
         Self:setStatus(500) 
         jResponse['errorId']  := 'DEL012'
         jResponse['error']    := 'Parse do JSON'
@@ -676,19 +645,19 @@ WSMETHOD PUT ERASE WSRECEIVE NUMPC WSSERVICE WSPEDCOM
         jResponse['solution'] := 'Erro ao fazer o Parse do JSON'
 
 		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
-		oWS:GRAVALOGMURO(cResponc, cJason, "WSPEDCOM", "EXCLUS√O DE PEDIDO DE COMPRAS")
+		oWS:GRAVALOGMURO(cResponc, cJason, "WSPDCDEE", "EXCLUS√ÉO DE PEDIDO DE COMPRAS")
     Else
 		
 		//Adiciona os dados do ExecAuto
         //_cNumPed := oWs:PGExtrt(jJson:GetJsonObject("EXTERNID")) //jJson:GetJsonObject("NUMPC") //GetSx8Num("SC7","C7_NUM")
 
-        _ZEXTID  := jJson:GetJsonObject("EXTERNID")                 //14/10/2025 - inclus„o depois de reuni„o com MP, George e Rodrigo
-        cIdUiv   := jJson:GetJsonObject("IDPEDCOMPREXT") + _ZEXTID  //14/10/2025 - inclus„o depois de reuni„o com MP, George e Rodrigo
+        _ZEXTID  := jJson:GetJsonObject("EXTERNID")                 //14/10/2025 - inclus√£o depois de reuni√£o com MP, George e Rodrigo
+        cIdUiv   := jJson:GetJsonObject("IDPEDCOMPREXT") + _ZEXTID  //14/10/2025 - inclus√£o depois de reuni√£o com MP, George e Rodrigo
         aDadSC7   := oWs:PGExtDad( cIdUiv )
         
         //26/09/2025 - incluido para identificar o eero 500
         If len(aDadSC7) == 0
-            ConOut("Exclus„o pedido de Compras - pedido n„o encontrado " + jJson:GetJsonObject("EXTERNID") )
+            ConOut("Exclus√£o pedido de Compras - pedido n√£o encontrado " + jJson:GetJsonObject("EXTERNID") )
             Self:setStatus(200) 
             Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
             lRet := .F.
@@ -738,7 +707,7 @@ WSMETHOD PUT ERASE WSRECEIVE NUMPC WSSERVICE WSPEDCOM
         aRetGrv := oWS:pedCompra(aCab, aItens, 5) 
 
 		If !aRetGrv[1,2] //lMsErroAuto
-			//Monta o texto do Error Log que ser· salvo
+			//Monta o texto do Error Log que ser√° salvo
 			cErrorLog   := ''
 			aLogAuto    := aRetGrv // GetAutoGrLog()
 			For nLinha := 1 To Len(aLogAuto)
@@ -750,7 +719,7 @@ WSMETHOD PUT ERASE WSRECEIVE NUMPC WSSERVICE WSPEDCOM
 			MemoWrite(cDirLog + cArqLog, cErrorLog)
 
 			//Define o retorno para o WebService
-			//SetRestFault(500, cErrorLog) //caso queira usar esse comando, vocÍ n„o poder· usar outros retornos, como os abaixo
+			//SetRestFault(500, cErrorLog) //caso queira usar esse comando, voc√™ n√£o poder√° usar outros retornos, como os abaixo
            Self:setStatus(500) 
 			jResponse['errorId']  := 'DEL013'
 			jResponse['error']    := 'Erro na exclusao do registro'
@@ -759,9 +728,9 @@ WSMETHOD PUT ERASE WSRECEIVE NUMPC WSSERVICE WSPEDCOM
 			lRet := .F.
 
 			cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
-			oWS:GRAVALOGMURO(cResponc, cJason, "WSPEDCOM", "EXCLUS√O DE PEDIDO DE COMPRAS")
+			oWS:GRAVALOGMURO(cResponc, cJason, "WSPDCDEE", "EXCLUS√ÉO DE PEDIDO DE COMPRAS")
 
-		//Sen„o, define o retorno
+		//Sen√£o, define o retorno
 		Else
 			jResponse['note']     := 'Registro excluido com sucesso'
 		EndIf
@@ -773,122 +742,3 @@ WSMETHOD PUT ERASE WSRECEIVE NUMPC WSSERVICE WSPEDCOM
     Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
 Return lRet
 
-WSMETHOD GET PDC WSRECEIVE searchKey, page, pageSize WSREST WSPEDCOM
-
-	Local aList := {}
-
-	Local cAlias := GetNextAlias()
-	Local cJsonPdC := ''
-	Local cWhere := "AND SC7.C7_FILIAL = '"+xFilial('SC7')+"'"
-
-	Local lRet := .T.
-
-	Local nCount := 0
-	Local nStart := 1
-	Local nReg := 0
-	Local nAux := 0
-
-	Local oJsonPdC := JsonObject():New()
-
-	Default self:searchKey := ''
-	Default self:page := 1
-	Default self:pageSize := 10
-    
-    cWhere += " AND SC7.C7_ZINTEGR <> 'S' "
-
-	cWhere := '%'+cWhere+'%'
-
-	//-------------------------------------------------------------------
-	// Query para selecionar clientes
-	//-------------------------------------------------------------------
-	BEGINSQL Alias cAlias
- 
-	SELECT SC7.C7_NUM,SC7.C7_EMISSAO,SC7.C7_FORNECE,SC7.C7_LOJA,SC7.C7_COND,SC7.C7_CONTATO,SC7.C7_FILENT,SC7.C7_ZINTEGR FROM %table:SC7% SC7
-	WHERE SC7.%NotDel%
-	%exp:cWhere%
-	
-	ENDSQL
-
-	If ( cAlias )->( ! Eof() )
-
-		//-------------------------------------------------------------------
-		// Identifica a quantidade de registro no alias tempor·rio
-		//-------------------------------------------------------------------
-		COUNT TO nRecord
-
-		//-------------------------------------------------------------------
-		// nStart -> primeiro registro da pagina
-		// nReg -> numero de registros do inicio da pagina ao fim do arquivo
-		//-------------------------------------------------------------------
-		If self:page > 1
-			nStart := ( ( self:page - 1 ) * self:pageSize ) + 1
-			nReg := nRecord - nStart + 1
-		Else
-			nReg := nRecord
-		EndIf
-
-		//-------------------------------------------------------------------
-		// Posiciona no primeiro registro.
-		//-------------------------------------------------------------------
-		( cAlias )->( DBGoTop() )
-
-		//-------------------------------------------------------------------
-		// Valida a exitencia de mais paginas
-		//-------------------------------------------------------------------
-		If nReg > self:pageSize
-			oJsonPdC['hasNext'] := .T.
-		Else
-			oJsonPdC['hasNext'] := .F.
-		EndIf
-	Else
-		//-------------------------------------------------------------------
-		// Nao encontrou registros
-		//-------------------------------------------------------------------
-		oJsonPdC['hasNext'] := .F.
-	EndIf
-
-	//-------------------------------------------------------------------
-	// Alimenta array de clientes
-	//-------------------------------------------------------------------
-	While ( cAlias )->( ! Eof() )
-
-		nCount++
-
-		If nCount >= nStart
-			nAux++
-			aAdd( aList , JsonObject():New() )
-            aList[nAux]['NUMPC']     := (cAlias)->C7_NUM
-            aList[nAux]['EMISSAO']   := StoD((cAlias)->C7_EMISSAO)
-            aList[nAux]['FORNECE']   := (cAlias)->C7_FORNECE
-            aList[nAux]['LOJA']      := (cAlias)->C7_LOJA
-            aList[nAux]['COND']      := (cAlias)->C7_COND
-            aList[nAux]['CONTATO']   := (cAlias)->C7_CONTATO
-            aList[nAux]['FILENT']    := (cAlias)->C7_FILENT
-            aList[nAux]['INTEGRADO'] := (cAlias)->C7_ZINTEGR
-			If Len(aList) >= self:pageSize
-				Exit
-			EndIf
-
-		EndIf
-
-		( cAlias )->( DBSkip() )
-
-	End
-
-	( cAlias )->( DBCloseArea() )
-
-	oJsonPdC['PDVS'] := aList
-
-	//-------------------------------------------------------------------
-	// Serializa objeto Json
-	//-------------------------------------------------------------------
-	cJsonPdC:= FwJsonSerialize( oJsonPdC )
-
-	//-------------------------------------------------------------------
-	// Elimina objeto da memoria
-	//-------------------------------------------------------------------
-	FreeObj(oJsonPdC)
-
-	Self:SetResponse( cJsonPdC ) //-- Seta resposta
-
-Return( lRet )
