@@ -222,10 +222,25 @@ WSMETHOD POST NEW WSRECEIVE NUMPV WSSERVICE WSPEDVEND
 
     lTemCLi := ows:temCliCod(FWxFilial("SA1"), _Cli, _lojCli)
 
-    _idEnu  := jJson:GetJsonObject("IDPEDCOMPREXT") 
-    cExtId  := jJson:GetJsonObject("EXTERNID")
+    cIdUiv  := jJson:GetJsonObject("IDPEDCOMPREXT") + jJson:GetJsonObject("EXTERNID")  //14/10/2025 - inclusão depois de reunião com MP, George e Rodrigo - composição o Externi mais o Enum
+    aDadPDV := oWs:PGExtPDV( cIdUiv ) //jJson:GetJsonObject("NUMPV") 
 
-    IF !Empty(oWs:PGExtrtV( alltrim(_idEnu) + alltrim(cExtId) )) //jJson:GetJsonObject("EXTERNID") ))
+    //26/09/2025 - incluido para identificar o eero 500
+    If len(aDadPDV) == 0
+		Self:setStatus(506)
+		jResponse['errorId']  := 'NEW0016'
+		jResponse['error']    := 'EXTERNOID'
+        jResponse['errorLog'] := "PEDIDO JA ENVIADO ANTERIORMENTE"
+		jResponse['solution'] := 'MANDE UM PEDIDO NOVO'
+
+		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
+		oWS:GRAVALOGMURO(cResponc, cJason, "WSPEDVEND", "INCLUSAO DE PEDIDO DE VENDAS - EXTERNAID")
+        
+        Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
+        Return .F.
+    Endif
+
+    IF !Empty(oWs:PGExtrtV( cIdUiv )) //jJson:GetJsonObject("EXTERNID") ))
 		Self:setStatus(506)
 		jResponse['errorId']  := 'NEW0016'
 		jResponse['error']    := 'EXTERNOID'
@@ -317,8 +332,10 @@ WSMETHOD POST NEW WSRECEIVE NUMPV WSSERVICE WSPEDVEND
         _cNumPed := oWs:GrPedVd(cFilAt) //GetSXENum("SC5","C5_NUM") //jJson:GetJsonObject("NUMPV") 
         //cNatur   := "02.01.01"
         //cNatur   := iif( Empty(jJson:GetJsonObject("NATUREZA")), "02.01.01", jJson:GetJsonObject("NATUREZA") )
-        if (ValType(jJson:GetJsonObject("SINISTR")) == "U" )
+        if (ValType(jJson:GetJsonObject("SINISTR  ")) == "U" )
             cSinistr := ""
+        ELSE
+            cSinistr := jJson:GetJsonObject("SINISTR  ")
         Endif
 
         cIdUiv := jJson:GetJsonObject("IDPEDCOMPREXT") + jJson:GetJsonObject("EXTERNID")  //14/10/2025 - inclusão depois de reunião com MP, George e Rodrigo - composição o Externi mais o Enum

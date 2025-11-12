@@ -188,7 +188,7 @@ WSMETHOD POST NEW WSRECEIVE NUMPC WSSERVICE WSNFE
     cEmpAnt  := cEmpAt1
     cFilAnt  := cFilAt1
     
-    ConOut("ô sistema Bommm - Gerou a nota " )
+    ConOut("ô sistema Bommm " )
         
     //Define o retorno
     Self:SetResponse(EncodeUTF8(jResponse:toJSON()))

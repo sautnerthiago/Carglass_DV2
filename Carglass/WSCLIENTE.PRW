@@ -344,6 +344,17 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE wsCliente
 	_COD   := Iif(empty(jJson:GetJsonObject('CODIGO')), GetSXENum('SA1', 'A1_COD') , jJson:GetJsonObject('CODIGO'))
 	_LOJA  := iif(empty(jJson:GetJsonObject('LOJA')), "01", jJson:GetJsonObject('LOJA'))
 
+	IF empty(::cnpj) 
+		Self:setStatus(500)
+		jResponse['errorId']  := 'NEW004'
+		jResponse['error']    := 'CLIENTE SEM CNPJ'
+		jResponse['errorLog'] := cErrorLog
+		jResponse['solution'] := 'CLIENTE SEM CNPJ'
+
+		cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
+		oWS:GRAVALOGMURO(cResponc, cJason, "WSCLIENTE", "INCLUS√ÉO DE CLIENTE")
+	EndIF		
+
 	lBloq  := iif(jJson:GetJsonObject('BLOQUEADO')=="N" .or. Empty(jJson:GetJsonObject('BLOQUEADO')), "2", "1")
 	lAtivo := iif( jJson:GetJsonObject('ATIVO')=="N" .or. Empty(jJson:GetJsonObject('ATIVO')), "N", "S")
 	cMOVEL := iif( jJson:GetJsonObject('MOVEL') == "" , "N", jJson:GetJsonObject('MOVEL') )
@@ -351,7 +362,7 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE wsCliente
 	cPAGAM := iif( jJson:GetJsonObject('PAGAMENTOADT') == "" , "N", jJson:GetJsonObject('PAGAMENTOADT') )
 	cREVEN := iif( jJson:GetJsonObject('REVENDEAFIAL') == "" , "N", jJson:GetJsonObject('REVENDEAFIAL') )
 	cAFILI := iif( jJson:GetJsonObject('AFILIADOCONV') == "" , "N", jJson:GetJsonObject('AFILIADOCONV') )
-	cTIPOA := iif( jJson:GetJsonObject('TIPOAFILIADO') == "" , "N", jJson:GetJsonObject('TIPOAFILIADO') )
+	cTIPOA := iif( jJson:GetJsonObject('TIPOAFILIADO') == "" , "3", jJson:GetJsonObject('TIPOAFILIADO') ) //02/11/2025 - mudado de N para 3
 	CONFIRMSX8()
 
 	IF oWS:temClient(FWxFilial(cAliasWS), ::cnpj) //.OR. oWS:temCliCod(FWxFilial(cAliasWS), _cod, _loja)
@@ -422,6 +433,7 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE wsCliente
 		aAdd(aDados, {'A1_MSBLQL' , lBloq 							, Nil} )
 		aAdd(aDados, {'A1_ZATIVO' , lAtivo	    					, Nil} )
 		aAdd(aDados, {'A1_RISCO'  , 'A'	    					    , Nil} ) //06/10/2025 - INCLUS√O SOLICITADO PELO Sr. Victor / George		
+		aAdd(aDados, {'A1_CONTA'  , '11211001' 					    , Nil} ) //06/11/2025 - DEFINI«√O DE FIXO POR MARCOS PINTO - CONTA INFORMADA POR LUCIANA
 
 		//Percorre os dados do execauto
 		For nCampo := 1 To Len(aDados)

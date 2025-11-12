@@ -81,6 +81,8 @@ class LIBGLASS
 
     METHOD PGtIPcLI(_cLI, _lOJ)
 
+    METHOD temCC( _cCusto ) //11/11/2025 - VALIDAÇÃO DO CC, ROTINA PADÃO NÃO ESTA VALIDANDO NA INCLISÃO
+
 endclass
 
 method new() class LIBGLASS
@@ -1068,6 +1070,7 @@ METHOD GerarNota(cPdv, cFilpv) class LIBGLASS
     Local cDoc     := ""
     Local aRet     := {}
     Local aNota    := {}
+    Local lServic  := .F.
     //Local aMonit   := {}
 
     cC5Num := cPdv
@@ -1089,6 +1092,8 @@ METHOD GerarNota(cPdv, cFilpv) class LIBGLASS
 
         SB1->(DbSetOrder(1))
         SB1->(MsSeek(cFili+SC6->C6_PRODUTO))    //FILIAL+PRODUTO
+
+        lServic := (SB1->B1_TIPO == "SV")  //07/11/2025 - VERIFICA SE O TIPO DEO PRODUTO É SERVIÇO
 
         SB2->(DbSetOrder(1))
         SB2->(MsSeek(cFili+SC6->(C6_PRODUTO+C6_LOCAL))) //FILIAL+PRODUTO+LOCAL
@@ -1147,11 +1152,29 @@ METHOD GerarNota(cPdv, cFilpv) class LIBGLASS
         AADD(aRet,  { PadR(Alltrim(cDoc), TamSx3('F2_DOC')[1]), PadR(Alltrim(cSerie), TamSx3('F2_SERIE')[1]) })
         AADD(aNota, { PadR(Alltrim(cDoc), TamSx3('F2_DOC')[1]), PadR(Alltrim(cSerie), TamSx3('F2_SERIE')[1]) })
         
-        //cFilNF  := Xfilial("SF2")
-        //cMensa  := oWMS:TrsMitNot( aNota )
-        //Conout("Transmissao da nota: " + cDoc + " - " + cMensa + "  , gerado com sucesso!!!")
+        IF lServic
+		    cRetorno := SpedNFeTrf("SF2",;
+				SF2->F2_SERIE/*cSerie*/,;
+				SF2->F2_DOC/*cNotaIni*/,;
+				SF2->F2_DOC/*cNotaFim*/,;
+				cIdEnt,;
+				cAmbiente,;
+				cModalidade,;
+				cVersao,;
+				@lEnd,;
+				.F./*lCte*/,;
+				.T.)      
+    			Sleep(8000)
+                Conout("Transmissao da nota: " + cDoc + " - " + cMensa + "  , gerado com sucesso!!!")
+	    		SpedNFe6Mnt( SF2->F2_SERIE/*cSerie*/,SF2->F2_DOC/*cNotaIni*/,SF2->F2_DOC/*cNotaFim*/,.T. /*lCTe*/)
+                Conout("Transmissao da nota: " + cDoc + " - " + cMensa + "  , gerado com sucesso!!!")
+        ELSE
+            cFilNF  := Xfilial("SF2")
+            cMensa  := oWMS:TrsMitNot( aNota )
+            Conout("Transmissao da nota: " + cDoc + " - " + cMensa + "  , gerado com sucesso!!!")
 
-        //aMonit  := oWMS:MonitNf(aNota)
+            aMonit  := oWMS:MonitNf(aNota)
+        ENDIF
 
         aNota    := {}
         aPvlDocS := {}
@@ -1218,7 +1241,6 @@ METHOD TrsMitNot(aDados) class LIBGLASS
         cSerie   := aDados[X,2]   
         cRetorno := SpedNFeTrf("SF2",cSerie,cNotaIni,cNotaFim,cIdEnt,cAmbiente,cModalidade,cVersao,@lEnd,lCte,.F.)
         CONOUT("LIBGLASS TRNASMITIU " + cRetorno +" "+ STR(X) )
-                    // SpedNFeTrf("SF2",cSerie,cNota,cNota,cIDEnt,cAmbiente,cModalidade,cVersao,.F.,.F., .F.)
     Next
      CONOUT("SAIU DA TRANSMISSÃO " )
 
@@ -1727,6 +1749,8 @@ method GerNFE(_EXTERNID, _CHVNFE, cOpc) class LIBGLASS
             _EMISSAO := (cAlSC7)->C7_EMISSAO     
             _TIPO    := "N"  
             _PEDIDO  := (cAlSC7)->C7_NUM
+            _COD     := (cAlSC7)->C7_PRODUTO
+            _Natur   := PgNat( Substr( POSICIONE('SB1',1,Xfilial('SB1')+_COD, 'B1_CSUBG'),1,4) ) //'B1_XNATURE') 
 
             aCab := {   {"F1_FILIAL"    ,_FILIAL                ,NIL,Nil},;
                         {"F1_TIPO" 	    ,_TIPO                  ,NIL,Nil},;
@@ -1742,7 +1766,8 @@ method GerNFE(_EXTERNID, _CHVNFE, cOpc) class LIBGLASS
                         {"F1_TXMOEDA"   ,1                      ,Nil,NIL},;
 			            {"F1_STATUS"    ,"A"                    ,Nil,NIL},;
                         {"F1_COND"      ,(cAlSC7)->C7_COND      ,Nil,Nil},;
-                        {"F1_ESPECIE"   ,"SPED"                 ,Nil,Nil}}
+                        {"E2_NATUREZ"   ,_Natur                 ,Nil,Nil},;                        
+                        {"F1_ESPECIE"   ,"SPED"                 ,Nil,Nil} }
             nIt++
         Endif
     	aItem      := {}
@@ -1845,6 +1870,17 @@ METHOD PGtIPcLI(_cLI, _lOJ) CLASS LIBGLASS
 
 RETURN cRet
 
+METHOD temCC( _cCusto ) CLASS LIBGLASS
+    Local lRet   := .T.
+    Local cDesCC := ""
+    cDesCC := POSICIONE("CTT",1,xFilial("CTT")+Alltrim(_cCusto),"CTT_DESC01")
+
+    IF EMPTY(_cCusto) .or. EMPTY(cDesCC)
+        lRet := .F.
+    ENDIF
+
+Return lRet
+
 Static Function TMATA265(cProd, _QUANT)
     Local aCabSDA       := {}
     Local aItSDB        := {}
@@ -1878,49 +1914,56 @@ Static Function TMATA265(cProd, _QUANT)
 
 Return
 
-//chave pix fornecedor - em desenvolvimento
-/*
-User Function F885AMVC()
- 
-    Local oModel   := Nil
-    Local cFornec  := '000050'
-    Local cForLoja := '01'
- 
-    PREPARE ENVIRONMENT EMPRESA "01" FILIAL "0101" MODULO "FIN" TABLES "SA2", "F72"
- 
-    DbSelectArea("SA2")
-    SA2->(DbSetOrder(1))
- 
-    If SA2->(DBSeek(xFilial("SA2") + cFornec + cForLoja))
-        oModel := FwLoadModel ("FINA885")
-        oModel:SetOperation(MODEL_OPERATION_INSERT)
-        oModel:Activate()
- 
-        oModel:SetValue("FORMCAB","F72_FILIAL", xFilial("SA2"))
-        oModel:SetValue("FORMCAB","F72_COD"   , cFornec)
-        oModel:SetValue("FORMCAB","F72_LOJA"  , cForLoja)
-        oModel:SetValue("FORMCAB","F72_NOME"  , SA2->A2_NOME)
- 
-        oModel:SetValue("FORDETAIL", "F72_TPCHV" , "02")
-        oModel:SetValue("FORDETAIL", "F72_CHVPIX", "email_fornec@emailpix.com.br")
-        oModel:SetValue("FORDETAIL", "F72_ACTIVE", "1")
- 
-        If oModel:VldData()
-            oModel:CommitData()
-            MsgInfo("Registro INCLUÍDO!", "Atenção")
-        Else
-            VarInfo("",oModel:GetErrorMessage())
-        EndIf
- 
-        oModel:DeActivate()
-        oModel:Destroy()
-        oModel := NIL
-    EndiF
- 
-    RESET ENVIRONMENT
- 
-Return Nil
-*/
-//chave pix fornecedor - em desenvolvimento
+Static Function PgNat(_Natur)
+    Local cRet   := ""
+    Local X      := 0
+    Local aNtGrp := {   {'0102', '02.01.01'},;
+                        {'0103', '02.01.01'},;
+                        {'0101', '02.01.01'},;
+                        {'0104', '02.01.01'},;
+                        {'0404', '02.01.01'},;
+                        {'0424', '02.01.01'},;
+                        {'0428', '02.01.01'},;
+                        {'0430', '02.01.01'},;
+                        {'0431', '02.01.01'},;
+                        {'0432', '02.01.01'},;
+                        {'0426', '02.01.01'},;
+                        {'0434', '02.01.01'},;
+                        {'0435', '02.01.01'},;
+                        {'0436', '02.01.01'},;
+                        {'0429', '02.01.01'},;
+                        {'0437', '02.01.01'},;
+                        {'0438', '02.01.01'},;
+                        {'0433', '02.01.01'},;
+                        {'0439', '02.01.01'},;
+                        {'0440', '02.01.01'},;
+                        {'0441', '02.01.01'},;
+                        {'0442', '02.01.01'},;
+                        {'0427', '02.01.01'},;
+                        {'0707', '02.01.01'},;
+                        {'0808', '02.01.01'},;
+                        {'0832', '02.01.01'},;
+                        {'0838', '02.01.01'},;
+                        {'0840', '02.01.01'},;
+                        {'0809', '02.01.01'},;
+                        {'1302', '02.01.02'},;
+                        {'1301', '02.01.02'},;
+                        {'1303', '02.01.02'},;
+                        {'1304', '02.01.02'},;
+                        {'1305', '02.01.02'},;
+                        {'1306', '02.01.02'},;
+                        {'1307', '02.01.02'},;
+                        {'1309', '02.01.02'},;
+                        {'1310', '02.01.02'},;
+                        {'1401', '02.01.02'},;
+                        {'1402', '02.01.02'},;
+                        {'1500', '02.01.02'},;
+                        {'1601', '02.01.02'} }
 
+    FOR X := 1 TO LEN(aNtGrp)
+        If aNtGrp[X,1] == _Natur
+            cRet := aNtGrp[X,2]
+        EndiF
+    Next
 
+Return cRet

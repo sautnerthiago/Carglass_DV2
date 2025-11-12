@@ -156,11 +156,12 @@ WSMETHOD POST NEW WSRECEIVE NUMPC WSSERVICE WSPEDCOM
     Local _cCusto           := ""
     Local cCCont            := ""   //23/10/2025 - INCLUSÃO - GEORGE / RODRIGO
     Local cIdUiv            := ""   //14/10/2025 - id unico do pedido de compras
+    Local aRet              := {}
     //Local aFornec           := {}
 
     Private lMsErroAuto     := .F.
     Private lMsHelpAuto     := .T.
-    Private lAutoErrNoFile  := .T.
+    Private lAutoErrNoFile  := .T.    
 
 	oWS    := LIBGLASS():new()
  
@@ -286,6 +287,20 @@ WSMETHOD POST NEW WSRECEIVE NUMPC WSSERVICE WSPEDCOM
             _cCusto := jJson:GetJsonObject("CENTROCUSTOS")
         EndIf
 
+        IF !(oWs:temCC( _cCusto ))
+            Self:setStatus(502)
+            jResponse['errorId']  := 'NEW0019'
+            jResponse['error']    := 'CENTRO DE CUSTOS'
+            jResponse['errorLog'] := cErrorLog
+            jResponse['solution'] := 'CENTRO DE CUSTOS, NÃO EXISTE OU VAZIO'
+
+            cResponc := jResponse['errorId'] + jResponse['error'] + jResponse['solution']
+            oWS:GRAVALOGMURO(cResponc, cJason, "WSPEDCOM", "INCLUSÃO DE PEDIDO DE COMPRAS - EXTERNID")
+            
+            Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
+            Return .F.
+        Endif
+
         aadd(aCab, {"C7_FILIAL"    , cFilAt     ,Nil})
         aadd(aCab, {"C7_NUM"       , _cNumPed   ,Nil})
         aadd(aCab, {"C7_EMISSAO"   , ddatabase  ,Nil})
@@ -297,12 +312,11 @@ WSMETHOD POST NEW WSRECEIVE NUMPC WSSERVICE WSPEDCOM
         aadd(aCab, {"C7_CONTATO"   , jJson:GetJsonObject("CONTATO"), Nil})
         aadd(aCab, {"C7_FILENT"    , jJson:GetJsonObject("FILENT"), Nil})
         aadd(aCab, {"C7_ZINTEGR"   , jJson:GetJsonObject("INTEGRADO"), Nil})
-        // IF !Empty(cTes)
-        //     aadd(aCab, {"C7_TES"   , jJson:GetJsonObject("TES"), Nil})  //RETIRADO - 
-        // EndIF
 
         _ZEXTID := jJson:GetJsonObject("EXTERNID")
-        IF !Empty(oWs:PGExtDad( _ZEXTID ))
+        _Enum   := jJson:GetJsonObject("IDPEDCOMPREXT")
+        aRet    := oWs:PGExtDad( _Enum + _ZEXTID )
+        IF len(aRet) > 0
             Self:setStatus(500)
             jResponse['errorId']  := 'NEW0016'
             jResponse['error']    := 'EXTERNOID'

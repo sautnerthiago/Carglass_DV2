@@ -14,7 +14,7 @@ GERAÇÃO DE NOTA FISCAL DE Saida
 @type wsrestful
 /*/
 
-WSSTRUCT ITEMPDC
+WSSTRUCT ITEMPDV
 
 	WSDATA nitem as INTEGER
 	WSDATA cCodProd as String
@@ -27,7 +27,7 @@ WSRESTFUL WSNFS DESCRIPTION 'NOTA FISCAL DE SAIDA'
     //Atributos
     WSDATA NUMPV       AS STRING
     WSDATA emissao     AS STRING
-    WSDATA item        AS ITEMPDC
+    WSDATA item        AS ITEMPDV
     
     WSDATA page AS INTEGER OPTIONAL
 	WSDATA pageSize AS INTEGER OPTIONAL
@@ -92,8 +92,15 @@ WSMETHOD POST NEW WSRECEIVE NUMPV WSSERVICE WSNFS
 	cJason := cJson 
     lTemPr := .F.
 
-    _CNPJCPF:= Substr( jJson:GetJsonObject("CHVNFE" ),7, 14) //jJson:GetJsonObject("CNPJ")
-    lTemCli := ows:temClient(FWxFilial("SA1"), _CNPJCPF)
+    cEnum := jJson:GetJsonObject("IDPEDCOMPREXT")
+	cExter:= jJson:GetJsonObject("EXTERNID")
+
+    alTemExtr := ows:PGExtPDV(cEnum + cExter) //ows:PGExtDad(jJson:GetJsonObject("IDPEDCOMPREXT"))
+
+    //_CNPJCPF:= Substr( jJson:GetJsonObject("CHVNFE" ),7, 14) //jJson:GetJsonObject("CNPJ")
+    cod    := alTemExtr[1,3]
+    loja   := alTemExtr[1,4]
+    lTemCli := ows:temCliCod(FWxFilial("SA1"), cod, loja)
 
     cEmpAt1 := cEmpAnt
     cFilAt1 := cFilAnt
@@ -121,11 +128,6 @@ WSMETHOD POST NEW WSRECEIVE NUMPV WSSERVICE WSNFS
         Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
         Return .F.
 	EndIF
-
-    cEnum := jJson:GetJsonObject("IDPEDCOMPREXT")
-	cExter:= jJson:GetJsonObject("EXTERNID")
-
-    alTemExtr := ows:PGExtPDV(cEnum + cExter) //ows:PGExtDad(jJson:GetJsonObject("IDPEDCOMPREXT"))
 
 	IF len(alTemExtr) == 0  //Verifica se tem ExternoID - Numero do Pedido Externo
 		Self:setStatus(502)
@@ -160,7 +162,7 @@ WSMETHOD POST NEW WSRECEIVE NUMPV WSSERVICE WSNFS
         cPdv    := alTemExtr[1,1]
         aRetGrv := oWS:GerarNota(cPdv, cFilAt)
 
-		If Len(aRetGrv) > 0
+		If Len(aRetGrv) == 0
 			cErrorLog   := ''
 			aLogAuto    := aRetGrv // GetAutoGrLog()
 			For nLinha := 1 To Len(aLogAuto)
@@ -184,7 +186,7 @@ WSMETHOD POST NEW WSRECEIVE NUMPV WSSERVICE WSNFS
             ConOut("erro 005")
        
 		Else
-			jResponse['note']     := 'Registro incluido com sucesso - NFS' 
+			jResponse['note']     := 'Registro incluido com sucesso - ' + aRetGrv[1,1] + " - " + aRetGrv[1,2]
 		EndIf
 
     EndIf

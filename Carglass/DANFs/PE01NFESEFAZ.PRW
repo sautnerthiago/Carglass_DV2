@@ -1,4 +1,5 @@
 #INCLUDE 'TOTVS.CH'
+#INCLUDE "TOPCONN.CH"
 
 /*/{Protheus.doc} User Function PE01NFESEFAZ
     @type  Function
@@ -32,6 +33,7 @@ User Function PE01NFESEFAZ()
     //Exemplo a ser utilizado
 	//cMensCli := ExecBlock('PFFATA29', .F., .F., {cMensCli, aNota})
     cMensCli += ", Pedido: " + ainfoItem[1,1]
+    cMensCli += ", Inf. Complementares: " + PgMsnNt(SF2->F2_FILIAL, SF2->F2_DOC, SF2->F2_SERIE, SF2->F2_CLIENTE, SF2->F2_LOJA)
 
     Aadd(aRet, aProd)
     Aadd(aRet, cMensCli)
@@ -54,3 +56,21 @@ User Function PE01NFESEFAZ()
     Aadd(aRet, aMed)
     Aadd(aRet, aLote)
 Return aRet
+
+Static Function PgMsnNt(_FILIAL, _DOC, _SERIE, _CLIENTE, _LOJA)
+    local cRet := ""
+    Local cAlSC5    := GetNextAlias()
+
+    cQuery := " SELECT * "
+    cQuery += " FROM "+RetSQLName("SC5") + " AS C5 WITH (NOLOCK) "
+    cQuery += " WHERE C5.D_E_L_E_T_ <> '*' AND C5_NOTA = '"+_DOC+"' AND "
+    cQuery += " C5_SERIE = '"+_SERIE+"' AND C5_CLIENTE = '"+_CLIENTE+"' AND C5_LOJACLI = '"+_LOJA+"'  "
+    DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSC5, .F., .T.)    
+
+    cRet := "CONTRATO: " + (cAlSC5)->C5_ZEXTID + "  "
+	cRet += "PLACA / PEDIDO: " + (cAlSC5)->C5_PLACA + " - " + (cAlSC5)->C5_NUM + " "
+	cRet += "SINISTRO / AUTORIZACAO: " + (cAlSC5)->C5_SINISTR + "  "
+
+    (cAlSC5)->(DBCLOSEAREA())
+
+Return cRet
