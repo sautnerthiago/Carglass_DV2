@@ -1,0 +1,148 @@
+#include 'totvs.ch'
+#include 'tlpp-core.th'
+
+Namespace rest.controller
+Using Namespace rest.service
+
+//*****************************************************************************
+Class NotaComprasController From NotaComprasController
+//*****************************************************************************
+	public method new() constructor
+
+    @post('/WSNFE/new')
+	public method incluir_nota()
+    
+    Private Method Save()
+
+end class
+
+Method New() Class NotaComprasController
+	_Super:New()
+	Self:_service := NotaComprasService():New()
+Return self
+
+method incluir_nota() class NotaComprasController
+
+	Local lRPC      as logical
+	Local jJson     as json
+
+    Local Nx  := 0
+    
+    Local aItens    := {}
+    Local aCab      := {}
+    Local aLinhaC1  := {}
+
+	Private lMsErroAuto as logical
+    Private err as object
+
+    Do While .T.
+        rpcClearEnv()
+		if RPCSetEnv('02','01')       
+            EXIT            
+        ENDIF
+		lRPC := .T.        
+    EndDo
+    
+	oWS    := LIBGLASS():new()
+
+	try
+
+		jJson := jsonObject():new()
+		jJson:fromJson(oRest:getBodyRequest())
+
+        cEmpAt   := Iif(EMPTY(jJson:GetJsonObject("GRUPO") ), "01", jJson:GetJsonObject("GRUPO" ))
+        cFilAt   := Iif(EMPTY(jJson:GetJsonObject("FILIAL")), "01", jJson:GetJsonObject("FILIAL"))
+
+        _Cli    := jJson:GetJsonObject("CLIENTE")
+        _lojCli := if (Empty(jJson:GetJsonObject("LOJA")),"01", jJson:GetJsonObject("LOJA"))
+        _TpCli  := ows:PGtIPcLI(_Cli, _lojCli) 
+        
+        _idEnu  := jJson:GetJsonObject("IDPEDCOMPREXT") 
+        cExtId  := jJson:GetJsonObject("EXTERNID")
+
+         if (ValType(jJson:GetJsonObject("SINISTR")) == "U" )
+            cSinistr := ""
+        Endif
+
+        cIdUiv := jJson:GetJsonObject("IDPEDCOMPREXT") + jJson:GetJsonObject("EXTERNID")  //14/10/2025 - inclusão depois de reunião com MP, George e Rodrigo - composição o Externi mais o Enum
+
+        _cNumPed := oWs:GrPedVd(cFilAt)
+
+        aadd(aCab, {"C5_NUM"       , _cNumPed   ,Nil})
+        aadd(aCab, {"C5_EMISSAO"   , ddatabase  ,Nil})
+        aadd(aCab, {"C5_CLIENTE"   , _Cli       , nIL})    //jJson:GetJsonObject("CLIENTE"), Nil})
+        aadd(aCab, {"C5_LOJACLI"   , _lojCli    , nIL})    //jJson:GetJsonObject("LOJA"), Nil})
+        aadd(aCab, {"C5_LOJAENT"   , jJson:GetJsonObject("LOJAENTREGA") , Nil})
+        aadd(aCab, {"C5_CONDPAG"   , jJson:GetJsonObject("COND")        , Nil})
+        aadd(aCab, {"C5_ZINTEGR"   , jJson:GetJsonObject("INTEGRADO")   , Nil})
+        aadd(aCab, {"C5_ZEXTID"    , jJson:GetJsonObject("EXTERNID")    , Nil})
+        aadd(aCab, {"C5_SINISTR"   , cSinistr   , Nil})                           //24/09/2025 - 
+        aadd(aCab, {"C5_PLACA"     , jJson:GetJsonObject("PLACA")       , Nil})   //24/09/2025 - 
+        aadd(aCab, {"C5_INDPRES"   , "1"        , Nil})   //10/10/25 -  SOLICITAÇÃO GEORGE - VIA ZAP
+        aadd(aCab, {"C5_TIPOCLI"   , _TpCli     , Nil})   //15/10/25 -  SOLICITAÇÃO VICTOR RAMON - EM MEETING
+        aadd(aCab, {"C5_TPFRETE"   , "S"        , Nil})   //20/10/25 -  SOLICITAÇÃO GEORGE - VIA ZAP - PEDIDO PARA "XUMBAR"
+        
+        aadd(aCab, {"C5_ZGRPNUM"   , jJson:GetJsonObject("IDPEDCOMPREXT")    , Nil})
+        aadd(aCab, {"C5_ZIDPDVI"   , cIdUiv   , Nil})                           //14/10/2025 - inclusão depois de reunião com MP, George e Rodrigo - composição o Externi mais o Enum
+
+        FOR Nx := 1 to len(jJson:GetJsonObject("ITENS"))
+
+            If ValType(jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("CENTROCUSTOS")) == "U"
+               _cCusto := ""
+            else
+               _cCusto := jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("CENTROCUSTOS")
+            EndIf
+
+            cCCont   := jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("CONTACONTABIL")
+
+            aLinhaC1 := {}
+
+            cProdut := jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO")
+            cOperac := jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("OPERACAO")
+            cNatur  := oWS:pgNat(cProdut)
+
+            if nX == 1
+                _cProdu := Posicione("SB1",1, XFILIAL("SB1") + jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"), "B1_DESC") 
+                _Tipo   := Posicione("SB1",1, XFILIAL("SB1") + jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"), "B1_TIPO") 
+
+                IF _Tipo == 'SV' 
+                    cObsMem := cExtId + " - " + _cProdu
+                    aadd(aCab, {"C5_XMEMO"     , cObsMem     , NIL}) // J.EDILSON - 10/10/2025 - EM REUNIÃO COM GEORGE E EQUIPE DO FINANCEIR / ONTABILIDADE - DFINIDO QUE NÃO SERÁ USADO 
+                ENDIF                
+                aadd(aCab, {"C5_NATUREZ"   , cNatur     , NIL}) // J.EDILSON - 10/10/2025 - EM REUNIÃO COM GEORGE E EQUIPE DO FINANCEIR / ONTABILIDADE - DFINIDO QUE NÃO SERÁ USADO 
+                nTotal := (jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT") * jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO"))
+            Endif
+            
+            aadd(aLinhaC1, {"C6_ITEM"     , Strzero(Nx,4)               ,nil})
+            aadd(aLinhaC1, {"C6_PRODUTO"  , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"), NIL})
+            aadd(aLinhaC1, {"C6_QTDVEN"   , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT"), NIL})
+            aadd(aLinhaC1, {"C6_QTDLIB"   , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT"), NIL})
+            aadd(aLinhaC1, {"C6_PRCVEN"   , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO"), NIL})
+            aadd(aLinhaC1, {"C6_VALDESC"  , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("DESC"), NIL})
+            aadd(aLinhaC1, {"C6_VALOR"    , nTotal, Nil }) 
+            aadd(aLinhaC1, {"C6_OPER"     , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("OPERACAO"), NIL})
+            aadd(aLinhaC1, {"C6_DESCRI"   , oWS:PGDSCPRD(cProdut), NIL}) //30/09/2025 - incluido para descrição            
+            aadd(aLinhaC1, {"C6_CCUSTO"   , _cCusto , NIL})            //23/10/2025 - REINCLUIDO GEORGE / RODRIGO - //26/09/2025 - solicitada a retirada pelo GEORGE - //22/09/2025 - SOLICITADO POR GEORGE    
+            aadd(aLinhaC1, {"C6_CONTA"    , cCCont  , NIL})            //23/10/2025 - INCLUIDO GEORGE / RODRIGO            
+            aadd(aItens,aLinhaC1)
+        Next
+
+        MSExecAuto({|X,Y,Z| MATA410(X,Y,Z)}, aCab, aItens, 3)
+
+	catch err
+
+		cError          := err:description
+
+		jResp           := jsonObject():new()
+		jResp['error']  := cError
+
+		oRest:setFault(jResp:toJson())        
+
+	endtry
+
+	IF lRPC
+		rpcClearEnv()
+	EndIF
+
+return .T.
+

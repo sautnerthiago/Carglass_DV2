@@ -10,16 +10,65 @@
 			"smartclientBin": "../totvs/bin/smartclient/smartclient.exe",
 			"isMultiSession": true,
 			"enableTableSync": true,
+			"enableMultiThread": true,
 			"extendFeatures": {
 				"charDetails": false
 			}
+		},
+		{
+			"type": "totvs_language_web_debug",
+			"request": "launch",
+			"name": "Smart Client Web Debug",
+			"program": "${command:AskForProgramName}",
+			"enableMultiThread": true,
+			"isMultiSession": true,
+			"enableTableSync": true,
+			"smartclientUrl": "http://localhost:8332/webapp"
+		},
+		{
+			"type": "totvs_language_web_debug",
+			"request": "launch",
+			"name": "COMPFV - Smart Client Web Debug",
+			"program": "${command:AskForProgramName}",
+			"enableMultiThread": true,
+			"isMultiSession": true,
+			"enableTableSync": true,
+			"smartclientUrl": "http://localhost:8341/webapp"
+		},
+		{
+			"type": "totvs_language_web_debug",
+			"request": "launch",
+			"name": "REST - Smart Client Web Debug",
+			"program": "${command:AskForProgramName}",
+			"enableMultiThread": true,
+			"isMultiSession": true,
+			"enableTableSync": true,
+			"smartclientUrl": "http://localhost:8523/webapp"
+		}
+	],
+	"lastPrograms": [
+		{
+			"label": "sigafin"
+		},
+		{
+			"label": "SIGAMDI"
+		},
+		{
+			"label": "u_xxxxx"
+		},
+		{
+			"label": "mpsdu"
+		},
+		{
+			"label": "SIGACFG"
+		},
+		{
+			"label": "u_AJUSTSF3"
+		},
+		{
+			"label": "AJUSTSA2"
 		}
 	],
 	"lastProgramExecuted": "SIGAMDI",
-	"lastProgramArguments": [],
-	"lastPrograms": [
-		{
-			"label": "SIGAMDI"
-		}
-	]
+	"lastProgramArguments": []
 }
