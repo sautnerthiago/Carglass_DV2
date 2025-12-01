@@ -1,17 +1,21 @@
 #include "totvs.ch"
 #include "protheus.ch"
 #include "TOPCONN.CH"
-#INCLUDE "TBICONN.CH"
 
-User Function ImpNFS()
+User Function ImpNFS5()
+    Local aArea  := GetArea()
+	Processa({||ImpDados()},"Aguarde Gerando Notas de Vendas.." )
+    RestArea(aArea)
+Return
+
+Static Function ImpDados()
     Local cQueryTab := ""
+    Local nTotal := 0
+    Local nInicio := '5001'
+    Local nFinal  := '6000'
 
-    // Local nTotal := 0
-    // Count To nTotal
-    // ProcRegua(nTotal)
-
-    PREPARE ENVIRONMENT EMPRESA '01' FILIAL '01' MODULO 'FAT'
-
+    Count To nTotal
+    ProcRegua(nTotal)
     oWS    := LIBGLASS():new()	
 
     cQueryTab := " SELECT *, R_E_C_N_O_ RECNO " + CRLF
@@ -19,13 +23,15 @@ User Function ImpNFS()
     cQueryTab += "     " + RetSQLName("ZZF") + " ZZF " + CRLF
     cQueryTab += " WHERE " + CRLF
     cQueryTab += "     ZZF.D_E_L_E_T_ = '' AND ZZF_STATUS = '0' " + CRLF
+    cQueryTab += "     AND R_E_C_N_O_ BETWEEN "+nInicio+" AND "+nFinal+" " + CRLF
     cQueryTab += "     ORDER BY ZZF_VALOR DESC " + CRLF
     TCQuery cQueryTab New Alias 'QRY_TAB'
 
     nConte := 0
     WHILE !(QRY_TAB->(EOF()))
         nConte++
-        // IncProc("Qtd: " + Alltrim(Str(nConte)) + " - ExternID: " + Alltrim(QRY_TAB->ZZF_ZEXTID) + " - Registro: " + ALLTRIM(sTR(QRY_TAB->RECNO))  )
+        //IncProc("Externi: " + QRY_TAB->ZZF_ZEXTID )
+        IncProc("Qtd: " + Alltrim(Str(nConte)) + " - ExternID: " + Alltrim(QRY_TAB->ZZF_ZEXTID) + " - Registro: " + ALLTRIM(sTR(QRY_TAB->RECNO))  )
 
         cEmpAt1 := cEmpAnt
         cFilAt1 := cFilAnt
@@ -89,6 +95,5 @@ User Function ImpNFS()
     ENDDO	
     QRY_TAB->(DBCLOSEAREA())
     //rpcClearEnv()
-    RESET ENVIRONMENT
 
 Return

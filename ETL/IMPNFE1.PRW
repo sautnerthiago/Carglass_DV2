@@ -2,9 +2,9 @@
 #include "protheus.ch"
 #include "TOPCONN.CH"
 
-User Function ImpNFE()
+User Function ImpNFE1()
     Local aArea  := GetArea()
-    	Processa({||ImpDados()},"Aguarde Gerando Notas de Compras " )
+    Processa({||ImpDados()},"Aguarde Gerando Notas de Compras " )
     RestArea(aArea)
 Return
 
@@ -24,7 +24,7 @@ Static Function ImpDados()
     cQueryTab += "     " + RetSQLName("ZZE") + " ZZE " + CRLF
     cQueryTab += " WHERE " + CRLF
     cQueryTab += "     ZZE.D_E_L_E_T_ = '' AND ZZE_STATUS IN ('9', '0') AND " + CRLF
-    cQueryTab += "     R_E_C_N_O_ BETWEEN "+'26355'+" AND "+'26655'+" AND ZZE_STATUS IN ('9', '0') " + CRLF
+    cQueryTab += "     R_E_C_N_O_ BETWEEN "+'26655'+" AND "+'26955'+" AND ZZE_STATUS IN ('9', '0') " + CRLF
     TCQuery cQueryTab New Alias 'QRY_TAB'
 
     nConte := 0

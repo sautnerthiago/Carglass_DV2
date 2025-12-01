@@ -4,7 +4,8 @@
 
 User Function ImpNFE()
     Local aArea  := GetArea()
-    	Processa({||ImpDados()},"Aguarde Gerando Notas de Compras " )
+    Local x := 0
+    	Processa({||ImpDados()},"Aguarde Gerando Notas de Compras " + Alltrim(Str(X)) )
     RestArea(aArea)
 Return
 
@@ -19,12 +20,12 @@ Static Function ImpDados()
     ProcRegua(nTotal)
     oWS    := LIBGLASS():new()	
 
-    cQueryTab := " SELECT *, R_E_C_N_O_ RECNO " + CRLF
+    cQueryTab := " SELECT TOP "+Alltrim(Str(X))+" *, R_E_C_N_O_ RECNO " + CRLF
     cQueryTab += " FROM " + CRLF
     cQueryTab += "     " + RetSQLName("ZZE") + " ZZE " + CRLF
     cQueryTab += " WHERE " + CRLF
-    cQueryTab += "     ZZE.D_E_L_E_T_ = '' AND ZZE_STATUS IN ('9', '0') AND " + CRLF
-    cQueryTab += "     R_E_C_N_O_ BETWEEN "+'26355'+" AND "+'26655'+" AND ZZE_STATUS IN ('9', '0') " + CRLF
+    cQueryTab += "     ZZE.D_E_L_E_T_ = '' AND ZZE_STATUS IN ('9', '0') " + CRLF
+    cQueryTab += "     ZZE.RECNO BETWEEN "+'26355'+" AND "+'26655'+" AND ZZE_STATUS IN ('9', '0') " + CRLF
     TCQuery cQueryTab New Alias 'QRY_TAB'
 
     nConte := 0
