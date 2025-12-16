@@ -434,7 +434,11 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE wsCliente
 		aAdd(aDados, {'A1_ZATIVO' , lAtivo	    					, Nil} )
 		aAdd(aDados, {'A1_RISCO'  , 'A'	    					    , Nil} ) //06/10/2025 - INCLUS√O SOLICITADO PELO Sr. Victor / George		
 		aAdd(aDados, {'A1_CONTA'  , '11211001' 					    , Nil} ) //06/11/2025 - DEFINI«√O DE FIXO POR MARCOS PINTO - CONTA INFORMADA POR LUCIANA
-
+		aAdd(aDados, {'A1_CODPAIS', '01058'							, Nil} ) //02/12/2025 - SOLICITA«√O VICTOR / TANIA
+		IF (jJson:GetJsonObject('PESSOA') == "F")
+			aAdd(aDados, {'A1_CONTRIB', '2'							, Nil} ) //02/12/2025 - SOLICITA«√O VICTOR / TANIA
+		ENDIF
+		
 		//Percorre os dados do execauto
 		For nCampo := 1 To Len(aDados)
 			//Se o campo for data, retira os hifens e faz a convers√£o

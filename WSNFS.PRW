@@ -160,7 +160,10 @@ WSMETHOD POST NEW WSRECEIVE NUMPV WSSERVICE WSNFS
     Else
         		
         cPdv    := alTemExtr[1,1]
-        aRetGrv := oWS:GerarNota(cPdv, cFilAt)
+        lPedi   := VldNot(cPdv, cFilAt) //validação de existencia do pedido ja faturado - 08/12/2025 - victor
+        if !lPedi
+            aRetGrv := oWS:GerarNota(cPdv, cFilAt)
+        endif
 
 		If Len(aRetGrv) == 0
 			cErrorLog   := ''
@@ -200,3 +203,24 @@ WSMETHOD POST NEW WSRECEIVE NUMPV WSSERVICE WSNFS
     Self:SetResponse(EncodeUTF8(jResponse:toJSON()))
 Return lRet
 
+
+Static Function VldNot(cPdv, _Fil)
+    Local lRet := .F.
+    conout("VERIFNCANDO SE TEM NOTA PARA PEDIDO DE VENDAS")
+
+    cQueryTab := " SELECT COUNT(*) AS QTD " + CRLF
+    cQueryTab += " FROM " + CRLF
+    cQueryTab += "     " + RetSQLName("SD2") + " SD2 " + CRLF
+    cQueryTab += " WHERE " + CRLF
+    cQueryTab += "     SD2.D_E_L_E_T_ = ''  " + CRLF
+    cQueryTab += "     AND D2_FILIAL = '"+_Fil+"' AND D2_PEDIDO = '"+cPdv+"' " + CRLF
+    TCQuery cQueryTab New Alias 'QRY_TMP'    
+
+    IF QRY_TMP->QTD > 0
+        lRet := .T.
+        conout("NAO SERÁ GERADA A FATURA - TEM PEDIDO DE VENDAS JA FATURADO")
+    ENDIF
+
+    QRY_TMP->(DBCLOSEAREA())
+
+Return lret 

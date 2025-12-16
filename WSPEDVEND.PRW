@@ -391,12 +391,12 @@ WSMETHOD POST NEW WSRECEIVE NUMPV WSSERVICE WSPEDVEND
                 nTotal := (jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT") * jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO"))
             Endif
             
-            aadd(aLinhaC1, {"C6_ITEM"     , Strzero(Nx,4)               ,nil})
-            aadd(aLinhaC1, {"C6_PRODUTO"  , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO"), NIL})
-            aadd(aLinhaC1, {"C6_QTDVEN"   , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT"), NIL})
-            aadd(aLinhaC1, {"C6_QTDLIB"   , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT"), NIL})
-            aadd(aLinhaC1, {"C6_PRCVEN"   , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO"), NIL})
-            aadd(aLinhaC1, {"C6_VALDESC"  , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("DESC"), NIL})
+            aadd(aLinhaC1, {"C6_ITEM"     , Strzero(Nx,2)                                               , nil})
+            aadd(aLinhaC1, {"C6_PRODUTO"  , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRODUTO")   , NIL})
+            aadd(aLinhaC1, {"C6_QTDVEN"   , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT")     , NIL})
+            aadd(aLinhaC1, {"C6_QTDLIB"   , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("QUANT")     , NIL})
+            aadd(aLinhaC1, {"C6_PRCVEN"   , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("PRECO")     , NIL})
+            aadd(aLinhaC1, {"C6_VALDESC"  , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("DESC")      , NIL})
             aadd(aLinhaC1, {"C6_VALOR"    , nTotal, Nil }) 
             aadd(aLinhaC1, {"C6_OPER"     , jJson:GetJsonObject("ITENS")[nX]:GetJsonObject("OPERACAO"), NIL})
             aadd(aLinhaC1, {"C6_DESCRI"   , oWS:PGDSCPRD(cProdut), NIL}) //30/09/2025 - incluido para descrição            

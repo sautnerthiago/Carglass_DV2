@@ -10,7 +10,7 @@ User Function ImpNFS()
     // Count To nTotal
     // ProcRegua(nTotal)
 
-    PREPARE ENVIRONMENT EMPRESA '01' FILIAL '01' MODULO 'FAT'
+    //PREPARE ENVIRONMENT EMPRESA '01' FILIAL '01' MODULO 'FAT'
 
     oWS    := LIBGLASS():new()	
 
@@ -18,7 +18,7 @@ User Function ImpNFS()
     cQueryTab += " FROM " + CRLF
     cQueryTab += "     " + RetSQLName("ZZF") + " ZZF " + CRLF
     cQueryTab += " WHERE " + CRLF
-    cQueryTab += "     ZZF.D_E_L_E_T_ = '' AND ZZF_STATUS = '0' " + CRLF
+    cQueryTab += "     ZZF.D_E_L_E_T_ = '' AND ZZF_STATUS = '0' AND ZZF_ZEXTID = '2866978' " + CRLF
     cQueryTab += "     ORDER BY ZZF_VALOR DESC " + CRLF
     TCQuery cQueryTab New Alias 'QRY_TAB'
 

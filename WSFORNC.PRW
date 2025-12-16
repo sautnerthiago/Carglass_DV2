@@ -535,6 +535,7 @@ WSMETHOD POST NEW WSRECEIVE WSSERVICE WSFORNEC
 		oModel:setValue('SA2MASTER', "A2_ZATIVO"  , lAtivo	    					)
 		oModel:setValue('SA2MASTER', "A2_INDRUR"  , '0'								) //08/09/2025 - INDICAÇÃO TOTVS - CONSIDERADO OU NÃO O CPF
 		oModel:setValue('SA2MASTER', "A2_CONTA"   , '21111001'						) //06/11/2025 - DEFINIÇÃO DE FIXO POR MARCOS PINTO - CONTA INFORMADA POR LUCIANA
+		oModel:setValue('SA2MASTER', "A2_CODPAIS" , '01058'							) //02/12/2025 - SOLICITAÇÃO VICTOR / TANIA
 
 		//M->A2_CGC  := jJson:GetJsonObject('CNPJ')
 		//M->A2_TIPO := jJson:GetJsonObject('TIPO')
