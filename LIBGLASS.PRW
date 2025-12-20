@@ -1088,6 +1088,7 @@ METHOD GerarNota(cPdv, cFilpv) class LIBGLASS
     Local aRet     := {}
     Local aNota    := {}
     Local lServic  := .F.
+    Local cDirLog  := '\x_logs\'
 
     Local nSaldSB2 := 0
 

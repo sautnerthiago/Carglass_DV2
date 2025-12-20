@@ -5,39 +5,49 @@
 
 User Function MyMata103DEV()
     Local aArea  := GetArea()
-    	Processa({|| ADEVOLUI() },"Aguarde Devolucao das Notas Saida.... " )
-    	Processa({|| AEXCLUIR() },"Aguarde Exclusao das Notas Saida.... " )
-		Processa({|| ADEVOLU1() },"Aguarde Devolucao das Notas Saida - COM FROTISTA E cfop 5949.... " )
-		Processa({|| AEXCLU1R() },"Aguarde Exclusao das Notas Saida  - COM FROTISTA E cfop 5949.... " )
+	Local aFil 	 := {"13", "16", "17", "20"}
+	Local Xy
+	FOR Xy := 1 to len(aFil)
+		Processa({|| ADEVOLUI(aFil[Xy]) },"Aguarde Devolucao das Notas Saida.... " )
+		Processa({|| ADEVOLU1(aFil[Xy]) },"Aguarde Devolucao das Notas Saida - COM FROTISTA E cfop 5949 - 6949.... " )
+    	Processa({|| AEXCLUIR(aFil[Xy]) },"Aguarde Exclusao das Notas Saida.... " )
+		Processa({|| AEXCLU1R(aFil[Xy]) },"Aguarde Exclusao das Notas Saida  - COM FROTISTA E cfop 5949 - 6949.... " )
+	Next
     RestArea(aArea)
 Return
 
-Static Function ADEVOLUI() //teste com ambiente atualizado....
+Static Function ADEVOLUI(_cFil) //teste com ambiente atualizado....
 
 	Local aCabec        := {}
 	Local aItens        := {}
 	Local aLinha        := {}
 	Local cDoc          := ""
 
+	cEmpAt   			:= "01"
+	cFilAt   			:= _cFil
+
+	cEmpAnt  			:= cEmpAt
+	cFilAnt  			:= cFilAt
+
     Local aRexId  		:= PedADev(cFilAnt)
     Local cDirLog 		:= '\x_logs\'
     Local cLog    		:= ""
 	Local Y, X, Z
 	Local _DOCCUM		:= ""
-
+	
 	oWSNfs 				:= LIBGLASS():new()	
 	Local aNota			:= {}
 	
 	PRIVATE lMsErroAuto := .F.
 
-    FOR Z := 1 TO 5 //LEN(aRexId)
+    FOR Z := 1 TO LEN(aRexId)
 		ConOut(Repl("-",80))
-		ConOut(PadC(OemToAnsi("Inclusao de NFE DEVOLUCAO COM NOTA DE ORIGEM NFS"),80))
+		ConOut(PadC(OemToAnsi("Filial: " +cFilAnt+ "Inclusao de NFE DEVOLUCAO COM NOTA DE ORIGEM NFS"),80))
 		ConOut(Repl("-",80))
 
 		aNotas := reTNotas(aRexId[Z,1], aRexId[Z,2]) 
-		
-        FOR Y := 1 TO LEN(aNotas)
+	
+        FOR Y := 1 TO (LEN(aNotas) - 1)
 			 //cDoc   := GetSXENum("SF2","F2_DOC")
 			 aCabec := {}
 			 aItens := {}
@@ -50,7 +60,7 @@ Static Function ADEVOLUI() //teste com ambiente atualizado....
 			 FOR X := 1 TO LEN(aPedi)
 
 				_DOCCUM		:= aPedi[X,01]
-				_SERIE		:= aPedi[X,02]
+				cSerie		:= IIF( EMPTY(aPedi[X,02]), "001", aPedi[X,02] )
 				_FORNECE	:= aPedi[X,03]
 				_LOJA		:= aPedi[X,04]
 				_EMISSAO	:= StoD(aPedi[X,06])
@@ -65,17 +75,19 @@ Static Function ADEVOLUI() //teste com ambiente atualizado....
 				_IDENTB6	:= aPedi[X,15]
 				_Pedi       := aPedi[X,16]
 				_CHVNFE     := aPedi[X,17]
+				cFil		:= aPedi[X,18]
 
 				SB1->(DbSetOrder(1))
 				SB1->(MsSeek(Xfilial("SB1")+_COD))    //FILIAL+PRODUTO
+				lEnderc := (SB1->B1_LOCALIZ == "S")		
 				lServic := (SB1->B1_TIPO == "SV")  //07/11/2025 - VERIFICA SE O TIPO DEO PRODUTO É SERVIÇO
 				
 				if X == 1
 					aadd(aCabec,{"F1_TIPO"      ,"D"        })
 					aadd(aCabec,{"F1_FORMUL"    ,"S"        })
 					// aadd(aCabec,{"F1_DOC"       ,cDoc       })
-					aadd(aCabec,{"F1_SERIE"     ,_SERIE     })
-					aadd(aCabec,{"F1_EMISSAO"   ,_EMISSAO   })
+					aadd(aCabec,{"F1_SERIE"     ,cSerie     })
+					aadd(aCabec,{"F1_EMISSAO"   ,ddatabase  })
 					aadd(aCabec,{"F1_FORNECE"   ,_FORNECE   })
 					aadd(aCabec,{"F1_LOJA"      ,_LOJA      })
 					aadd(aCabec,{"F1_ESPECIE"   ,"SPED"     })
@@ -92,10 +104,10 @@ Static Function ADEVOLUI() //teste com ambiente atualizado....
 				aadd(aLinha,{"D1_TES"       , "038"     ,Nil}) //TES DEVOLUÇÃO - PASSADO POR LUCIANA 10/12/2025 16:57
 				aAdd(aLinha,{"D1_CF"        , "1949"    ,Nil}) 
 				// aAdd(aLinha,{"D1_DOC"       , cDoc      ,Nil}) // *
-				aAdd(aLinha,{"D1_SERIE"     , _SERIE    ,Nil}) // *
-				aAdd(aLinha,{"D1_EMISSAO"   , _EMISSAO  ,Nil}) // ADICIONEI
+				aAdd(aLinha,{"D1_SERIE"     , cSerie    ,Nil}) // *
+				aAdd(aLinha,{"D1_EMISSAO"   , ddatabase ,Nil}) // ADICIONEI
 				aadd(aLinha,{"D1_NFORI"     , _DOCCUM   ,Nil}) // nota de origem
-				aadd(aLinha,{"D1_SERIORI"   , _SERIE    ,Nil})
+				aadd(aLinha,{"D1_SERIORI"   , cSerie    ,Nil})
 				aadd(aLinha,{"D1_ITEMORI"   , nItem     ,Nil})
 				AAdd(aLinha,{"D1_IDENTB6"   , _IDENTB6  ,Nil}) // d2_numseq
 				aadd(aLinha,{"AUTDELETA"    , "N"       ,Nil})
@@ -122,25 +134,26 @@ Static Function ADEVOLUI() //teste com ambiente atualizado....
 								.T.)      
 							SpedNFe6Mnt( _SERIE/*cSerie*/,cDoc/*cNotaIni*/,cDoc/*cNotaFim*/,.T. /*lCTe*/) //não transmitir de primeiro
 							ConOut("Incluido com sucesso! "+cDoc)
-							cLog += 'DEVOLUCAO REALIZADA COM SUCESSO - ' + cDoc + " - " + _SERIE
+							cLog += 'DEVOLUCAO REALIZADA COM SUCESSO - ' + cDoc + " Nf Origem: " + _DOCCUM + " - " + _SERIE + CRLF
 							ConfirmSX8()
 					ELSE
 						cFilNF  := Xfilial("SF1")
 						cMensa  := TransNfe(cDoc, _SERIE)
-						Conout("Transmissao da nota: " + cDoc + " - " + cMensa + "  , gerado com sucesso!!!")
+						Conout("Transmissao da nota: " + cDoc + " - Nf Origem: " + _DOCCUM + " - " + cMensa + "  , gerado com sucesso!!!")
 						aMonit  := MonitNf(aNota) 
 
 						//Distribuição
-						if aMonit[1]
+						if aMonit[1] .AND. lEnderc
 							_LOCAL := POSICIONE('SB1',1,Xfilial('SB1')+_COD,'B1_LOCPAD') 
 							TMATA265(_COD, _QUANT, _LOCAL, cDoc, _SERIE, _FORNECE, _LOJA)
 						EndiF
+						cLog += "DEVOLUCAO REALIZADA NOTA: " + cDoc + " - Nf Origem: " + _DOCCUM + " , gerado com sucesso!!!" + CRLF
 						ConfirmSX8()
 					EndIf
 				Else
 					ConOut("Erro na inclusao!")
-					cLog += 'EXCLUSÃO NAO REALIZADA - ' + cDoc + CRLF
-					mostraerro()
+					cLog += 'DEVOLUCAO NAO REALIZADA - NOTA: ' + _DOCCUM + " - " + cSerie + CRLF
+					//mostraerro()
 				EndIf
 				ConOut(OemToAnsi("Fim : ")+Time())
 			EndIf
@@ -160,6 +173,7 @@ Static Function PedADev(_Fil)
     cQuery += " INNER JOIN SC5010 C5 ON C5_NUM = D2_PEDIDO AND C5_FILIAL = D2_FILIAL "
     cQuery += " WHERE C5.D_E_L_E_T_ = '' AND D2.D_E_L_E_T_ = '' AND D2_FILIAL = '"+_Fil+"' "
     cQuery += " AND D2_FILIAL NOT IN ('15', '01', '10') "
+    cQuery += " AND D2_CF IN ('5949', '6949') "    	//16/11/2025 - INCLUIDO COM VICTOR E TÂNIA
     cQuery += " AND D2_EMISSAO > '20251201' AND D2_CLIENTE NOT IN ('0050539327', '0051278112', '0050635124', '0050783270', '0050630011', '0001634036', '0050604254', '0001963653') "    
     cQuery += " GROUP BY D2_PEDIDO, D2_EMISSAO, D2_FILIAL "
     cQuery += " HAVING COUNT(*) > 1 "
@@ -175,12 +189,19 @@ Static Function PedADev(_Fil)
    
 Return aRet
 
-Static Function ADEVOLU1() //teste com ambiente atualizado....
+Static Function ADEVOLU1(_cFil) //teste com ambiente atualizado....
 
 	Local aCabec        := {}
 	Local aItens        := {}
 	Local aLinha        := {}
 	Local cDoc          := ""
+
+	cEmpAt   			:= "01"
+	cFilAt   			:= _cFil
+
+	cEmpAnt  			:= cEmpAt
+	cFilAnt  			:= cFilAt
+
 
     Local aRexId  		:= PedADev1(cFilAnt)
     Local cDirLog 		:= '\x_logs\'
@@ -193,14 +214,14 @@ Static Function ADEVOLU1() //teste com ambiente atualizado....
 	
 	PRIVATE lMsErroAuto := .F.
 
-    FOR Z := 1 TO 5 //LEN(aRexId)
+    FOR Z := 1 TO LEN(aRexId)
 		ConOut(Repl("-",80))
-		ConOut(PadC(OemToAnsi("Inclusao de NFE DEVOLUCAO COM NOTA DE ORIGEM NFS"),80))
+		ConOut(PadC(OemToAnsi("Filial: " +cFilAnt+ "Inclusao de NFE DEVOLUCAO COM NOTA DE ORIGEM NFS - 5949/6949"),80))
 		ConOut(Repl("-",80))
 
 		aNotas := reTNotas(aRexId[Z,1], aRexId[Z,2]) 
 		
-        FOR Y := 1 TO LEN(aNotas)
+        FOR Y := 1 TO (LEN(aNotas) - 1)
 			 //cDoc   := GetSXENum("SF2","F2_DOC")
 			 aCabec := {}
 			 aItens := {}
@@ -213,7 +234,8 @@ Static Function ADEVOLU1() //teste com ambiente atualizado....
 			 FOR X := 1 TO LEN(aPedi)
 
 				_DOCCUM		:= aPedi[X,01]
-				_SERIE		:= aPedi[X,02]
+				//_SERIE		:= aPedi[X,02]
+				cSerie		:= IIF( EMPTY(aPedi[X,02]), "001", aPedi[X,02] )
 				_FORNECE	:= aPedi[X,03]
 				_LOJA		:= aPedi[X,04]
 				_EMISSAO	:= StoD(aPedi[X,06])
@@ -228,21 +250,23 @@ Static Function ADEVOLU1() //teste com ambiente atualizado....
 				_IDENTB6	:= aPedi[X,15]
 				_Pedi       := aPedi[X,16]
 				_CHVNFE     := aPedi[X,17]
+				cFil		:= aPedi[X,18]
 
 				SB1->(DbSetOrder(1))
-				SB1->(MsSeek(Xfilial("SB1")+_COD))    //FILIAL+PRODUTO
-				lServic := (SB1->B1_TIPO == "SV")  //07/11/2025 - VERIFICA SE O TIPO DEO PRODUTO É SERVIÇO
+				SB1->(MsSeek(Xfilial("SB1")+_COD))    	//FILIAL+PRODUTO
+				lEnderc := (SB1->B1_LOCALIZ == "S")		
+				lServic := (SB1->B1_TIPO == "SV")  		//07/11/2025 - VERIFICA SE O TIPO DEO PRODUTO É SERVIÇO
 				
 				if X == 1
 					aadd(aCabec,{"F1_TIPO"      ,"D"        })
 					aadd(aCabec,{"F1_FORMUL"    ,"S"        })
 					// aadd(aCabec,{"F1_DOC"       ,cDoc       })
-					aadd(aCabec,{"F1_SERIE"     ,_SERIE     })
-					aadd(aCabec,{"F1_EMISSAO"   ,_EMISSAO   })
+					aadd(aCabec,{"F1_SERIE"     ,cSerie     })
+					aadd(aCabec,{"F1_EMISSAO"   ,dDataBase  })
 					aadd(aCabec,{"F1_FORNECE"   ,_FORNECE   })
 					aadd(aCabec,{"F1_LOJA"      ,_LOJA      })
 					aadd(aCabec,{"F1_ESPECIE"   ,"SPED"     })
-					aadd(aCabec,{"F1_CHVNFE"    ,_CHVNFE    })
+					// aadd(aCabec,{"F1_CHVNFE"    ,_CHVNFE    })
 
 					aLinha := {}
 				endif
@@ -255,10 +279,10 @@ Static Function ADEVOLU1() //teste com ambiente atualizado....
 				aadd(aLinha,{"D1_TES"       , "038"     ,Nil}) //TES DEVOLUÇÃO - PASSADO POR LUCIANA 10/12/2025 16:57
 				aAdd(aLinha,{"D1_CF"        , "1949"    ,Nil}) 
 				// aAdd(aLinha,{"D1_DOC"       , cDoc      ,Nil}) // *
-				aAdd(aLinha,{"D1_SERIE"     , _SERIE    ,Nil}) // *
-				aAdd(aLinha,{"D1_EMISSAO"   , _EMISSAO  ,Nil}) // ADICIONEI
+				aAdd(aLinha,{"D1_SERIE"     , cSerie    ,Nil}) // *
+				aAdd(aLinha,{"D1_EMISSAO"   , dDataBase ,Nil}) // ADICIONEI
 				aadd(aLinha,{"D1_NFORI"     , _DOCCUM   ,Nil}) // nota de origem
-				aadd(aLinha,{"D1_SERIORI"   , _SERIE    ,Nil})
+				aadd(aLinha,{"D1_SERIORI"   , cSerie    ,Nil})
 				aadd(aLinha,{"D1_ITEMORI"   , nItem     ,Nil})
 				AAdd(aLinha,{"D1_IDENTB6"   , _IDENTB6  ,Nil}) // d2_numseq
 				aadd(aLinha,{"AUTDELETA"    , "N"       ,Nil})
@@ -285,25 +309,26 @@ Static Function ADEVOLU1() //teste com ambiente atualizado....
 								.T.)      
 							SpedNFe6Mnt( _SERIE/*cSerie*/,cDoc/*cNotaIni*/,cDoc/*cNotaFim*/,.T. /*lCTe*/) //não transmitir de primeiro
 							ConOut("Incluido com sucesso! "+cDoc)
-							cLog += 'DEVOLUCAO REALIZADA COM SUCESSO - ' + cDoc + " - " + _SERIE
+							cLog += 'DEVOLUCAO REALIZADA COM SUCESSO - ' + cDoc+ " - Nf Origem: " +_DOCCUM + " - " + _SERIE + CRLF
 							ConfirmSX8()
 					ELSE
 						cFilNF  := Xfilial("SF2")
 						cMensa  := TransNfe(cDoc, _SERIE)
-						Conout("Transmissao da nota: " + cDoc + " - " + cMensa + "  , gerado com sucesso!!!")
+						Conout("Transmissao da nota: " + cDoc + " - Nf Origem: "+_DOCCUM +" - " + cMensa + "  , gerado com sucesso!!!")
 						aMonit  := MonitNf(aNota) 
 
 						//Distribuição
-						if aMonit[1]
+						if aMonit[1] .AND. lEnderc
 							_LOCAL := POSICIONE('SB1',1,Xfilial('SB1')+_COD,'B1_LOCPAD') 
 							TMATA265(_COD, _QUANT, _LOCAL, cDoc, _SERIE, _FORNECE, _LOJA)
 						EndiF
 						ConfirmSX8()
+						cLog += "DEVOLUCAO REALIZADA NOTA: " + cDoc + " - Nf Origem: " + _DOCCUM + " , gerado com sucesso!!!"+ CRLF
 					EndIf
 				Else
 					ConOut("Erro na inclusao!")
-					cLog += 'EXCLUSÃO NAO REALIZADA - ' + cDoc + CRLF
-					mostraerro()
+					cLog += 'DEVOLUÇÃO NAO REALIZADA - ' + _DOCCUM + " - " + cSerie + CRLF
+					// mostraerro()
 				EndIf
 				ConOut(OemToAnsi("Fim : ")+Time())
 			EndIf
@@ -323,7 +348,7 @@ Static Function PedADev1(_Fil)
     cQuery += " INNER JOIN SC5010 C5 ON C5_NUM = D2_PEDIDO AND C5_FILIAL = D2_FILIAL "
     cQuery += " WHERE C5.D_E_L_E_T_ = '' AND D2.D_E_L_E_T_ = '' AND D2_FILIAL = '"+_Fil+"'  "
     cQuery += " AND D2_FILIAL NOT IN ('15', '01', '10') "
-    cQuery += " AND D2_EMISSAO > '20251201' AND D2_CF = '5949' "    
+    cQuery += " AND D2_EMISSAO > '20251201' AND D2_CF IN ('5949', '6949') "    
     cQuery += " GROUP BY D2_PEDIDO, D2_EMISSAO, D2_FILIAL "
     cQuery += " HAVING COUNT(*) > 1 "
     cQuery += " ORDER BY D2_FILIAL, D2_EMISSAO, D2_PEDIDO "
@@ -341,13 +366,13 @@ Return aRet
 Static Function retAped(cPedi, cFil, cNota)
     local aRet 	 := {}
     Local cAlSC5 := GetNextAlias()
-	Local aDadFr := {}
-	Local aClien := {}
-	Local xX
+	// Local aDadFr := {}
+	// Local aClien := {}
+	// Local xX
+	// Local aExtFor  := {}
 
 	Local cForne   := ""
 	Local cLoja    := ""
-	Local aExtFor  := {}
 
     cQuery := " SELECT *, D2.R_E_C_N_O_ RECNO, F2_CHVNFE "
     cQuery += " FROM SD2010 D2 "
@@ -356,22 +381,22 @@ Static Function retAped(cPedi, cFil, cNota)
     DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSC5, .F., .T.) 
 
     WHILE !(cAlSC5)->(EOF())
-		aExtFor := VldForn( (cAlSC5)->D2_CLIENTE, (cAlSC5)->D2_LOJA )
-		IF !aExtFor[1,1]
-			aDadFr := DadsForn((cAlSC5)->D2_CLIENTE, (cAlSC5)->D2_LOJA)
-			aClien := GrvForn(aDadFr)
-			if len(aClien) > 0
-				FOR xX := 1 To Len(aClien)
-					cForne   	:= aClien[xX,1]
-					cLoja      	:= aClien[xX,2]
-				NEXT
-			else
-				Return aRet
-			endif
-		Else			
-			cForne   	:= aExtFor[1,2]
-			cLoja      	:= aExtFor[1,3]
-		endif
+		// aExtFor := VldForn( (cAlSC5)->D2_CLIENTE, (cAlSC5)->D2_LOJA )
+		// IF !aExtFor[1,1]
+		// 	aDadFr := DadsForn((cAlSC5)->D2_CLIENTE, (cAlSC5)->D2_LOJA)
+		// 	aClien := GrvForn(aDadFr)
+		// 	if len(aClien) > 0
+		// 		FOR xX := 1 To Len(aClien)
+		// 			cForne   	:= aClien[xX,1]
+		// 			cLoja      	:= aClien[xX,2]
+		// 		NEXT
+		// 	else
+		// 		Return aRet
+		// 	endif
+		// Else			
+		// 	cForne   	:= aExtFor[1,2]
+		// 	cLoja      	:= aExtFor[1,3]
+		// endif
 
 		cForne   	:= (cAlSC5)->D2_CLIENTE
 		cLoja      	:= (cAlSC5)->D2_LOJA
@@ -391,9 +416,10 @@ Static Function retAped(cPedi, cFil, cNota)
 		_IDENTB6	:= (cAlSC5)->D2_IDENTB6
 		_Pedido     := (cAlSC5)->D2_PEDIDO
 		_Chavnf     := (cAlSC5)->F2_CHVNFE
+		_Filial   	:= (cAlSC5)->F2_FILIAL
 
-		IF TemEntrd(cDocumento, cSerie, cForne, cLoja, cFil)
-	        AADD(aRet, {cDocumento, cSerie, cForne, cLoja, cFil, dEmiss, nRecN, nItem, _COD,_QUANT,_VUNIT,_TOTAL,_TES,_CF,_IDENTB6, _Pedido, _Chavnf})
+		IF TemEntrd(cDocumento, cSerie, cForne, cLoja, cFil) .AND. TemDistr(cDocumento, cSerie, cForne, cLoja, cFil) //16/12/2025 - INCLUIDA A VALIDAÇÃO DE DISTRIBUIÇÃO - SO  
+	        AADD(aRet, {cDocumento, cSerie, cForne, cLoja, cFil, dEmiss, nRecN, nItem, _COD,_QUANT,_VUNIT,_TOTAL,_TES,_CF,_IDENTB6, _Pedido, _Chavnf, _Filial})
 		endif
         (cAlSC5)->(DBSKIP())
         LOOP
@@ -515,14 +541,14 @@ Return aRet
 Static Function reTNotas(cPedi, cFil)
     local aRet 	 := {}
     Local cAlSC5 := GetNextAlias()
-	Local aDadFr := {}
-	Local aClien := {}
-	Local xX
+	// Local aDadFr := {}
+	// Local aClien := {}
+	// Local xX
+	// Local aExtFor:= {}
 
 	Local cForne := ""
 	Local cLoja  := ""
 
-	Local aExtFor:= {}
 
     cQuery := " SELECT *, D2.R_E_C_N_O_ RECNO, F2_CHVNFE "
     cQuery += " FROM SD2010 D2 "
@@ -531,23 +557,25 @@ Static Function reTNotas(cPedi, cFil)
     DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSC5, .F., .T.) 
 
     WHILE !(cAlSC5)->(EOF())
-		aExtFor := VldForn( (cAlSC5)->D2_CLIENTE, (cAlSC5)->D2_LOJA )
-		IF !aExtFor[1,1]
-			aDadFr := DadsForn((cAlSC5)->D2_CLIENTE, (cAlSC5)->D2_LOJA)
-			aClien := GrvForn(aDadFr)
-			if len(aClien) > 0
-				FOR xX := 1 To Len(aClien)
-					cForne   	:= aClien[xX,1]
-					cLoja      	:= aClien[xX,2]
-				NEXT
-			else
-				Return aRet
-			endif
-		ELSE
-			cForne   	:= aExtFor[1,2]
-			cLoja      	:= aExtFor[1,3]
-		endif
+		// aExtFor := VldForn( (cAlSC5)->D2_CLIENTE, (cAlSC5)->D2_LOJA )
+		// IF !aExtFor[1,1]
+		// 	aDadFr := DadsForn((cAlSC5)->D2_CLIENTE, (cAlSC5)->D2_LOJA)
+		// 	aClien := GrvForn(aDadFr)
+		// 	if len(aClien) > 0
+		// 		FOR xX := 1 To Len(aClien)
+		// 			cForne   	:= aClien[xX,1]
+		// 			cLoja      	:= aClien[xX,2]
+		// 		NEXT
+		// 	else
+		// 		Return aRet
+		// 	endif
+		// ELSE
+		// 	cForne   	:= aExtFor[1,2]
+		// 	cLoja      	:= aExtFor[1,3]
+		// endif
 
+		cForne   	:= (cAlSC5)->D2_CLIENTE
+		cLoja      	:= (cAlSC5)->D2_LOJA
         cDocumento 	:= (cAlSC5)->D2_DOC
 		_Pedido     := (cAlSC5)->D2_PEDIDO
 
@@ -878,7 +906,14 @@ Static Function TMATA265(cProd, _QUANT, _LOCAL, _DOC, _SERIE, _CLIFOR, _LOJA)
 Return
 
 
-Static Function AEXCLUIR()
+Static Function AEXCLUIR(_cFil)
+
+	cEmpAt   			:= "01"
+	cFilAt   			:= _cFil
+
+	cEmpAnt  			:= cEmpAt
+	cFilAnt  			:= cFilAt
+
     Local Y, X
     Local aRexId  := PedADev(cFilAnt)
     Local cDirLog := '\x_logs\'
@@ -888,7 +923,7 @@ Static Function AEXCLUIR()
         
         aPedi := retApedEx(aRexId[Y,1], aRexId[Y,2])
         IncProc("Pedido " + aRexId[Y,1] )
-        nTot := LEN(aPedi)
+        nTot := LEN(aPedi) - 1
 
         FOR X := 1 TO nTot
 
@@ -963,9 +998,6 @@ Static Function AEXCLUIR()
     cArqLog := 'EXCLNFS_' + dToS(Date()) + '_' + StrTran(Time(), ':', '-') + '.log'
     MemoWrite(cDirLog + cArqLog, cLog)
 
-    cEmpAnt  := cEmpAt
-    cFilAnt  := cFilAt
-
 Return
 
 Static Function retApedEx(cPedi, cFil)
@@ -975,7 +1007,7 @@ Static Function retApedEx(cPedi, cFil)
     cQuery := " SELECT *, D2.R_E_C_N_O_ RECNO, F2_CHVNFE "
     cQuery += " FROM SD2010 D2 "
     cQuery += " INNER JOIN SF2010 F2 ON D2_DOC = F2_DOC AND D2_FILIAL = F2_FILIAL "
-    cQuery += " WHERE D2.D_E_L_E_T_ = '' AND D2_PEDIDO = '"+cPedi+"' AND D2_FILIAL = '"+cFil+"' AND D2_DOC = '"+cNota+"' AND F2_DAUTNFE = '' "
+    cQuery += " WHERE D2.D_E_L_E_T_ = '' AND D2_PEDIDO = '"+cPedi+"' AND D2_FILIAL = '"+cFil+"' AND F2_DAUTNFE = '' "
     DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSC5, .F., .T.) 
 
     WHILE !(cAlSC5)->(EOF())
@@ -994,7 +1026,13 @@ Static Function retApedEx(cPedi, cFil)
     
 Return aRet
 
-Static Function AEXCLU1R()
+Static Function AEXCLU1R(_cFil)
+	cEmpAt   			:= "01"
+	cFilAt   			:= _cFil
+
+	cEmpAnt  			:= cEmpAt
+	cFilAnt  			:= cFilAt
+
     Local Y, X
     Local aRexId  := PedADev1(cFilAnt)
     Local cDirLog := '\x_logs\'
@@ -1004,7 +1042,7 @@ Static Function AEXCLU1R()
         
         aPedi := retApedEx(aRexId[Y,1], aRexId[Y,2])
         IncProc("Pedido " + aRexId[Y,1] )
-        nTot := LEN(aPedi)
+        nTot := LEN(aPedi) - 1
 
         FOR X := 1 TO nTot
 
@@ -1079,8 +1117,24 @@ Static Function AEXCLU1R()
     cArqLog := 'EXCLNFS_' + dToS(Date()) + '_' + StrTran(Time(), ':', '-') + '.log'
     MemoWrite(cDirLog + cArqLog, cLog)
 
-    cEmpAnt  := cEmpAt
-    cFilAnt  := cFilAt
-
 Return
 
+Static Function TemDistr(cDocumento, cSerie, cForne, cLoja, cFil)
+	Local lRet := .F.
+    Local cAlF1 := GetNextAlias()
+
+    cQuery := " SELECT DB_DOC "
+    cQuery += " FROM SDB010 " 
+	cQuery += " WHERE D_E_L_E_T_ = '' AND DB_FILIAL = '"+cFil+"' AND DB_DOC = '"+cDocumento+"' AND DB_SERIE = '"+cSerie+"' "
+	//cQuery += " AND DB_TM <> '501'  "
+	cQuery += " AND DB_ORIGEM NOT IN ( 'SC5', 'SC6' )
+	cQuery += " AND DB_TIPONF = 'D'
+	cQuery += " AND DB_ESTORNO <> 'S'  "
+    DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlF1, .F., .T.) 
+
+    IF EMPTY( (cAlF1)->(DB_DOC) )
+		lRet := .T.
+	ENDIF
+	(cAlF1)->(DBCLOSEAREA())
+
+Return lRet
