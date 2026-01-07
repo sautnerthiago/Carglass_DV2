@@ -92,4 +92,5 @@ User Function JOBNFE07()
 
     ConOut(OemToAnsi("Fim : ")+Time())
 
+
 Return

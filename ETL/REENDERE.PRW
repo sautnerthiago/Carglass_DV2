@@ -6,7 +6,8 @@
 
 User Function MYREENDEREC()
     Local aArea  := GetArea()
-    Local aFili  := {'01', '02', '03', '04', '06', '08', '09', '10', '11', '12', '13', '14', '16', '17', '20' }    
+    //Local aFili  := //{'01', '02', '03', '04', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '20' }    
+    Local aFili  := {'15'}
     Local xX
         FOR xX := 1 TO LEN(aFili)
     	    Processa({|| REENDER(aFili[xX]) },"Aguarde REENDEREÇAMENTO das Notas - Filial:  " + aFili[xX] )

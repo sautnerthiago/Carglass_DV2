@@ -5,13 +5,14 @@
 
 User Function MyMata103DEV()
     Local aArea  := GetArea()
-	Local aFil 	 := {"13", "16", "17", "20"}
+	//Local aFil 	 := {"13", "16", "17", "20"}
+	Local aFil 	 := {"13"}
 	Local Xy
 	FOR Xy := 1 to len(aFil)
 		Processa({|| ADEVOLUI(aFil[Xy]) },"Aguarde Devolucao das Notas Saida.... " )
-		Processa({|| ADEVOLU1(aFil[Xy]) },"Aguarde Devolucao das Notas Saida - COM FROTISTA E cfop 5949 - 6949.... " )
-    	Processa({|| AEXCLUIR(aFil[Xy]) },"Aguarde Exclusao das Notas Saida.... " )
-		Processa({|| AEXCLU1R(aFil[Xy]) },"Aguarde Exclusao das Notas Saida  - COM FROTISTA E cfop 5949 - 6949.... " )
+		// Processa({|| ADEVOLU1(aFil[Xy]) },"Aguarde Devolucao das Notas Saida - COM FROTISTA E cfop 5949 - 6949.... " )
+    	// Processa({|| AEXCLUIR(aFil[Xy]) },"Aguarde Exclusao das Notas Saida.... " )
+		// Processa({|| AEXCLU1R(aFil[Xy]) },"Aguarde Exclusao das Notas Saida  - COM FROTISTA E cfop 5949 - 6949.... " )
 	Next
     RestArea(aArea)
 Return
@@ -42,7 +43,7 @@ Static Function ADEVOLUI(_cFil) //teste com ambiente atualizado....
 
     FOR Z := 1 TO LEN(aRexId)
 		ConOut(Repl("-",80))
-		ConOut(PadC(OemToAnsi("Filial: " +cFilAnt+ "Inclusao de NFE DEVOLUCAO COM NOTA DE ORIGEM NFS"),80))
+		ConOut(PadC(OemToAnsi("Filial: " +cFilAnt+ " Inclusao de NFE DEVOLUCAO COM NOTA DE ORIGEM NFS"),80))
 		ConOut(Repl("-",80))
 
 		aNotas := reTNotas(aRexId[Z,1], aRexId[Z,2]) 
@@ -118,7 +119,9 @@ Static Function ADEVOLUI(_cFil) //teste com ambiente atualizado....
 				cDoc 	:= SF1->F1_DOC
 				_SERIE	:= SF1->F1_SERIE
 				AADD(aNota, { PadR(Alltrim(cDoc), TamSx3('F2_DOC')[1]), PadR(Alltrim(_SERIE), TamSx3('F2_SERIE')[1]) })
-				
+
+				ConOut("inicio processi da Filial: "+cFilAnt)
+
 				If !lMsErroAuto
 					IF lServic
 							cRetorno := SpedNFeTrf("SF1",;
@@ -156,6 +159,7 @@ Static Function ADEVOLUI(_cFil) //teste com ambiente atualizado....
 					//mostraerro()
 				EndIf
 				ConOut(OemToAnsi("Fim : ")+Time())
+				ConOut("Final da Filial: "+cFilAnt)
 			EndIf
 		Next
 
@@ -167,26 +171,46 @@ Return(.T.)
 
 Static Function PedADev(_Fil)
     Local aRet   := {}
-    Local cAlSC5 := GetNextAlias()
+    // Local cAlSC5 := GetNextAlias()
 
-    cQuery := " SELECT COUNT(D2_DOC) AS QTD, D2_PEDIDO, D2_EMISSAO, D2_FILIAL FROM SD2010 D2 "
-    cQuery += " INNER JOIN SC5010 C5 ON C5_NUM = D2_PEDIDO AND C5_FILIAL = D2_FILIAL "
-    cQuery += " WHERE C5.D_E_L_E_T_ = '' AND D2.D_E_L_E_T_ = '' AND D2_FILIAL = '"+_Fil+"' "
-    cQuery += " AND D2_FILIAL NOT IN ('15', '01', '10') "
-    cQuery += " AND D2_CF IN ('5949', '6949') "    	//16/11/2025 - INCLUIDO COM VICTOR E TÂNIA
-    cQuery += " AND D2_EMISSAO > '20251201' AND D2_CLIENTE NOT IN ('0050539327', '0051278112', '0050635124', '0050783270', '0050630011', '0001634036', '0050604254', '0001963653') "    
-    cQuery += " GROUP BY D2_PEDIDO, D2_EMISSAO, D2_FILIAL "
-    cQuery += " HAVING COUNT(*) > 1 "
-    cQuery += " ORDER BY D2_FILIAL, D2_EMISSAO, D2_PEDIDO "
-    DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSC5, .F., .T.) 
+    // cQuery := " SELECT COUNT(D2_DOC) AS QTD, D2_PEDIDO, D2_EMISSAO, D2_FILIAL FROM SD2010 D2 "
+    // cQuery += " INNER JOIN SC5010 C5 ON C5_NUM = D2_PEDIDO AND C5_FILIAL = D2_FILIAL "
+    // cQuery += " WHERE C5.D_E_L_E_T_ = '' AND D2.D_E_L_E_T_ = '' AND D2_FILIAL = '"+_Fil+"' "
+    // cQuery += " AND D2_EMISSAO >= '20251201' AND D2_CF IN ('5949', '6949') "    
+    // cQuery += " AND D2_DOC IN ('000054228', '000054229', '000054230', '000054232', '000054233', '000054234', '000054235', '000054236', '000054237', '000054238', '000054239') "
+    // cQuery += " GROUP BY D2_PEDIDO, D2_EMISSAO, D2_FILIAL "
+    // cQuery += " HAVING COUNT(*) > 1 "
+    // cQuery += " ORDER BY D2_FILIAL, D2_EMISSAO, D2_PEDIDO "
+    // DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSC5, .F., .T.) 
 
-    WHILE !(cAlSC5)->(EOF())
-        AADD(aRet, { (cAlSC5)->D2_PEDIDO, (cAlSC5)->D2_FILIAL} )
-        (cAlSC5)->(DBSKIP())
-        LOOP
-    ENDDO
-    (cAlSC5)->(DBCLOSEAREA())   
-   
+    // WHILE !(cAlSC5)->(EOF())
+    //     AADD(aRet, { (cAlSC5)->D2_PEDIDO, (cAlSC5)->D2_FILIAL} )
+    //     (cAlSC5)->(DBSKIP())
+    //     LOOP
+    // ENDDO
+    // (cAlSC5)->(DBCLOSEAREA())   
+
+	AADD(aRet, {'040273', '13' })
+	AADD(aRet, {'060746', '13' })
+	AADD(aRet, {'061051', '13' })
+	AADD(aRet, {'061115', '13' })
+	AADD(aRet, {'061631', '13' })
+	AADD(aRet, {'063246', '13' })
+	AADD(aRet, {'064345', '13' })
+	AADD(aRet, {'064765', '13' })
+	AADD(aRet, {'065105', '13' })
+	AADD(aRet, {'065167', '13' })
+	AADD(aRet, {'065613', '13' })
+	AADD(aRet, {'065960', '13' })
+	AADD(aRet, {'066141', '13' })
+	AADD(aRet, {'066172', '13' })
+	AADD(aRet, {'066347', '13' })
+	AADD(aRet, {'066497', '13' })
+	AADD(aRet, {'068027', '13' })
+	AADD(aRet, {'068273', '13' })
+	AADD(aRet, {'069215', '13' })
+
+
 Return aRet
 
 Static Function ADEVOLU1(_cFil) //teste com ambiente atualizado....
@@ -216,7 +240,7 @@ Static Function ADEVOLU1(_cFil) //teste com ambiente atualizado....
 
     FOR Z := 1 TO LEN(aRexId)
 		ConOut(Repl("-",80))
-		ConOut(PadC(OemToAnsi("Filial: " +cFilAnt+ "Inclusao de NFE DEVOLUCAO COM NOTA DE ORIGEM NFS - 5949/6949"),80))
+		ConOut(PadC(OemToAnsi("Filial: " +cFilAnt+ " Inclusao de NFE DEVOLUCAO COM NOTA DE ORIGEM NFS - 5949/6949"),80))
 		ConOut(Repl("-",80))
 
 		aNotas := reTNotas(aRexId[Z,1], aRexId[Z,2]) 
@@ -628,7 +652,7 @@ Static Function TemEntrd(cDocumento, cSerie, cForne, cLoja, cFil)
 
     cQuery := " SELECT D1_DOC "
     cQuery += " FROM "+RetSQLName("SD1") + " WITH (NOLOCK) "
-    cQuery += " WHERE D_E_L_E_T_ = '' AND D1_NFORI = '"+cDocumento+"' AND D1_SERIORI = '"+cSerie+"' "
+    cQuery += " WHERE D_E_L_E_T_ = '' AND D1_NFORI = '"+cDocumento+"' AND D1_SERIORI = '"+cSerie+"' AND D1_FILIAL = '"+cFil+"' "
     DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlF1, .F., .T.) 
 
     IF EMPTY( (cAlF1)->(D1_DOC) )

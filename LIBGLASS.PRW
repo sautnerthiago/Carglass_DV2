@@ -1135,13 +1135,13 @@ METHOD GerarNota(cPdv, cFilpv) class LIBGLASS
 
         //04/12/2025 - inclusão validação de saldo quantitativo - solicitado por Victor / Luaciana / Marcos Pinto
             cPrdt := SB1->B1_COD 
-            cArmZ := SB1->B1_LOCPAD
+            cArmZ := "01" //30/12/2025 RETIRADO, DEFINIÇÃO FERNANDO / MARCOS / VICTOR RAMON - SB1->B1_LOCPAD
 
             SB2->(dbgotop())
             If SB2->(dbSeek(xFilial("SB2")+ cPrdt + cArmZ ))
                 nSaldSB2 := SaldoSb2()
             Endif
-            if nSaldSB2 < SC9->C9_QTDLIB
+            if nSaldSB2 < SC9->C9_QTDLIB .AND. SB2->B2_QATU < SC9->C9_QTDLIB
                 cArqLog := 'WSNFS_GERNOTA_' + dToS(Date()) + '_' + StrTran(Time(), ':', '-') + '.log'
                 cErrorLog := "PRODUTO NÃO TEM SALDO PARA FATURAR - NESSE PEDIDO: " + cPdv
                 MemoWrite(cDirLog + cArqLog, cErrorLog)
@@ -2142,9 +2142,8 @@ Static Function TMATA265(cProd, _QUANT, _LOCAL, _DOC, _SERIE, _CLIFOR, _LOJA)
     cQuery += " 	AND DA_PRODUTO = '"+cProd+"' "
     cQuery += " 	AND DA_LOCAL = '"+_LOCAL+"'
     DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAltb, .F., .T.)    
-    //dbUseArea(.t.,"TOPCONN",tcGenQry(,,cQuery),"T01",.t.)
 
-    cItem 	:= "0001"
+    cItem 	:= itemDB((cAltb)->Codigo, (cAltb)->FILIAL ) //"0001"
 
     aAdd(aCab,{"DA_PRODUTO"	,(cAltb)->Codigo,Nil})
     aAdd(aCab,{"DA_DATA"	,(cAltb)->DA_DATA,Nil})
@@ -6675,3 +6674,25 @@ Method mudStZZG(nRecn, cExter, _status ) class LIBGLASS
     UPD+= "AND R_E_C_N_O_  = " + Alltrim(Str(nRecn)) + " "
     TCSQLEXEC(UPD)
 Return 
+
+Static Function itemDB(_Produ, _Fil )
+    Local cRet := ""
+
+    cQueryTab := " SELECT COUNT(*) AS QTD " + CRLF
+    cQueryTab += " FROM " + CRLF
+    cQueryTab += "     " + RetSQLName("SDB") + " SDB " + CRLF
+    cQueryTab += " WHERE " + CRLF
+    cQueryTab += "     SDB.D_E_L_E_T_ = ''  " + CRLF
+    cQueryTab += "     AND DB_FILIAL = '"+_Fil+"' AND DB_PRODUTO = '"+_Produ+"' " + CRLF
+    TCQuery cQueryTab New Alias 'QRYTMP'    
+
+    IF QRYTMP->QTD > 0
+        cRet := StrZero(QRYTMP->QTD, 4)
+    else
+        cRet := "0001"
+    ENDIF
+
+    QRYTMP->(DBCLOSEAREA())
+
+Return cRet
+

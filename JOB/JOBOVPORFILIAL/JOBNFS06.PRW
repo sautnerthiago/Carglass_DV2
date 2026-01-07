@@ -17,7 +17,7 @@ User Function JOBNFS06()
     PREPARE ENVIRONMENT EMPRESA "01" FILIAL _Fil MODULO 'FAT'
     oWS    := LIBGLASS():new()	
 
-    cQueryTab := " SELECT *, R_E_C_N_O_ RECNO " + CRLF
+    cQueryTab := " SELECT TOP 30 *, R_E_C_N_O_ RECNO " + CRLF
     cQueryTab += " FROM " + CRLF
     cQueryTab += "     " + RetSQLName("ZZF") + " ZZF " + CRLF
     cQueryTab += " WHERE " + CRLF

@@ -5,7 +5,7 @@
 User Function EXCLNFS()
     Local aArea  := GetArea()
     	Processa({|| AEXCLUIR() },"Aguarde Excluindo Notas Saida - SEM FROTISTA.... " )
-    	Processa({|| AEXCL001() },"Aguarde Excluindo Notas Saida - COM FROTISTA E cfop 5949.... " )
+    	//Processa({|| AEXCL001() },"Aguarde Excluindo Notas Saida - COM FROTISTA E cfop 5949.... " )
     RestArea(aArea)
 Return
 
@@ -19,7 +19,7 @@ Static Function AEXCLUIR()
         
         aPedi := retAped(aRexId[Y,1], aRexId[Y,2])
         IncProc("Pedido " + aRexId[Y,1] )
-        nTot := (LEN(aPedi) - 1)
+        nTot := LEN(aPedi)
 
         FOR X := 1 TO nTot
 
@@ -89,13 +89,14 @@ Static Function AEXCLUIR()
                     EndIf
                 EndIf
             EndIf
+            cEmpAnt  := cEmpAt1
+            cFilAnt  := cFilAt1
         NEXT
     Next
-    cArqLog := 'EXCLNFS_' + dToS(Date()) + '_' + StrTran(Time(), ':', '-') + '.log'
-    MemoWrite(cDirLog + cArqLog, cLog)
-
-    cEmpAnt  := cEmpAt
-    cFilAnt  := cFilAt
+    if !empty(cLog)
+        cArqLog := 'EXCLNFS_' + dToS(Date()) + '_' + StrTran(Time(), ':', '-') + '.log'
+        MemoWrite(cDirLog + cArqLog, cLog)
+    endif
 
 Return
 
@@ -103,32 +104,24 @@ Static Function PedAExc(_Fil)
     Local aRet   := {}
     Local cAlSC5 := GetNextAlias()
 
-    cQuery := " SELECT COUNT(D2_DOC) AS QTD, D2_PEDIDO, D2_EMISSAO, D2_FILIAL FROM SD2010 D2 "
-    cQuery += " INNER JOIN SC5010 C5 ON C5_NUM = D2_PEDIDO AND C5_FILIAL = D2_FILIAL "
-    cQuery += " WHERE C5.D_E_L_E_T_ = '' AND D2.D_E_L_E_T_ = '' AND D2_FILIAL = '"+_Fil+"' "
-    cQuery += " AND D2_EMISSAO > '20251201' AND D2_CLIENTE NOT IN ('0050539327', '0051278112', '0050635124', '0050783270', '0050630011', '0001634036', '0050604254', '0001963653') "    
-    cQuery += " GROUP BY D2_PEDIDO, D2_EMISSAO, D2_FILIAL "
-    cQuery += " HAVING COUNT(*) > 1 "
-    cQuery += " ORDER BY D2_FILIAL, D2_EMISSAO, D2_PEDIDO "
-    DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSC5, .F., .T.) 
-
-    // cQuery := " SELECT COUNT(D2_DOC) AS QTD, D2_PEDIDO, D2_EMISSAO, D2_FILIAL "
-    // cQuery += " FROM "+RetSQLName("SD2") + " WITH (NOLOCK) "
-    // cQuery += " WHERE D_E_L_E_T_ = '' AND D2_PEDIDO IN ( SELECT DISTINCT C5_NUM FROM SC5010  WHERE D_E_L_E_T_= '' AND C5_ZEXTID <> '' AND C5_FILIAL = '15'  ) "
-    // cQuery += " AND D2_EMISSAO > '20251201' AND D2_CLIENTE NOT IN ('0050539327', '0051278112', '0050635124', '0050783270', '0050630011', '0001634036', '0050604254', '0001963653') "
-    // cQuery += " AND D2_FILIAL = '15' "
+    // cQuery := " SELECT COUNT(D2_DOC) AS QTD, D2_PEDIDO, D2_EMISSAO, D2_FILIAL FROM SD2010 D2 "
+    // cQuery += " INNER JOIN SC5010 C5 ON C5_NUM = D2_PEDIDO AND C5_FILIAL = D2_FILIAL "
+    // cQuery += " WHERE C5.D_E_L_E_T_ = '' AND D2.D_E_L_E_T_ = '' AND D2_FILIAL = '"+_Fil+"' "
+    // cQuery += " AND D2_EMISSAO > '20251201' AND D2_CLIENTE NOT IN ('0050539327', '0051278112', '0050635124', '0050783270', '0050630011', '0001634036', '0050604254', '0001963653') "    
     // cQuery += " GROUP BY D2_PEDIDO, D2_EMISSAO, D2_FILIAL "
     // cQuery += " HAVING COUNT(*) > 1 "
     // cQuery += " ORDER BY D2_FILIAL, D2_EMISSAO, D2_PEDIDO "
-    // DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSC5, .F., .T.) 
+    
+    cQuery := " SELECT D2_PEDIDO, D2_FILIAL FROM SD2010 WHERE D_E_L_E_T_ = '' AND D2_FILIAL  = '"+_Fil+"' AND D2_DOC BETWEEN '000456182' AND '000457869' "
+    DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cAlSC5, .F., .T.) 
 
     WHILE !(cAlSC5)->(EOF())
         AADD(aRet, { (cAlSC5)->D2_PEDIDO, (cAlSC5)->D2_FILIAL} )
         (cAlSC5)->(DBSKIP())
         LOOP
     ENDDO
-    (cAlSC5)->(DBCLOSEAREA())          
-    
+    (cAlSC5)->(DBCLOSEAREA())        
+
 Return aRet
 
 Static Function retAped(cPedi, cFil)
@@ -257,8 +250,8 @@ Static Function AEXCL001()
     cArqLog := 'EXCLNFS_' + dToS(Date()) + '_' + StrTran(Time(), ':', '-') + '.log'
     MemoWrite(cDirLog + cArqLog, cLog)
 
-    cEmpAnt  := cEmpAt
-    cFilAnt  := cFilAt
+    cEmpAnt  := cEmpAt1
+    cFilAnt  := cFilAt1
 
 Return
 
@@ -293,3 +286,5 @@ Static Function PedAExc1(_Fil)
     (cAlSC5)->(DBCLOSEAREA())          
     
 Return aRet
+
+
