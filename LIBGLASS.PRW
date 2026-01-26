@@ -65,6 +65,8 @@ class LIBGLASS
     METHOD GrPedVd(cFilAt)
     METHOD PGExtrtV(_EXTERNID)
 
+    METHOD TemNFE(_pedido)  //verifica pedido com nota faturado - entrada
+
     METHOD PGExtDad(_EXTERNID)
     METHOD PGExtPDV(_EXTERNID)
 
@@ -97,6 +99,9 @@ class LIBGLASS
     METHOD TransNfe(cDocumento, cSerie)    
     METHOD mudStZZG(nRecn, cExter, _status )
     Method GRVLGZZG( nRecn, cExter, cMensRet, cCodRotin, cNomRti )
+
+    METHOD mudStZZI(nRecn, cExter, _status )
+    Method GRVLGZZI( nRecn, cExter, cMensRet, cCodRotin, cNomRti, _erro )
 
 endclass
 
@@ -1565,8 +1570,6 @@ METHOD PGExtDad(_EXTERNID) class LIBGLASS
     cQuery := " SELECT * "
     cQuery += " FROM "+RetSQLName("SC7") + " AS C7 WITH (NOLOCK) "
     cQuery += " WHERE C7.D_E_L_E_T_ <> '*' AND C7_ZIDPDCI = '"+_EXTERNID+"' "
-    //cQuery += " WHERE C7.D_E_L_E_T_ <> '*' AND C7_ZEXTID = '"+_EXTERNID+"' "
-    //cAlSC7:= CriaTrab(Nil,.F.)
     DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cSC7aL, .F., .T.)    
 
     WHILE !(cSC7aL)->(EOF())
@@ -1876,13 +1879,13 @@ method GerNFE(_EXTERNID, _CHVNFE, cOpc, dTalvc, cDoc, cSeri, _GRPNUM, _IDGRPNUM)
         aAdd(aItemPC,{'D1_ITEMPC'   ,PADL(_ITEM,TAMSX3('D1_ITEMPC')[1],'0'),NIL} )        
         aAdd(aItemPC,{'D1_CC'	    ,_CC   			    ,NIL} )        
         aAdd(aItemPC,{'D1_LOTECTL'  ,""   			    ,NIL} )        
-        aAdd(aItemPC,{"D1_IPI"		,0 				    ,Nil} )
-        aAdd(aItemPC,{"D1_VALICM"	,0 				    ,Nil} )
-        aAdd(aItemPC,{"D1_BASEICM"	,0 				    ,Nil} )
-        aAdd(aItemPC,{"D1_VALIPI"	,0 				    ,Nil} )
-        aAdd(aItemPC,{"D1_ICMSRET"	,0 				    ,Nil} ) 
-        aAdd(aItemPC,{"D1_BRICMS"	,0				    ,Nil} )			  
-        aAdd(aItemPC,{"D1_DESPESA"	,0                  ,Nil} )
+        // aAdd(aItemPC,{"D1_IPI"		,0 				    ,Nil} )
+        // aAdd(aItemPC,{"D1_VALICM"	,0 				    ,Nil} )
+        // aAdd(aItemPC,{"D1_BASEICM"	,0 				    ,Nil} )
+        // aAdd(aItemPC,{"D1_VALIPI"	,0 				    ,Nil} )
+        // aAdd(aItemPC,{"D1_ICMSRET"	,0 				    ,Nil} ) 
+        // aAdd(aItemPC,{"D1_BRICMS"	,0				    ,Nil} )
+        // aAdd(aItemPC,{"D1_DESPESA"	,0                  ,Nil} )
         AADD(aItem,aItemPC)
 
         (cAlSC7)->(DBSKIP())
@@ -6696,3 +6699,34 @@ Static Function itemDB(_Produ, _Fil )
 
 Return cRet
 
+Method GRVLGZZI( nRecn, cExter, cMensRet, cCodRotin, cNomRti, _erro ) class LIBGLASS
+    UPD:= "UPDATE "+RETSQLNAME("ZZI")+" SET ZZI_STATUS = '2', ZZI_ERROLO = CONVERT(VARBINARY(MAX), '"+cMensRet+"'), ZZI_ERRO = '"+_erro+"' "
+    UPD+= "WHERE D_E_L_E_T_ <> '*'  "
+    UPD+= "AND R_E_C_N_O_  = " + Alltrim(Str(nRecn)) + " "
+    TCSQLEXEC(UPD)
+Return 
+
+Method mudStZZI(nRecn, cExter, _status ) class LIBGLASS
+    UPD:= "UPDATE "+RETSQLNAME("ZZI")+" SET ZZI_STATUS = '"+_status+"' "
+    UPD+= "WHERE D_E_L_E_T_ <> '*'  "
+    UPD+= "AND R_E_C_N_O_  = " + Alltrim(Str(nRecn)) + " "
+    TCSQLEXEC(UPD)
+Return 
+
+METHOD TemNFE(_pedido) class LIBGLASS  //VERIFICA SE O PEDIDO TEM NOTA
+    Local cSC7aL   := GetNextAlias()
+    Local lRet     := .F.
+
+    cQuery := " SELECT D1_DOC FROM "+RetSQLName("SD1") + " D1 WITH (NOLOCK) "
+    cQuery += " INNER JOIN "+RetSQLName("SC7") + " C7 ON D1_FILIAL = C7_MSFIL AND D1_PEDIDO = C7_NUM "
+    cQuery += " WHERE D1.D_E_L_E_T_ = '' AND C7.D_E_L_E_T_ = '' "
+    cQuery += " AND C7_NUM IN ('"+_pedido+"') "
+    DbUseArea(.T.,"TOPCONN", TCGENQRY(,,cQuery),cSC7aL, .F., .T.)    
+
+    IF !EMPTY((cSC7aL)->D1_DOC)
+        lRet := .T.
+    ENDIF
+
+    (cSC7aL)->(dbclosearea())
+
+Return lRet
